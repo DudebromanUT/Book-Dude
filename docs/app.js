@@ -61,7 +61,10 @@
     upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 19.5h14"/>',
     ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.3"/>',
-    share: '<path d="M12 3.5v11M8 7.5l4-4 4 4M6 11H5v9.5h14V11h-1"/>'
+    share: '<path d="M12 3.5v11M8 7.5l4-4 4 4M6 11H5v9.5h14V11h-1"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    pencil: '<path d="M15.5 5.5l3 3L8 19H5v-3z"/><path d="M13.5 7.5l3 3"/>',
+    trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/>'
   };
   const icon = (name, cls) => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"' + (cls ? ' class="' + cls + '"' : '') + '>' + ICONS[name] + '</svg>';
 
@@ -133,31 +136,50 @@
   const sortTitle = t => String(t).replace(/^(the|a|an)\s+/i, '');
   const number = v => (v !== '' && v !== undefined && Number.isFinite(Number(v)) ? Number(v) : null);
 
-  const BOOKS = CATALOG.map(raw => {
+  const MY_BOOKS = 'My books';
+
+  function prepare(raw, custom) {
     const h = hash(raw.book_id);
-    const awards = parseAwards(raw);
+    const awards = custom ? [] : parseAwards(raw);
     return Object.assign({}, raw, {
+      _custom: custom,
       _awards: awards,
-      _colls: Array.from(new Set(awards.map(collectionOf))),
+      _colls: custom ? [MY_BOOKS] : Array.from(new Set(awards.map(collectionOf))),
       _level: number(raw.ar_level),
       _points: C.knownPoints(raw),
       _score: number(raw.score),
-      _year: parseInt(raw.year, 10) || 0,
+      // Added books sort by the year they were added.
+      _year: custom ? (parseInt(String(raw.createdAt).slice(0, 4), 10) || 0) : (parseInt(raw.year, 10) || 0),
       _pal: h % 12,
       _motif: (h >>> 8) % 6,
-      _seal: sealFor(raw),
+      _seal: custom ? ['mine', 'My<br>book'] : sealFor(raw),
       _sortTitle: sortTitle(raw.title),
       _surname: surname(raw.author),
       _titleText: ' ' + fold(raw.title).replace(/[^a-z0-9]+/g, ' ').trim() + ' ',
       _authorText: ' ' + fold(raw.author).replace(/[^a-z0-9]+/g, ' ').trim() + ' ',
       _text: fold([raw.title, raw.author, raw.description, raw.award_history, raw.genre, raw.ar_record_title].join(' '))
     });
-  });
-  const BY_ID = new Map(BOOKS.map(b => [b.book_id, b]));
-  const COLLECTIONS = COLLECTION_ORDER.filter(c => BOOKS.some(b => b._colls.includes(c)))
-    .concat(Array.from(new Set(BOOKS.flatMap(b => b._colls))).filter(c => !COLLECTION_ORDER.includes(c)).sort());
-  const AGES = Array.from(new Set(BOOKS.map(b => b.ages).filter(Boolean))).sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || collator.compare(a, b));
-  const GENRES = Array.from(new Set(BOOKS.map(b => b.genre).filter(Boolean))).sort(collator.compare);
+  }
+
+  const CATALOG_BOOKS = CATALOG.map(raw => prepare(raw, false));
+  const AGES = Array.from(new Set(CATALOG_BOOKS.map(b => b.ages).filter(Boolean))).sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || collator.compare(a, b));
+  const GENRES = Array.from(new Set(CATALOG_BOOKS.map(b => b.genre).filter(Boolean))).sort(collator.compare);
+  // The catalog plus books the reader added; rebuilt whenever she adds, edits, or deletes one.
+  let BOOKS = CATALOG_BOOKS;
+  let BY_ID = new Map();
+  let COLLECTIONS = [];
+
+  function rebuildBooks() {
+    const mine = Object.keys(state.custom).map(id => {
+      const c = state.custom[id];
+      return prepare({ book_id: id, title: c.title, author: c.author, description: c.description, ar_level: c.ar_level, ar_points: c.ar_points, year: '', award: '', category: '', createdAt: c.createdAt }, true);
+    });
+    BOOKS = CATALOG_BOOKS.concat(mine);
+    BY_ID = new Map(BOOKS.map(b => [b.book_id, b]));
+    COLLECTIONS = COLLECTION_ORDER.filter(c => BOOKS.some(b => b._colls.includes(c)))
+      .concat(Array.from(new Set(CATALOG_BOOKS.flatMap(b => b._colls))).filter(c => !COLLECTION_ORDER.includes(c)).sort())
+      .concat(mine.length ? [MY_BOOKS] : []);
+  }
 
   // ---------- State ----------
 
@@ -173,6 +195,7 @@
     period: thisYear(),
     limit: PAGE,
     records: {},
+    custom: {},
     settings: { goals: {}, readerName: '', accent: 'teal', lastExportAt: '' },
     offline: 'checking',
     persisted: null,
@@ -191,7 +214,7 @@
       }
       if (SORTS[saved.sort]) state.sort = saved.sort;
       if (saved.layout === 'list' || saved.layout === 'grid') state.layout = saved.layout;
-      if (['reading', 'want', 'finished', 'paused', 'favorites'].includes(saved.shelf)) state.shelf = saved.shelf;
+      if (['reading', 'want', 'finished', 'paused', 'favorites', 'mine'].includes(saved.shelf)) state.shelf = saved.shelf;
       if (saved.period === 'all' || /^\d{4}$/.test(saved.period || '')) state.period = saved.period;
       state.installTipDismissed = saved.installTipDismissed === true;
     } catch (e) { /* storage unavailable: defaults are fine */ }
@@ -208,19 +231,25 @@
 
   const db = (() => {
     let opening = null;
-    const memory = { records: new Map(), settings: new Map() };
     let useMemory = false;
     function open() {
       if (!opening) {
         opening = new Promise((resolve, reject) => {
           if (!window.indexedDB) { reject(new Error('IndexedDB is not available')); return; }
-          const req = indexedDB.open(DB_NAME, 1);
+          // Version 2 added the "books" store for books the reader adds herself.
+          const req = indexedDB.open(DB_NAME, 2);
           req.onupgradeneeded = () => {
             const d = req.result;
             if (!d.objectStoreNames.contains('records')) d.createObjectStore('records', { keyPath: 'id' });
             if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings');
+            if (!d.objectStoreNames.contains('books')) d.createObjectStore('books', { keyPath: 'id' });
           };
-          req.onsuccess = () => resolve(req.result);
+          req.onsuccess = () => {
+            const d = req.result;
+            // Let a newer version of the app upgrade the database after an update.
+            d.onversionchange = () => d.close();
+            resolve(d);
+          };
           req.onerror = () => reject(req.error);
         });
       }
@@ -239,25 +268,35 @@
     return {
       async load() {
         try {
-          const [records, keys, values] = await Promise.all([
+          const [records, books, keys, values] = await Promise.all([
             run('records', 'readonly', s => s.getAll()),
+            run('books', 'readonly', s => s.getAll()),
             run('settings', 'readonly', s => s.getAllKeys()),
             run('settings', 'readonly', s => s.getAll())
           ]);
           const settings = {};
           keys.forEach((k, i) => { settings[k] = values[i]; });
-          return { records, settings, ok: true };
+          return { records, books, settings, ok: true };
         } catch (e) {
           useMemory = true;
-          return { records: [], settings: {}, ok: false };
+          return { records: [], books: [], settings: {}, ok: false };
         }
       },
+      // In memory mode (storage blocked) state already holds everything, so writes are no-ops.
       putRecords(list) {
-        if (useMemory) { list.forEach(r => memory.records.set(r.id, r)); return Promise.resolve(); }
+        if (useMemory) return Promise.resolve();
         return run('records', 'readwrite', s => { list.forEach(r => s.put(r)); });
       },
+      putBooks(list) {
+        if (useMemory) return Promise.resolve();
+        return run('books', 'readwrite', s => { list.forEach(b => s.put(b)); });
+      },
+      deleteBook(id) {
+        if (useMemory) return Promise.resolve();
+        return run('books', 'readwrite', s => { s.delete(id); }).then(() => run('records', 'readwrite', s => { s.delete(id); }));
+      },
       setSetting(key, value) {
-        if (useMemory) { memory.settings.set(key, value); return Promise.resolve(); }
+        if (useMemory) return Promise.resolve();
         return run('settings', 'readwrite', s => { s.put(value, key); });
       }
     };
@@ -330,6 +369,14 @@
     return state.settings.readerName ? part + ', ' + state.settings.readerName : part;
   }
 
+  // Horizontal chip rows can hide the selected chip off-screen on a phone.
+  function revealChip(row) {
+    const sel = row && $('[aria-pressed="true"]', row);
+    if (!sel || row.scrollWidth <= row.clientWidth) return;
+    const left = sel.offsetLeft - row.offsetLeft;
+    if (left < row.scrollLeft || left + sel.offsetWidth > row.scrollLeft + row.clientWidth) row.scrollLeft = Math.max(0, left - 16);
+  }
+
   // Sizes and bar lengths are applied after rendering because the page's security policy blocks inline styles.
   function applySizes(root) {
     $$('[data-w]', root).forEach(el => { el.style.width = Math.max(0, Math.min(100, Number(el.dataset.w))) + '%'; });
@@ -350,10 +397,10 @@
     return b._level !== null ? '<span class="tag" title="AR book level">Lvl ' + esc(b.ar_level) + '</span>' : '';
   }
   function pointsTag(b) {
-    return b._points !== null
-      ? '<span class="tag pts">' + fmtNum(b._points) + (b._points === 1 ? ' pt' : ' pts') + '</span>'
-      : '<span class="tag unknown">pts unverified</span>';
+    if (b._points !== null) return '<span class="tag pts">' + fmtNum(b._points) + (b._points === 1 ? ' pt' : ' pts') + '</span>';
+    return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
   }
+  const mineTag = b => (b._custom ? '<span class="tag mine">Added by you</span>' : '');
 
   function flagText(r) {
     if (!r || !r.status) return '';
@@ -362,11 +409,12 @@
   }
 
   function bookLabel(b, r) {
-    const bits = [b.title + ' by ' + b.author];
+    const bits = [b.title + (b.author ? ' by ' + b.author : '')];
     const a = b._awards[0];
     if (a) bits.push([a.award, a.category, a.year].filter(Boolean).join(' '));
+    if (b._custom) bits.push('added by you');
     if (b._level !== null) bits.push('book level ' + b.ar_level);
-    bits.push(b._points !== null ? plural(b._points, 'AR point') : 'AR points not verified');
+    bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
     if (r && r.status) bits.push(flagText(r));
     if (r && r.favorite) bits.push('favorite');
     return bits.join('. ');
@@ -524,8 +572,14 @@
   function listSub(b) {
     const r = state.records[b.book_id];
     const a = b._awards[0];
-    return levelTag(b) + pointsTag(b) + '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' +
+    return levelTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
       (r && r.status ? '<span class="tag">' + esc(flagText(r)) + '</span>' : '');
+  }
+
+  function addBookCta() {
+    const q = state.query.trim();
+    return '<div class="add-cta"><div><b>Can’t find ' + (q ? '“' + esc(q) + '”' : 'a book') + '?</b><p>Add it yourself. It works just like the other books.</p></div>' +
+      '<button type="button" class="btn small primary" data-act="add-book" data-title="' + esc(q) + '">' + icon('plus') + 'Add a book</button></div>';
   }
 
   function itemsHtml(list) {
@@ -536,13 +590,15 @@
     const results = $('#results');
     if (!results) return;
     lastResults = filtered();
-    const total = lastResults.length;
     const f = state.filters;
+    if (f.collection && !COLLECTIONS.includes(f.collection)) { f.collection = ''; lastResults = filtered(); }
+    const total = lastResults.length;
 
     const counts = {};
     for (const b of BOOKS) for (const c of b._colls) counts[c] = (counts[c] || 0) + 1;
     $('#coll-chips').innerHTML = '<button type="button" class="chip" data-act="collection" data-key="" aria-pressed="' + !f.collection + '">All <span class="n">' + BOOKS.length + '</span></button>' +
       COLLECTIONS.map(c => '<button type="button" class="chip" data-act="collection" data-key="' + esc(c) + '" aria-pressed="' + (f.collection === c) + '">' + esc(collLabel(c)) + ' <span class="n">' + counts[c] + '</span></button>').join('');
+    revealChip($('#coll-chips'));
 
     const n = activeFilterCount();
     const countEl = $('#filter-count');
@@ -565,12 +621,18 @@
     $('#result-count').textContent = total === BOOKS.length ? plural(total, 'book') : plural(total, 'book') + ' found';
 
     if (!total) {
-      results.innerHTML = emptyState('No books match', 'Try a different search, or loosen a filter.', '<button type="button" class="btn" data-act="reset-all">Show all books</button>');
+      const q = state.query.trim();
+      results.innerHTML = q
+        ? '<div class="empty compact"><h2>No books match “' + esc(q) + '”</h2><p>Is it a book that isn’t in the Reading Room? Add it yourself and track it like any other book.</p>' +
+            '<div class="row-actions"><button type="button" class="btn primary" data-act="add-book" data-title="' + esc(q) + '">' + icon('plus') + 'Add it as my book</button>' +
+            '<button type="button" class="btn" data-act="reset-all">Show all books</button></div></div>'
+        : emptyState('No books match', 'Try loosening a filter.', '<button type="button" class="btn" data-act="reset-all">Show all books</button>') + addBookCta();
       return;
     }
     const shown = Math.min(state.limit, total);
     results.innerHTML = '<div class="' + (state.layout === 'grid' ? 'grid' : 'list') + '" id="items">' + itemsHtml(lastResults.slice(0, shown)) + '</div>' +
-      (shown < total ? '<div class="more-row"><button type="button" class="btn" data-act="more" id="more-btn">Show more books</button></div>' : '');
+      (shown < total ? '<div class="more-row"><button type="button" class="btn" data-act="more" id="more-btn">Show more books</button></div>' : '') +
+      addBookCta();
     watchMore();
   }
 
@@ -606,11 +668,15 @@
   // ---------- Shelves ----------
 
   const SHELVES = [
-    ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites']
+    ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites'], ['mine', 'My books']
   ];
 
   function shelfBooks(key) {
     const out = [];
+    if (key === 'mine') {
+      for (const id of Object.keys(state.custom)) if (BY_ID.has(id)) out.push([BY_ID.get(id), rec(id)]);
+      return out.sort((x, y) => String(state.custom[y[0].book_id].createdAt).localeCompare(String(state.custom[x[0].book_id].createdAt)));
+    }
     for (const id of Object.keys(state.records)) {
       const r = state.records[id];
       const b = BY_ID.get(id);
@@ -636,7 +702,7 @@
     }
     if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + quizLine(b, r);
     if (r.status === 'paused') return '<span>Paused' + (r.progress ? ' at ' + r.progress + '%' : '') + '</span>';
-    if (key === 'favorites') return r.status ? '<span class="tag">' + STATUS[r.status].label + '</span>' : levelTag(b) + pointsTag(b);
+    if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + levelTag(b) + pointsTag(b);
     return levelTag(b) + pointsTag(b);
   }
 
@@ -651,16 +717,20 @@
       want: ['Your wish list is empty', 'Tap <b>Want to read</b> on any book to save it for later.'],
       finished: ['No finished books yet', 'When you finish a book, tap <b>Finished</b>. It will show up here.'],
       paused: ['Nothing paused', 'Books you set aside for now will wait for you here.'],
-      favorites: ['No favorites yet', 'Tap the heart on a book you love.']
+      favorites: ['No favorites yet', 'Tap the heart on a book you love.'],
+      mine: ['Add your own books', 'Reading something that isn’t in the Reading Room? Add it here and track it like any other book: shelves, notes, and quiz points.']
     };
+    const addBtn = '<button type="button" class="btn primary" data-act="add-book">' + icon('plus') + 'Add a book</button>';
     main.innerHTML =
-      '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>My shelves</h1></div></header>' +
+      '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>My shelves</h1></div>' +
+        '<button type="button" class="btn small" data-act="add-book">' + icon('plus') + 'Add a book</button></header>' +
       '<div class="chips" role="group" aria-label="Shelves">' + SHELVES.map(([k, label]) =>
         '<button type="button" class="chip" data-act="shelf" data-shelf="' + k + '" aria-pressed="' + (k === key) + '">' + label + ' <span class="n">' + counts[k] + '</span></button>').join('') + '</div>' +
       '<div class="list">' + (list.length ? list.map(([b, r]) => row(b, shelfSub(b, r, key))).join('') :
-        emptyState(empties[key][0], empties[key][1], '<button type="button" class="btn primary" data-act="tab" data-tab="explore">Explore books</button>')) + '</div>' +
+        emptyState(empties[key][0], empties[key][1], key === 'mine' ? addBtn : '<button type="button" class="btn primary" data-act="tab" data-tab="explore">Explore books</button>')) + '</div>' +
       (missing ? '<p class="notice soft" role="note">' + plural(missing, 'saved record is', 'saved records are') + ' for books no longer in the catalog. They stay in your totals and backups.</p>' : '');
     applySizes(main);
+    revealChip($('.chips', main));
   }
 
   // ---------- Progress ----------
@@ -733,7 +803,7 @@
         '<span class="bar gold"><i data-w="' + (done / books.length * 100).toFixed(1) + '"></i></span></div>';
     }).join('');
 
-    const hasRecords = Object.keys(state.records).some(id => !C.isBlank(state.records[id]));
+    const hasRecords = Object.keys(state.custom).length > 0 || Object.keys(state.records).some(id => !C.isBlank(state.records[id]));
     const lastExport = state.settings.lastExportAt ? Date.parse(state.settings.lastExportAt) : 0;
     const backupNudge = hasRecords && (!lastExport || Date.now() - lastExport > 30 * 864e5)
       ? '<div class="notice" role="note"><strong>Time for a backup</strong>Your journal lives only on this device. ' + (lastExport ? 'Your last backup was ' + esc(fmtDay(localDay(state.settings.lastExportAt))) + '.' : 'You have not saved a backup yet.') +
@@ -751,7 +821,7 @@
           '<div class="tile gold"><span class="num">' + m.finished + '</span><span class="lbl">' + (m.finished === 1 ? 'Book' : 'Books') + ' finished</span><span class="sub">' + esc(when) + '</span></div>' +
           '<button type="button" class="tile accent" data-act="shelf-go" data-shelf="reading"><span class="num">' + m.reading + '</span><span class="lbl">Reading now</span><span class="sub">Right now</span></button>' +
           '<div class="tile coral"><span class="num">' + m.awaiting + '</span><span class="lbl">Awaiting quiz entry</span><span class="sub">' +
-            (m.awaiting ? (m.potential ? 'Up to ' + fmtNum(m.potential) + ' pts available' : 'No listed points') + (m.unknown ? ' · ' + m.unknown + ' unverified' : '') : 'All caught up') + '</span></div>' +
+            (m.awaiting ? (m.potential ? 'Up to ' + fmtNum(m.potential) + ' pts available' : 'No listed points') + (m.unknown ? ' · ' + m.unknown + ' unknown' : '') : 'All caught up') + '</span></div>' +
           '<div class="tile plum"><span class="num">' + m.quizzes + '</span><span class="lbl">' + (m.quizzes === 1 ? 'Quiz' : 'Quizzes') + ' recorded</span><span class="sub">' + esc(when) + '</span></div>' +
         '</div>' +
         (year && m.undated ? '<p class="notice soft" role="note">' + plural(m.undated, 'finished book has', 'finished books have') + ' no finish date, so ' + (m.undated === 1 ? 'it counts' : 'they count') + ' only in All time.</p>' : '') +
@@ -762,6 +832,7 @@
         '<section class="panel"><h2 class="section-title">Collections <small>books finished, all time</small></h2><div class="collections">' + colls + '</div></section>' +
       '</div>';
     applySizes(main);
+    revealChip($('.chips', main));
     const chart = $('.chart', main);
     if (chart) chart.style.setProperty('--cols', chart.dataset.cols);
   }
@@ -770,7 +841,8 @@
 
   function renderMore() {
     const total = Object.keys(state.records).filter(id => !C.isBlank(state.records[id])).length;
-    const withPoints = BOOKS.filter(b => b._points !== null).length;
+    const withPoints = CATALOG_BOOKS.filter(b => b._points !== null).length;
+    const added = Object.keys(state.custom).length;
     const standalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
     const offline = {
       ready: ['ok', 'Ready offline', 'The app and book list are saved on this device.'],
@@ -791,8 +863,8 @@
           '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + accents.map(a =>
             '<button type="button" data-act="accent" data-accent="' + a + '" aria-label="' + a + '" aria-pressed="' + (state.settings.accent === a) + '"></button>').join('') + '</div></div>' +
         '</div></section>' +
-        '<section class="panel"><h2>Backups</h2><p class="lead">Your shelves, notes, and quiz points are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong.</p>' +
-          '<p class="hint">' + (state.settings.lastExportAt ? 'Last backup: ' + esc(fmtDay(localDay(state.settings.lastExportAt))) : 'No backup saved yet.') + ' · ' + plural(total, 'book record') + ' on this device.</p>' +
+        '<section class="panel"><h2>Backups</h2><p class="lead">Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong.</p>' +
+          '<p class="hint">' + (state.settings.lastExportAt ? 'Last backup: ' + esc(fmtDay(localDay(state.settings.lastExportAt))) : 'No backup saved yet.') + ' · ' + plural(total, 'book record') + (added ? ' and ' + plural(added, 'added book') : '') + ' on this device.</p>' +
           '<div class="row-actions"><button type="button" class="btn primary" data-act="export">' + icon('download') + 'Save a backup</button>' +
           '<button type="button" class="btn" data-act="restore">' + icon('upload') + 'Restore from backup</button></div>' +
           '<input type="file" id="restore-file" accept=".json,application/json" hidden>' +
@@ -806,8 +878,9 @@
             item('', 'Saved on this device', 'Clearing website data or deleting the app removes your journal. Save backups now and then.')) +
           (standalone ? item('ok', 'Installed', 'Running from the Home Screen.') : item('', 'Running in the browser', 'For the best experience, add the app to your Home Screen: tap Share, then Add to Home Screen. The Home Screen app keeps its own separate journal.')) +
         '</ul></section>' +
-        '<section class="panel"><h2>About the books</h2><p class="lead">' + plural(BOOKS.length, 'book') + ' from Newbery, Beehive, Printz, Pulitzer, Carnegie, National Book Award, and classics lists. ' +
-          withPoints + ' have AR details from a checked source; the other ' + (BOOKS.length - withPoints) + ' are not verified yet, and a blank never means zero.</p>' +
+        '<section class="panel"><h2>About the books</h2><p class="lead">' + plural(CATALOG_BOOKS.length, 'book') + ' from Newbery, Beehive, Printz, Pulitzer, Carnegie, National Book Award, and classics lists. ' +
+          withPoints + ' have AR details from a checked source; the other ' + (CATALOG_BOOKS.length - withPoints) + ' are not verified yet, and a blank never means zero.' +
+          (added ? ' You added ' + plural(added, 'more book') + ' yourself.' : '') + '</p>' +
           '<p class="hint">Always confirm the quiz and edition with your school before counting points. Community scores were supplied with the list and are believed to be from Goodreads, but are not verified. Each book shows where its information came from.</p></section>' +
         '<section class="panel"><h2>Privacy</h2><p class="lead">No accounts, no ads, no tracking. Nothing you write leaves this device unless you save a backup file. Links to book sources open other websites.</p></section>' +
       '</div></div>';
@@ -837,8 +910,8 @@
 
   function quizBox(b, r) {
     const worth = b._points !== null
-      ? 'This book’s quiz is worth up to <b>' + fmtNum(b._points) + '</b> points.'
-      : 'This book’s AR points are not verified yet. Check with your school.';
+      ? 'This book’s quiz is worth up to <b>' + fmtNum(b._points) + '</b> points' + (b._custom ? ' (the number you entered).' : '.')
+      : b._custom ? 'You haven’t added this book’s AR points. Use <b>Edit book</b> below if you find them.' : 'This book’s AR points are not verified yet. Check with your school.';
     return '<div class="box quiz"><h3>AR quiz result</h3><p class="worth">' + worth + '</p>' +
       (r.earnedPoints !== null ? '<div class="earned"><span class="big">' + fmtNum(r.earnedPoints) + '</span><span><b>points earned</b><br><span class="hint">' + (r.quizDate ? 'Quiz taken ' + esc(fmtDay(r.quizDate)) : 'No quiz date, so this counts only in All time') + '</span></span></div>' : '') +
       '<form class="stack" data-form="quiz" novalidate><div class="two">' +
@@ -868,8 +941,38 @@
       '<div class="status-grid" role="group" aria-label="Shelf">' + statusButtons(r) + '</div>' + (extra ? '<div class="stack">' + extra + '</div>' : '');
   }
 
+  function sheetBar(title) {
+    return '<div class="sheet-bar"><span class="grab" aria-hidden="true"></span><p class="visually-hidden" id="sheet-title">' + esc(title) + '</p>' +
+      '<span></span><button type="button" class="icon-btn" data-act="close-sheet" aria-label="Close">' + icon('x') + '</button></div>';
+  }
+
+  const dl = rows => '<dl class="facts">' + rows.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('') + '</dl>';
+
+  // Details for a book the reader added: everything here came from her.
+  function customDetailsHtml(b) {
+    const c = state.custom[b.book_id] || {};
+    const notAdded = '<span class="hint">Not added</span>';
+    return '<section class="box"><h3>About this book</h3>' +
+        (b.description ? '<p class="desc">' + esc(b.description) + '</p>' : '<p class="hint">No description yet.</p>') +
+        dl([
+          ['AR book level', b.ar_level ? esc(b.ar_level) + ' <span class="hint">(' + levelMeaning(b.ar_level) + ')</span>' : notAdded],
+          ['AR points', b._points !== null ? '<b>' + fmtNum(b._points) + '</b>' : notAdded],
+          ['Added', c.createdAt ? esc(fmtDay(localDay(c.createdAt))) : notAdded]
+        ]) +
+        '<p class="small-print">You added this book, so these details came from you. Check AR numbers with your teacher or AR BookFinder.</p>' +
+        '<div class="row-actions"><button type="button" class="btn" data-act="edit-book">' + icon('pencil') + 'Edit book</button>' +
+        '<button type="button" class="btn ghost danger" data-act="delete-book">' + icon('trash') + 'Delete book</button></div></section>';
+  }
+
   function sheetHtml(b) {
     const r = rec(b.book_id);
+    const hero = '<section class="book-hero">' + cover(b) + '<div><h1>' + esc(b.title) + '</h1>' + (b.author ? '<p class="by">' + esc(b.author) + '</p>' : '') +
+      '<div class="tags">' + levelTag(b) + pointsTag(b) + mineTag(b) + (b.ar_interest ? '<span class="tag">' + esc(b.ar_interest) + '</span>' : '') + (b.ages ? '<span class="tag">Ages ' + esc(b.ages) + '</span>' : '') + '</div></div></section>';
+    const personal = '<section id="shelf-box" class="box" aria-label="My shelf">' + shelfHtml(b) + '</section>' +
+      '<section class="box"><h3><label for="note">My notes</label></h3><textarea id="note" class="input" placeholder="Favorite parts, characters, words to remember, what you thought…">' + esc(r.note) + '</textarea>' +
+      '<p class="hint" id="note-status">Private to this device. Saves as you type.</p></section>';
+    if (b._custom) return sheetBar(b.title) + '<div class="sheet-body">' + hero + personal + customDetailsHtml(b) + '</div>';
+
     const facts = [];
     facts.push(['Year', esc(b.year) + (b.year_type === 'Publication' ? ' (published)' : ' (award year)')]);
     facts.push(['Ages', b.ages ? esc(b.ages) : '<span class="hint">Not listed</span>']);
@@ -886,16 +989,9 @@
     if (b.ar_source) ar.push(['Source', links(b.ar_source, b.ar_source_type) + (b.ar_checked ? ' <span class="hint">· checked ' + esc(fmtDay(b.ar_checked)) + '</span>' : '')]);
     if (b.ar_research_source) ar.push(['Research', links(b.ar_research_source, 'AR BookFinder')]);
     ar.push(['Status', esc(b.ar_status || 'Not yet verified')]);
-    const dl = rows => '<dl class="facts">' + rows.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('') + '</dl>';
 
-    return '<div class="sheet-bar"><span class="grab" aria-hidden="true"></span><p class="visually-hidden" id="sheet-title">' + esc(b.title) + '</p>' +
-        '<span></span><button type="button" class="icon-btn" data-act="close-sheet" aria-label="Close">' + icon('x') + '</button></div>' +
-      '<div class="sheet-body">' +
-        '<section class="book-hero">' + cover(b) + '<div><h1>' + esc(b.title) + '</h1><p class="by">' + esc(b.author) + '</p>' +
-          '<div class="tags">' + levelTag(b) + pointsTag(b) + (b.ar_interest ? '<span class="tag">' + esc(b.ar_interest) + '</span>' : '') + (b.ages ? '<span class="tag">Ages ' + esc(b.ages) + '</span>' : '') + '</div></div></section>' +
-        '<section id="shelf-box" class="box" aria-label="My shelf">' + shelfHtml(b) + '</section>' +
-        '<section class="box"><h3><label for="note">My notes</label></h3><textarea id="note" class="input" placeholder="Favorite parts, characters, words to remember, what you thought…">' + esc(r.note) + '</textarea>' +
-          '<p class="hint" id="note-status">Private to this device. Saves as you type.</p></section>' +
+    return sheetBar(b.title) +
+      '<div class="sheet-body">' + hero + personal +
         '<section class="box"><h3>About this book</h3><p class="desc">' + esc(b.description) + '</p>' +
           '<p class="small-print">' + esc(b.description_kind || 'Summary') + descSource + (b.description_status ? ' · ' + esc(b.description_status) : '') + '</p>' +
           (b.heads_up ? '<div class="heads-up">' + icon('alert') + '<div><b>Heads up:</b> ' + esc(b.heads_up) + '</div></div>' : '') +
@@ -915,6 +1011,89 @@
     sheet.innerHTML = sheetHtml(b);
     if (!sheet.open) sheet.showModal();
     sheet.scrollTop = 0;
+  }
+
+  // ---------- Books she adds ----------
+
+  function newCustomId() {
+    let id;
+    do { id = C.CUSTOM_PREFIX + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); } while (state.custom[id] || BY_ID.has(id));
+    return id;
+  }
+
+  function bookFormHtml(id, prefill) {
+    const editing = !!id;
+    const c = editing ? state.custom[id] : C.customBook({ title: prefill || '' });
+    const shelfPick = editing ? '' : '<div class="field"><span class="label" id="bk-shelf-label">Put it on a shelf</span>' +
+      '<div class="status-grid" role="group" aria-labelledby="bk-shelf-label">' + Object.keys(STATUS).map(k =>
+        '<button type="button" class="status-btn" data-act="pick-status" data-status="' + k + '" aria-pressed="' + (k === 'want') + '">' + icon(STATUS[k].icon) + STATUS[k].label + '</button>').join('') + '</div></div>';
+    return sheetBar(editing ? 'Edit ' + c.title : 'Add a book') +
+      '<div class="sheet-body"><form class="stack" data-form="book" data-status="want" novalidate' + (editing ? ' data-id="' + esc(id) + '"' : '') + '>' +
+        '<div><h1 class="form-title">' + (editing ? 'Edit your book' : 'Add your own book') + '</h1>' +
+        (editing ? '' : '<p class="lead">For a book that isn’t in the Reading Room. It is saved on this device and in your backups.</p>') + '</div>' +
+        '<label class="field"><span>Title</span><input id="bk-title" class="input" type="text" maxlength="200" autocomplete="off" autocapitalize="words" value="' + esc(c.title) + '"></label>' +
+        '<label class="field"><span>Author <span class="hint">(optional)</span></span><input id="bk-author" class="input" type="text" maxlength="200" autocomplete="off" autocapitalize="words" value="' + esc(c.author) + '"></label>' +
+        '<div class="two"><label class="field"><span>AR book level</span><input id="bk-level" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 4.5" value="' + esc(c.ar_level) + '"></label>' +
+        '<label class="field"><span>AR points</span><input id="bk-points" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 6" value="' + esc(c.ar_points) + '"></label></div>' +
+        '<p class="hint">Not sure? Leave these blank and add them later. You can look them up on <a href="https://www.arbookfind.com/" target="_blank" rel="noopener noreferrer">AR BookFinder</a> or ask your teacher.</p>' +
+        '<label class="field"><span>What’s it about? <span class="hint">(optional)</span></span><textarea id="bk-desc" class="input" maxlength="2000" placeholder="A sentence or two, in your own words">' + esc(c.description) + '</textarea></label>' +
+        shelfPick +
+        '<div class="error" id="bk-error" role="alert" hidden></div>' +
+        '<div class="row-actions"><button type="submit" class="btn primary">' + (editing ? 'Save changes' : icon('plus') + 'Add book') + '</button>' +
+        '<button type="button" class="btn" data-act="' + (editing ? 'cancel-edit' : 'close-sheet') + '">Cancel</button></div>' +
+      '</form></div>';
+  }
+
+  function openBookForm(id, prefill) {
+    state.openId = id || null;
+    sheet.innerHTML = bookFormHtml(id, prefill);
+    if (!sheet.open) sheet.showModal();
+    sheet.scrollTop = 0;
+  }
+
+  async function saveBookForm(form) {
+    const err = $('#bk-error', form);
+    const fail = html => { err.innerHTML = html; err.hidden = false; };
+    const value = sel => $(sel, form).value.trim();
+    const title = value('#bk-title');
+    const author = value('#bk-author');
+    const level = value('#bk-level').replace(',', '.');
+    const points = value('#bk-points').replace(',', '.');
+    const description = value('#bk-desc');
+    if (!title) return fail('Give your book a title.');
+    if (level && (!/^\d+(\.\d+)?$/.test(level) || Number(level) > 20)) return fail('AR book level must be a number, like 4.5.');
+    if (points && (!/^\d+(\.\d+)?$/.test(points) || Number(points) > 999)) return fail('AR points must be a number, like 6.');
+    const editingId = form.dataset.id || '';
+    if (!editingId && !form.dataset.allowDupe) {
+      const dupe = BOOKS.find(b => C.fold(b.title) === C.fold(title));
+      if (dupe) {
+        return fail('<b>' + esc(dupe.title) + '</b>' + (dupe.author ? ' by ' + esc(dupe.author) : '') + (dupe._custom ? ' is already in your books.' : ' is already in the Reading Room.') +
+          '<div class="row-actions"><button type="button" class="btn small primary" data-act="open" data-id="' + esc(dupe.book_id) + '">Open it</button>' +
+          '<button type="button" class="btn small" data-act="allow-dupe">Add mine anyway</button></div>');
+      }
+    }
+    const now = new Date().toISOString();
+    const id = editingId || newCustomId();
+    const prev = state.custom[id];
+    const book = C.customBook({ id, title, author, ar_level: level, ar_points: points, description, createdAt: prev ? prev.createdAt : now, updatedAt: now });
+    try {
+      await db.putBooks([book]);
+    } catch (e) {
+      return fail('This device would not save the book. Try again.');
+    }
+    state.custom[id] = book;
+    rebuildBooks();
+    state.dirty = true;
+    requestPersistence();
+    const status = editingId ? '' : form.dataset.status;
+    if (status) {
+      const patch = { status };
+      if (status === 'reading') patch.startedDate = today();
+      if (status === 'finished') { patch.finishedDate = today(); patch.progress = 100; }
+      await save(id, patch);
+    }
+    openBook(id);
+    toast(editingId ? 'Book updated.' : 'Added “' + book.title + '” to your books!');
   }
 
   function refreshShelf() {
@@ -1018,7 +1197,7 @@
 
   function exportBackup() {
     flushNote();
-    const data = C.exportBackup(state.records, state.settings);
+    const data = C.exportBackup(state.records, state.settings, undefined, state.custom);
     const text = JSON.stringify(data, null, 2);
     const name = 'reading-room-backup-' + today() + '.json';
     let file = null;
@@ -1054,10 +1233,10 @@
       return;
     }
     await flushNote();
-    const plan = C.mergeBackup(state.records, state.settings.goals, parsed);
+    const plan = C.mergeBackup(state.records, state.settings.goals, parsed, state.custom);
     const newGoals = Object.keys(parsed.goals).filter(y => !Object.prototype.hasOwnProperty.call(state.settings.goals, y));
     const takeName = !state.settings.readerName && parsed.readerName;
-    if (!plan.added && !plan.updated && !newGoals.length && !takeName) {
+    if (!plan.added && !plan.updated && !plan.changedBooks.length && !newGoals.length && !takeName) {
       showConfirm('Already up to date', '<p>Everything in this backup is already on this device (or this device has newer changes).</p>');
       return;
     }
@@ -1066,20 +1245,25 @@
     if (plan.updated) lines.push('<li>' + plan.updated + ' newer than the copy on this device</li>');
     if (plan.kept) lines.push('<li>' + plan.kept + ' left as they are (this device has the same or newer)</li>');
     if (parsed.unknown) lines.push('<li>' + parsed.unknown + ' for books not in the current catalog (kept anyway)</li>');
+    if (plan.booksAdded) lines.push('<li>' + plural(plan.booksAdded, 'book you added', 'books you added') + ', new to this device</li>');
+    if (plan.booksUpdated) lines.push('<li>' + plural(plan.booksUpdated, 'added book', 'added books') + ' with newer details</li>');
     if (newGoals.length) lines.push('<li>' + plural(newGoals.length, 'yearly goal') + ' added</li>');
     showConfirm('Restore this backup?', '<ul>' + lines.join('') + '</ul><p class="hint">Nothing on this device is deleted.' + (parsed.exportedAt ? ' Backup made ' + esc(fmtDay(localDay(parsed.exportedAt))) + '.' : '') + '</p>', 'Restore', async () => {
       const changed = plan.changed.map(id => plan.records[id]);
       try {
+        await db.putBooks(plan.changedBooks.map(id => plan.customBooks[id]));
         await db.putRecords(changed);
       } catch (e) {
-        showConfirm('Could not restore', '<p>The device would not save the restored records. Nothing was changed.</p>');
+        showConfirm('Could not restore', '<p>The device would not save everything from the backup. Try restoring again.</p>');
         return;
       }
+      state.custom = plan.customBooks;
+      rebuildBooks();
       state.records = plan.records;
       if (newGoals.length) await saveSetting('goals', plan.goals);
       if (takeName) await saveSetting('readerName', parsed.readerName);
       render(true);
-      toast('Restored ' + plural(changed.length, 'book') + '.');
+      toast('Restored ' + plural(new Set(plan.changed.concat(plan.changedBooks)).size, 'book') + '.');
     });
   }
 
@@ -1244,6 +1428,39 @@
       });
     },
     export: exportBackup,
+    'add-book': el => openBookForm(null, el.dataset.title || ''),
+    'edit-book': () => { flushNote(); openBookForm(state.openId); },
+    'cancel-edit': () => openBook(state.openId),
+    'pick-status': el => {
+      const form = el.closest('form');
+      const next = form.dataset.status === el.dataset.status ? '' : el.dataset.status;
+      form.dataset.status = next;
+      $$('[data-act="pick-status"]', form).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.status === next)));
+    },
+    'allow-dupe': el => {
+      const form = el.closest('form');
+      form.dataset.allowDupe = '1';
+      saveBookForm(form);
+    },
+    'delete-book': () => {
+      const id = state.openId;
+      const c = state.custom[id];
+      if (!c) return;
+      showConfirm('Delete this book?', '<p><b>' + esc(c.title) + '</b> will be removed from this device, along with its shelf, notes, and quiz result.</p><p class="hint">Backups you already saved still include it.</p>', 'Delete book', async () => {
+        try {
+          await db.deleteBook(id);
+        } catch (e) {
+          toast('Could not delete the book. Try again.');
+          return;
+        }
+        delete state.custom[id];
+        delete state.records[id];
+        rebuildBooks();
+        state.dirty = true;
+        closeSheet();
+        toast('Book deleted.');
+      });
+    },
     restore: () => { const input = $('#restore-file'); input.value = ''; input.click(); },
     accent: async el => {
       await saveSetting('accent', el.dataset.accent);
@@ -1283,6 +1500,9 @@
     } else if (t.id === 'progress') {
       $('#progress-out', sheet).textContent = t.value + '%';
     }
+    const form = t.closest && t.closest('form[data-form]');
+    const error = form && $('.error', form);
+    if (error && !error.hidden) error.hidden = true;
   });
 
   document.addEventListener('change', async e => {
@@ -1310,6 +1530,7 @@
   document.addEventListener('submit', async e => {
     const form = e.target;
     if (form.dataset.form === 'quiz') { e.preventDefault(); saveQuiz(form); }
+    else if (form.dataset.form === 'book') { e.preventDefault(); saveBookForm(form); }
     else if (form.dataset.form === 'goal') {
       e.preventDefault();
       const raw = $('#goal-input').value.trim().replace(',', '.');
@@ -1340,6 +1561,8 @@
     const loaded = await db.load();
     state.storage = loaded.ok ? 'ok' : 'memory';
     for (const r of loaded.records) if (r && C.safeId(r.id)) state.records[r.id] = C.entry(r);
+    for (const b of loaded.books) if (b && C.isCustomId(b.id) && b.title) state.custom[b.id] = C.customBook(b);
+    rebuildBooks();
     const s = loaded.settings;
     if (s.goals && typeof s.goals === 'object') state.settings.goals = s.goals;
     if (typeof s.readerName === 'string') state.settings.readerName = s.readerName;

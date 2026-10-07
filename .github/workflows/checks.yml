@@ -19,6 +19,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Unit and offline tests
-        run: node --test tests/core.test.cjs tests/offline.test.cjs
+        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs
       - name: Generated files are up to date
         run: python3 scripts/build.py --check

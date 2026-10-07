@@ -50,6 +50,7 @@ ALWAYS = {'book_id', 'award', 'category', 'year', 'title', 'author', 'descriptio
 URL_FIELDS = ['description_source', 'ar_source', 'selection_source', 'ar_research_source']
 ID_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$')
 NUMBER_RE = re.compile(r'^\d+(\.\d+)?$')
+CUSTOM_PREFIX = 'mine:'  # Must match CUSTOM_PREFIX in docs/core.js.
 
 
 def slug(text, limit):
@@ -108,6 +109,8 @@ def validate(rows):
         bid = r['book_id']
         if not ID_RE.match(bid) or bid in ('__proto__', 'constructor', 'prototype'):
             errors.append(f'{where}: book_id "{bid}" may only use letters, numbers, . _ : -')
+        if bid.startswith(CUSTOM_PREFIX):
+            errors.append(f'{where}: book_id "{bid}" cannot start with "{CUSTOM_PREFIX}" (reserved for books added in the app)')
         if bid in seen:
             errors.append(f'{where}: book_id "{bid}" is already used on line {seen[bid]}')
         seen[bid] = i

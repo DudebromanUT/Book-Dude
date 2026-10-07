@@ -13,6 +13,10 @@
   const NUMBER_RE = /^\s*\d+(\.\d+)?\s*$/;
   const LIMITS = { earnedPoints: 999, progress: 100, rating: 5 };
   const DATE_FIELDS = ['startedDate', 'finishedDate', 'quizDate'];
+  // Books the reader adds herself get IDs with this prefix; the catalog never uses it.
+  const CUSTOM_PREFIX = 'mine:';
+  const CUSTOM_TEXT = { title: 200, author: 200, description: 2000 };
+  const CUSTOM_NUMBERS = { ar_level: 20, ar_points: 999 };
 
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const isPlain = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -76,6 +80,27 @@
   function knownPoints(book) {
     const n = book ? amount(book.ar_points, Infinity) : null;
     return typeof n === 'number' && !Number.isNaN(n) ? n : null;
+  }
+
+  function isCustomId(id) {
+    return safeId(id) && id.indexOf(CUSTOM_PREFIX) === 0 && id.length > CUSTOM_PREFIX.length;
+  }
+
+  /**
+   * A book the reader added herself, shaped like a catalog row where it matters
+   * (ar_points and ar_level are text, blank when unknown).
+   */
+  function customBook(o) {
+    o = isPlain(o) ? o : {};
+    const out = { id: typeof o.id === 'string' ? o.id : '' };
+    for (const field of Object.keys(CUSTOM_TEXT)) out[field] = typeof o[field] === 'string' ? o[field].trim().slice(0, CUSTOM_TEXT[field]) : '';
+    for (const field of Object.keys(CUSTOM_NUMBERS)) {
+      const n = amount(o[field], CUSTOM_NUMBERS[field]);
+      out[field] = typeof n === 'number' && !Number.isNaN(n) ? String(n) : '';
+    }
+    out.createdAt = stamp(o.createdAt);
+    out.updatedAt = stamp(o.updatedAt);
+    return out;
   }
 
   function yearBucket(years, y) {
@@ -180,6 +205,29 @@
     return entry(Object.assign({}, raw, { id }));
   }
 
+  function strictCustomBook(id, raw) {
+    if (!isCustomId(id)) throw new BackupError('A book added in this backup has an ID the app cannot accept.');
+    if (!isPlain(raw)) throw new BackupError('A book added in this backup is not readable.');
+    const name = typeof raw.title === 'string' && raw.title.trim() ? '"' + raw.title.trim().slice(0, 60) + '"' : id;
+    const bad = field => { throw new BackupError('The added book ' + name + ' has an invalid ' + field + '.'); };
+    for (const field of Object.keys(CUSTOM_TEXT)) if (has(raw, field) && raw[field] !== null && typeof raw[field] !== 'string') bad(field);
+    if (typeof raw.title !== 'string' || !raw.title.trim()) bad('title');
+    for (const field of Object.keys(CUSTOM_NUMBERS)) if (has(raw, field) && Number.isNaN(amount(raw[field], CUSTOM_NUMBERS[field]))) bad(field === 'ar_level' ? 'AR level' : 'AR points');
+    for (const field of ['createdAt', 'updatedAt']) if (has(raw, field) && raw[field] && !stamp(raw[field])) bad(field);
+    return customBook(Object.assign({}, raw, { id }));
+  }
+
+  function parseCustomBooks(list) {
+    const out = {};
+    if (list === undefined || list === null) return out;
+    if (!isPlain(list)) throw new BackupError('The books added in this backup are not readable.');
+    for (const id of Object.keys(list)) {
+      checkId(id);
+      out[id] = strictCustomBook(id, list[id]);
+    }
+    return out;
+  }
+
   function parseGoals(goals) {
     const out = {};
     if (goals === undefined || goals === null) return out;
@@ -206,7 +254,7 @@
     }
     const settings = isPlain(data.settings) ? data.settings : {};
     const readerName = typeof settings.readerName === 'string' ? settings.readerName.trim().slice(0, 40) : '';
-    return finish(records, parseGoals(settings.goals), index, { legacy: false, readerName, exportedAt: stamp(data.exportedAt) });
+    return finish(records, parseGoals(settings.goals), index, { legacy: false, readerName, exportedAt: stamp(data.exportedAt) }, parseCustomBooks(data.customBooks));
   }
 
   function parseLegacy(data, index) {
@@ -234,9 +282,13 @@
     return finish(records, {}, index, { legacy: true, readerName: '', exportedAt: updatedAt });
   }
 
-  function finish(records, goals, index, extra) {
+  function finish(records, goals, index, extra, customBooks) {
     const ids = Object.keys(records);
-    return Object.assign({ records, goals, total: ids.length, unknown: ids.filter(id => !index.ids.has(id)).length }, extra);
+    const books = customBooks || {};
+    return Object.assign({
+      records, goals, customBooks: books, total: ids.length, customCount: Object.keys(books).length,
+      unknown: ids.filter(id => !index.ids.has(id) && !has(books, id)).length
+    }, extra);
   }
 
   /** Validates and normalizes a backup (current or older reading-list format). Throws BackupError with a readable message. */
@@ -252,34 +304,50 @@
     throw new BackupError('This file is not a Reading Room backup.');
   }
 
-  /** Restore: the newer copy of each book record wins; goals already on this device win. */
-  function mergeBackup(localRecords, localGoals, incoming) {
-    const records = Object.assign({}, localRecords);
+  /**
+   * Restore: the newer copy of each book record (and each added book) wins; goals already on this device win.
+   * Nothing on the device is removed.
+   */
+  function mergeBackup(localRecords, localGoals, incoming, localCustom) {
     const time = r => { const t = Date.parse(r.updatedAt); return Number.isNaN(t) ? -Infinity : t; };
-    const changed = [];
-    let added = 0, updated = 0, kept = 0;
-    for (const id of Object.keys(incoming.records)) {
-      const next = incoming.records[id];
-      const cur = has(records, id) ? records[id] : null;
-      if (!cur) { records[id] = next; changed.push(id); added++; }
-      else if (time(next) > time(cur)) { records[id] = next; changed.push(id); updated++; }
-      else kept++;
+    function merge(local, next) {
+      const out = Object.assign({}, local);
+      const changed = [];
+      let added = 0, updated = 0, kept = 0;
+      for (const id of Object.keys(next || {})) {
+        const cur = has(out, id) ? out[id] : null;
+        if (!cur) { out[id] = next[id]; changed.push(id); added++; }
+        else if (time(next[id]) > time(cur)) { out[id] = next[id]; changed.push(id); updated++; }
+        else kept++;
+      }
+      return { out, changed, added, updated, kept };
     }
-    const goals = Object.assign({}, incoming.goals, localGoals);
-    return { records, goals, changed, added, updated, kept };
+    const r = merge(localRecords, incoming.records);
+    const b = merge(localCustom, incoming.customBooks);
+    return {
+      records: r.out, changed: r.changed, added: r.added, updated: r.updated, kept: r.kept,
+      customBooks: b.out, changedBooks: b.changed, booksAdded: b.added, booksUpdated: b.updated,
+      goals: Object.assign({}, incoming.goals, localGoals)
+    };
   }
 
-  function exportBackup(records, settings, now) {
+  function exportBackup(records, settings, now, customBooks) {
     const out = {};
     for (const id of Object.keys(records || {}).sort()) if (!isBlank(records[id])) out[id] = records[id];
+    const books = {};
+    for (const id of Object.keys(customBooks || {}).sort()) books[id] = customBooks[id];
     return {
       app: 'reading-room',
       version: BACKUP_VERSION,
       exportedAt: now || new Date().toISOString(),
       records: out,
+      customBooks: books,
       settings: { goals: Object.assign({}, settings && settings.goals), readerName: (settings && settings.readerName) || '' }
     };
   }
 
-  return { STATUSES, BACKUP_VERSION, BackupError, day, entry, isBlank, safeId, knownPoints, metrics, periods, parseBackup, mergeBackup, exportBackup, fold };
+  return {
+    STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
+    metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+  };
 });

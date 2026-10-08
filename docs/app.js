@@ -681,6 +681,12 @@
   function levelTag(b) {
     return b._level !== null ? '<span class="tag" title="AR book level">Lvl ' + esc(b.ar_level) + '</span>' : '';
   }
+  // Book cards and lists show the community score (supplied with the list, believed Goodreads); the AR level is on the book's page.
+  // Books she added have no community score, so they keep the level she entered.
+  function scoreTag(b) {
+    return b._score !== null ? '<span class="tag score" title="Community score, out of 5">Score ' + esc(b.score) + '</span>' : '';
+  }
+  const browseTag = b => (b._custom ? levelTag(b) : scoreTag(b));
   function pointsTag(b) {
     if (b._points !== null) return '<span class="tag pts">' + fmtNum(b._points) + (b._points === 1 ? ' pt' : ' pts') + '</span>';
     return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
@@ -701,6 +707,7 @@
     const a = b._awards[0];
     if (a) bits.push([a.award, a.category, a.year].filter(Boolean).join(' '));
     if (b._custom) bits.push('added by you');
+    if (b._score !== null) bits.push('community score ' + b.score + ' out of 5');
     if (b._level !== null) bits.push('book level ' + b.ar_level);
     bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
     if (r && r.status) bits.push(flagText(r));
@@ -716,7 +723,7 @@
     return '<button type="button" class="card" data-act="open" data-id="' + esc(b.book_id) + '" aria-label="' + esc(bookLabel(b, r)) + '">' +
       '<span class="cover-slot"><span class="cover-wrap">' + cover(b) + flag + heart + '</span></span>' +
       '<span class="card-meta" aria-hidden="true"><span class="t">' + esc(b.title) + '</span><span class="a">' + esc(b.author) + '</span>' +
-      '<span class="tags">' + ratingTag(r) + levelTag(b) + pointsTag(b) + '</span></span></button>';
+      '<span class="tags">' + ratingTag(r) + browseTag(b) + pointsTag(b) + '</span></span></button>';
   }
 
   function row(b, sub) {
@@ -866,7 +873,7 @@
   function listSub(b) {
     const r = state.records[b.book_id];
     const a = b._awards[0];
-    return ratingTag(r) + levelTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
+    return ratingTag(r) + browseTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
       (r && r.status ? '<span class="tag">' + esc(flagText(r)) + '</span>' : '');
   }
 
@@ -997,8 +1004,8 @@
     }
     if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + ratingTag(r) + quizLine(b, r);
     if (r.status === 'paused') return '<span>Paused' + (r.progress ? ' at ' + r.progress + '%' : '') + '</span>';
-    if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + levelTag(b) + pointsTag(b);
-    return levelTag(b) + pointsTag(b);
+    if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + browseTag(b) + pointsTag(b);
+    return browseTag(b) + pointsTag(b);
   }
 
   function renderShelves() {

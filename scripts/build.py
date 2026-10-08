@@ -148,6 +148,12 @@ def validate(rows):
             errors.append(f'{where}: isbn13 "{r["isbn13"]}" is not a valid 13-digit ISBN (digits only, no dashes)')
         if r.get('isbn10') and (not isbn10_ok(r['isbn10']) or r['isbn10'][:9] != r.get('isbn13', '')[3:12]):
             errors.append(f'{where}: isbn10 "{r["isbn10"]}" is not a valid 10-digit ISBN for the same book as isbn13')
+        if r.get('amz_rating') and (not NUMBER_RE.match(r['amz_rating']) or float(r['amz_rating']) > 5):
+            errors.append(f'{where}: amz_rating "{r["amz_rating"]}" must be a number from 0 to 5')
+        if r.get('amz_ratings') and not r['amz_ratings'].isdigit():
+            errors.append(f'{where}: amz_ratings "{r["amz_ratings"]}" must be a whole number')
+        if r.get('amz_asin') and not re.match(r'^[A-Z0-9]{10}$', r['amz_asin']):
+            errors.append(f'{where}: amz_asin "{r["amz_asin"]}" must be a 10-character Amazon product number')
         if r.get('ol_work') and not re.match(r'^OL\d+W$', r['ol_work']):
             errors.append(f'{where}: ol_work "{r["ol_work"]}" must look like OL12345W')
         if r['ar_points'] and not r.get('ar_source'):

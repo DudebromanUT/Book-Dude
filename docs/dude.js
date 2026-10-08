@@ -129,59 +129,212 @@ window.BOOK_DUDE = {
     readingStart: ['P.S. How’s {title} going? Give it ten pages. That’s the rule.', 'P.S. {title} is on your Reading shelf. It misses you. Books get lonely.']
   },
 
+  // About the Dude. **double asterisks** make a word bold; "chips" and "words" show as tags; "more" follows the chips.
   story: [
     {
-      paragraphs: [
-        'Nobody knows the Dude’s real name. Not the mail carrier. Not the librarian. Not even {dog}, and {dog} knows everything that happens in this house (mostly by sniffing it). He’s just the Dude.',
-        'And before he was the Dude, he was a lot of other things. A LOT of other things.'
+      "heading": "Meet the Dude",
+      "paragraphs": [
+        "**Real name: unknown.** Nobody knows the Dude’s real name. Not the mail carrier. Not the librarian. Not even {dog}, whose **olfactory** talents are legendary.",
+        "He is a scientist, an explorer, a war hero, a jazz fanatic and a former fairy. But above everything else, he is a reader. A **bibliophile**, if you want the fancy word, and the Dude always wants the fancy word."
       ]
     },
     {
-      heading: 'Everything he’s ever been',
-      chips: ['Geologist', 'Chemist', 'Gold miner', 'Cowboy', 'Marine biologist', 'Physicist', 'Doctor', 'Teacher', 'Photographer', 'Botanist', 'Video game developer', 'Geologist (again)', 'Fairy'],
-      paragraphs: [
-        'Yes, geologist is on there twice. He missed the rocks. And yes, fairy. For one very confusing summer. He will not explain.',
-        'Ask him about any of them and he just wiggles his socks and says, “Earn a few points and I’ll tell you.” He means it. Every time you earn AR points, you unlock another one of his Secret Files on the Progress tab.'
+      "heading": "The Night Maddy Broke the Universe",
+      "paragraphs": [
+        "There are two {dog}s and two {cat}s. The originals live with a girl named Maddy in an ordinary house in an ordinary universe. The other two work in the Reading Room. Here is how that happened.",
+        "It was taco night. Maddy says three beans were involved. Eyewitnesses say thirty seven. Later that evening, Maddy was curled up on the couch with a very good book, {cat} was asleep on top of it, and {dog} was sniffing everything nearby, as usual.",
+        "Then it happened. It started as a small rumble and grew into the most **cataclysmic** act of **flatulence** in recorded history. Seismographs in three states picked it up. A volcano somewhere got nervous. And a crackling, faintly green hole tore open in the **spacetime continuum**, right above the couch.",
+        "The universe does not like losing a dog and a cat, so as {dog} and {cat} tumbled toward the hole, it quickly made copies. The original {dog} and {cat} stayed on the couch with Maddy, a little confused and smelling faintly of tacos. The copies went through.",
+        "“Excuse me,” said Maddy. The hole closed with a small, polite pop.",
+        "The new {dog} and {cat} landed in a parallel universe, completely **discombobulated**. The sky was the color of old paper, the birds sang in footnotes, and the ground was surprisingly soft and slightly plaid.",
+        "“Oof,” said the ground.",
+        "It was not the ground. It was a **sentient** blanket named BB, short for Birdie Blanky. BB used to be a reading blanket, the kind you hide under with a flashlight long after bedtime, and so many stories were read under it that they soaked right in. {cat} curled up on BB and started purring immediately. BB is the only thing besides a very good book that {cat} will sleep on, and BB considers this a great honor.",
+        "Then a long shadow fell over them. It belonged to a very tall bird on very long legs, with a crest of black feathers sticking out behind its head like a bundle of quill pens.",
+        "“Howdy,” said the bird. “Name’s Bobby Joe. Y’all came through the stinky door, huh?”",
+        "Bobby Joe is a secretary bird. Secretary birds hunt snakes by stomping on them faster than you can blink (true, look it up), which was awkward at first, since the Dude is a herpetologist. They worked it out. Bobby Joe now only stomps typos.",
+        "High overhead, a red tailed hawk circled once and let out a magnificent screech. That was Reddy. If you have ever heard an eagle scream in a movie, you were actually hearing a red tailed hawk, because real bald eagles sound a lot like squeaky toys. (True. Look it up.) Reddy does all of the Reading Room’s dramatic sound effects and is very proud of it.",
+        "Bobby Joe led them down a **labyrinthine** street to a tall, crooked, creaky house with one light on at the very top. A man in a cardigan leaned out the window, glasses on top of his head. He sniffed the air and raised an eyebrow.",
+        "“Ah,” he said. “Taco night? Excellent. The new staff.”",
+        "The Dude says what Maddy made that night was technically a **tesseract**, like the ones in A Wrinkle in Time, only with beans. So the copy {dog} became Head of Fetching, and the copy {cat} became Head of Naps. The Dude believes the two {cat}s share one nap across both universes, which is why both of them are always asleep.",
+        "Maddy, for the record, still says it was the cat."
       ]
     },
     {
-      heading: 'How he became the Dude',
-      paragraphs: [
-        'Every job ended the same way. He’d be right in the middle of something important, open a book “just for a minute,” and look up three days later. Halfway through a cattle drive. Halfway through a chemistry experiment. Halfway up a volcano. (It was a small volcano.)',
-        'Then one night, somewhere between being a cowboy and being a fairy, it hit him like a falling encyclopedia: in a book, you can be anything. A cowboy at breakfast. A marine biologist by lunch. A fairy by bedtime. And you never, ever have to clean the octopus tank.',
-        'So he hung up his hard hat, his lasso, his lab coat, his stethoscope, and his (very small) wings. He climbed to the top of a creaky old house, filled every wall with books, and called it the Reading Room. He has been whatever he wants ever since.',
-        'Look closely at his picture and you’ll spot souvenirs from his other lives: the old map from his geology days, the little sailboat from his ocean years, the brass globe from his physics lab, and a hanging plant named Chapter that only grows when someone reads out loud.'
+      "heading": "Everything He Has Ever Been",
+      "paragraphs": [
+        "Before he was the Dude, he was a lot of other things."
+      ],
+      "chips": [
+        "Geologist",
+        "Chemist",
+        "Gold miner",
+        "Cowboy",
+        "Marine biologist",
+        "Physicist",
+        "Doctor",
+        "Teacher",
+        "Photographer",
+        "Botanist",
+        "Video game developer",
+        "War hero",
+        "Naturalist",
+        "Ornithologist",
+        "Herpetologist",
+        "Neurologist",
+        "Entomologist",
+        "Volcanologist",
+        "Paleontologist",
+        "Teuthologist",
+        "Etymologist",
+        "Geologist (again)",
+        "Fairy"
+      ],
+      "more": [
+        "Yes, geologist is on there twice. He missed the rocks. And yes, fairy, for one very confusing summer involving a boy who refused to grow up. He will not explain.",
+        "Being a **polymath** has its perks. As a neurologist, he learned that reading builds new connections between your **neurons**, like trails that get wider every time you walk them. As a herpetologist, he is the world’s leading expert on the yellow spotted lizards in Holes, and does not recommend digging near them. As a marine biologist, he spent one long voyage trying to convince Captain Ahab that the whale was not personally out to get him. (Read Moby Dick to see how that went.) As a teuthologist, he met Gerald the octopus, who claims to be related to the giant squid in Twenty Thousand Leagues Under the Sea. The squid says this is not true.",
+        "Ask him about any of his jobs and he **scats** a little jazz, taps his nose and says, “Earn a few points and I’ll tell you.” Every time you earn AR points, you unlock another of his Secret Files on the Progress tab. Bobby Joe will hand it to you, alphabetized."
       ]
     },
     {
-      heading: 'The story on the shirt',
-      paragraphs: [
-        'When the Dude was about your age, he was not a reader. He was a fidgeter. He could not sit still for anything except dessert.',
-        'Then one rainy afternoon, a librarian with very sensible shoes handed him a book and said, “Give it ten pages.” He gave it ten pages. Then fifty. Then he missed dinner.',
-        'That librarian told him something he never forgot: “A good book is like a prism. You put plain light in, and a whole rainbow comes out.” That’s why he wears the shirt. Years later, as a physicist, he proved she was right. (He did not. But he says he did.)'
+      "heading": "The Hero in the Fog",
+      "paragraphs": [
+        "Long ago, in a war so old its history books have gone yellow, the Dude was a field medic and the most **intrepid** scout in the army. One night a fog rolled in so thick you could spread it on toast, and an entire **regiment** got lost in the hills.",
+        "The Dude led them home. He read the stars through gaps in the fog, the moss on the trees and the songs of night birds that only sing near water. When the sun came up, every soldier was safe.",
+        "They gave him a medal for **valor**. He uses it as a bookmark. He says being a hero is not about never being scared. It is about being scared and helping anyway."
       ]
     },
     {
-      heading: 'The crew',
-      crew: [
-        { img: 'img/dog.jpg', name: '{dog}, Head of Fetching', text: 'Welsh terrier. Type what you’re looking for in the search box and off {dog} goes. Sometimes {dog} brings back a sock. {dog} has 212 socks. Nobody knows whose.' },
-        { img: 'img/cat.jpg', name: '{cat}, Head of Naps', text: 'Tabby cat. {cat} only falls asleep on very good books. When you can’t decide what to read, tap Ask {cat}.' },
-        { img: 'img/dude-face.jpg', name: 'The Dude, Head of Cardigans', text: 'Loses his glasses about nine times a day (blame Gerald the octopus). They are usually on his head.' }
+      "heading": "The Emperor Who Borrowed a Book",
+      "paragraphs": [
+        "That war is how the Dude met Napoleon Bonaparte. They were supposed to negotiate an **armistice** but spent six hours arguing about books instead. Napoleon was a **voracious** reader (true: he carried a traveling library of hundreds of small books on his campaigns), and by morning he had borrowed the Dude’s copy of The Sorrows of Young Werther.",
+        "He never gave it back. The overdue fine is now about four billion dollars.",
+        "Also, Napoleon was not short. He was about five feet seven inches, perfectly ordinary for his time. The Dude measured him with the emergency ruler in his cardigan pocket. Napoleon was not amused."
       ]
     },
     {
-      heading: 'The rules of the Reading Room',
-      ordered: true,
-      list: [
-        'Safety is no accident.',
-        'You don’t have to finish a book you don’t love. Put it on the Paused shelf. No hard feelings.',
-        'If {cat} is asleep on a book, that’s your next book.',
-        'Write things down: favorite lines, funny parts, words you didn’t know. That’s what My notes is for.',
-        'AR points are nice. Stories are better. (Points are still nice. Especially the book-money kind.)'
+      "heading": "The Bear Was His Idea",
+      "paragraphs": [
+        "In the Dude’s world, books are doors, and doors do not care what century it is. So one afternoon the Dude stepped through an old book into London in 1599 and got a job at the Globe Theatre, sweeping the stage and giving William Shakespeare suggestions. Lots of suggestions. Shakespeare found him **indispensable** and **exasperating**, usually in the same afternoon.",
+        "According to the Dude, the skull in Hamlet was his, left over from his doctor days. The famous stage direction in The Winter’s Tale, “Exit, pursued by a bear,” was also his idea. Shakespeare thought a bear was too much. The Dude said there is no such thing as too much bear.",
+        "The witches’ recipe in Macbeth, with its “eye of newt, and toe of frog,” was NOT his idea. As a herpetologist, he was **apoplectic**. The newts have never forgiven either of them."
       ]
     },
     {
-      paragraphs: ['Now pull up a chair. That one’s the comfy one. What are we reading?']
+      "heading": "Jazz, and Everything Else",
+      "paragraphs": [
+        "The Dude loves jazz the way {cat} loves sunbeams: completely, and with his eyes closed. He plays the trumpet, not well, but with feeling. “First you learn the notes,” he says. “Then you learn the rules. Then you **improvise**.” That, he says, is also how reading works.",
+        "He loves every other kind of music too, and he will try anything once. The tango went beautifully. The bagpipes caused such a **cacophony** that the neighbors complained. The neighbors are owls. This year he is learning the **theremin**, which you play without touching it. {cat} finds it deeply suspicious."
+      ]
+    },
+    {
+      "heading": "How He Became the Dude",
+      "paragraphs": [
+        "Every job ended the same way. He would open a book “just for a minute” and look up three days later. Halfway through a cattle drive. Halfway through a chemistry experiment. Halfway up a volcano. (It was a small volcano.)",
+        "Then it hit him like a falling encyclopedia: in a book, you can be anything. A cowboy at breakfast, an ornithologist by lunch, a fairy by bedtime. And you never have to clean the octopus tank. The Dude calls it his greatest **epiphany**.",
+        "So he hung up his lasso, his lab coat and his (very small) wings, filled the top of a creaky old house with books and called it the Reading Room. Look closely at his picture for souvenirs: the old map from his geology days, the little sailboat, the brass globe, and a hanging plant named Chapter that only grows when someone reads out loud."
+      ]
+    },
+    {
+      "heading": "The Story on the Shirt",
+      "paragraphs": [
+        "When the Dude was about your age, he was not a reader. He was a fidgeter. Then a librarian with very sensible shoes handed him a book and said, “Give it ten pages.” He gave it ten. Then fifty. Then he missed dinner.",
+        "She told him, “A good book is like a prism. You put plain light in, and a whole rainbow comes out.” That is why he wears the shirt. Years later, as a physicist, he studied **refraction** and proved she was right. (He did not. Isaac Newton did that in 1666. But the Dude says he held the prism.)"
+      ]
+    },
+    {
+      "heading": "The Crew",
+      "crew": [
+        {
+          "img": "img/dog.jpg",
+          "name": "{dog}, Head of Fetching",
+          "text": "Welsh terrier, Reading Room edition. Type what you are looking for in the search box and off {dog} goes. Sometimes {dog} brings back a sock. {dog} has 212 socks. Nobody knows whose."
+        },
+        {
+          "img": "img/cat.jpg",
+          "name": "{cat}, Head of Naps",
+          "text": "Tabby cat, also the Reading Room edition. {cat} only sleeps on very good books, so when you cannot decide what to read, tap Ask {cat}."
+        },
+        {
+          "art": "bobby",
+          "name": "Bobby Joe, Head of Secret Files",
+          "text": "Secretary bird. Stomps typos on sight."
+        },
+        {
+          "art": "hawk",
+          "name": "Reddy, Head of Lookout",
+          "text": "Red tailed hawk. Can spot a lost book from high above the rooftops. Provides dramatic screeches on request, and occasionally when nobody requested them."
+        },
+        {
+          "img": "img/bb.webp",
+          "name": "BB, Head of Coziness",
+          "text": "Birdie Blanky, a sentient blanket. Please do not put BB in the washing machine."
+        },
+        {
+          "art": "gerald",
+          "name": "Gerald, Head of Mischief",
+          "text": "Octopus. Eight arms, three hearts, no respect for other people’s glasses."
+        },
+        {
+          "img": "img/dude-face.jpg",
+          "name": "The Dude, Head of Cardigans",
+          "text": "Loses his glasses about nine times a day. They are usually on his head."
+        }
+      ]
+    },
+    {
+      "heading": "The Rules of the Reading Room",
+      "ordered": true,
+      "list": [
+        "Safety is no accident.",
+        "You do not have to finish a book you do not love. Put it on the Paused shelf. No hard feelings.",
+        "If {cat} is asleep on a book, that is your next book.",
+        "Write things down. Favorite lines, funny parts, words you did not know. That is what My notes is for.",
+        "Try something new. A new author, a new kind of story, a book that looks too big. You do not know yet whether you love it.",
+        "AR points are nice. Stories are better. (Points are still nice. Especially the book money kind.)"
+      ]
+    },
+    {
+      "heading": "The Dude’s Word Hoard",
+      "paragraphs": [
+        "The Dude has a confession: he is **sesquipedalian**. Look it up. Every word in bold here is one the Dude thinks you should meet, and so is every ologist on his list. Write your favorites in My notes. Extra glory if you use flatulence at the dinner table. (The Dude did not tell you to do that.)"
+      ],
+      "words": [
+        "olfactory",
+        "bibliophile",
+        "cataclysmic",
+        "flatulence",
+        "spacetime continuum",
+        "discombobulated",
+        "sentient",
+        "labyrinthine",
+        "tesseract",
+        "polymath",
+        "neurons",
+        "scat",
+        "intrepid",
+        "regiment",
+        "valor",
+        "armistice",
+        "voracious",
+        "indispensable",
+        "exasperating",
+        "apoplectic",
+        "improvise",
+        "cacophony",
+        "theremin",
+        "epiphany",
+        "refraction",
+        "sesquipedalian"
+      ],
+      "more": [
+        "Most of the books the Dude mentions in this story are waiting on the Reading Room shelves. Type one into the search box and see if {dog} can fetch it."
+      ]
+    },
+    {
+      "paragraphs": [
+        "Now pull up a chair. That one is the comfy one. Oh, wait. {cat} is asleep on a book. You know what that means.",
+        "What are we reading?"
+      ]
     }
   ],
   signoff: 'The Dude',

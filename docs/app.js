@@ -494,7 +494,7 @@
     const text = fill(line.text);
     const b = bookByTitle(line.title);
     return '<section class="dude" aria-label="The Dude">' +
-      '<button type="button" class="dude-avatar" data-act="story" aria-label="Meet the Dude"><img src="img/dude-face.jpg" alt="" width="60" height="60"></button>' +
+      '<button type="button" class="dude-avatar" data-act="story" aria-label="About the Dude"><img src="img/dude-face.jpg" alt="" width="60" height="60"></button>' +
       '<div class="bubble" aria-live="polite"><span class="who">The Dude says</span>' +
         '<button type="button" class="line" data-act="next-saying" title="Tap for another">' + esc(text) + '</button>' +
         (b ? '<button type="button" class="bubble-link" data-act="open" data-id="' + esc(b.book_id) + '">' + icon('book') + esc(b.title) + '</button>' : '') +
@@ -509,24 +509,33 @@
     if (pop) { const line = $('.dude .line', main); if (line) line.classList.add('pop'); }
   }
 
+  // Story text is escaped first; **double asterisks** then mark the Dude's vocabulary words in bold.
+  const rich = t => esc(fill(t)).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  function crewFace(c) {
+    const art = c.art && window.BookPets && window.BookPets.art[c.art];
+    if (art) return '<span class="face art critter-' + esc(c.art) + '">' + art + '</span>';
+    return '<span class="face' + (/\.webp$/.test(c.img) ? ' contain' : '') + '"><img src="' + esc(c.img) + '" alt="" width="64" height="64" loading="lazy"></span>';
+  }
   function storyHtml() {
     const sections = DUDE.story.map(sec => {
       let html = sec.heading ? '<h2>' + esc(fill(sec.heading)) + '</h2>' : '';
+      if (sec.paragraphs) html += sec.paragraphs.map(p => '<p>' + rich(p) + '</p>').join('');
       if (sec.chips) html += '<ul class="careers">' + sec.chips.map(c => '<li>' + esc(fill(c)) + '</li>').join('') + '</ul>';
-      if (sec.paragraphs) html += sec.paragraphs.map(p => '<p>' + esc(fill(p)) + '</p>').join('');
+      if (sec.words) html += '<ul class="careers words">' + sec.words.map(w => '<li>' + esc(fill(w)) + '</li>').join('') + '</ul>';
+      if (sec.more) html += sec.more.map(p => '<p>' + rich(p) + '</p>').join('');
       if (sec.crew) {
-        html += '<ul class="crew">' + sec.crew.map(c => '<li><span class="face"><img src="' + esc(c.img) + '" alt="" width="64" height="64" loading="lazy"></span>' +
-          '<div><b>' + esc(fill(c.name)) + '</b><span class="txt">' + esc(fill(c.text)) + '</span></div></li>').join('') + '</ul>';
+        html += '<ul class="crew">' + sec.crew.map(c => '<li>' + crewFace(c) +
+          '<div><b>' + esc(fill(c.name)) + '</b><span class="txt">' + rich(c.text) + '</span></div></li>').join('') + '</ul>';
       }
       if (sec.list) {
         const tag = sec.ordered ? 'ol' : 'ul';
-        html += '<' + tag + ' class="rules">' + sec.list.map(li => '<li>' + esc(fill(li)) + '</li>').join('') + '</' + tag + '>';
+        html += '<' + tag + ' class="rules">' + sec.list.map(li => '<li>' + rich(li) + '</li>').join('') + '</' + tag + '>';
       }
       return '<section>' + html + '</section>';
     }).join('');
-    return sheetBar('Meet the Dude') + '<div class="sheet-body story">' +
+    return sheetBar('About the Dude') + '<div class="sheet-body story">' +
       '<figure class="story-figure"><img src="img/dude.jpg" width="960" height="955" alt="The Dude in a worn leather armchair, surrounded by bookshelves, with a Welsh terrier and a tabby cat asleep on the rug"></figure>' +
-      '<div class="story-title"><h1>Meet the Dude</h1><p>Real name: unknown</p></div>' +
+      '<div class="story-title"><h1>About the Dude</h1><p>Scientist, explorer, war hero, jazz fanatic, former fairy</p></div>' +
       '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p></div>' +
       '<div class="row-actions"><button type="button" class="btn primary" data-act="close-sheet">Let’s read</button></div></div>';
   }
@@ -1215,9 +1224,9 @@
       '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>More</h1></div></header>' +
       '<div class="settings-grid">' +
       '<div>' +
-        '<section class="panel meet"><span class="face"><img src="img/dude-face.jpg" alt="" width="96" height="96"></span><div><h2>Meet the Dude</h2>' +
-          '<p class="lead">Geologist, cowboy, doctor, fairy (don’t ask), and now Keeper of the Reading Room.</p>' +
-          '<div class="row-actions"><button type="button" class="btn small primary" data-act="story">Read the Dude’s story</button></div></div></section>' +
+        '<section class="panel meet"><span class="face"><img src="img/dude-face.jpg" alt="" width="96" height="96"></span><div><h2>About the Dude</h2>' +
+          '<p class="lead">Scientist, explorer, war hero, jazz fanatic and former fairy. Mostly, a reader. Real name: unknown.</p>' +
+          '<div class="row-actions"><button type="button" class="btn small primary" data-act="story">Read about the Dude</button></div></div></section>' +
         '<section class="panel"><h2>Make it yours</h2><div class="stack">' +
           '<label class="field"><span>Your name</span><input id="reader-name" class="input" type="text" maxlength="40" autocomplete="given-name" placeholder="What should the app call you?" value="' + esc(state.settings.readerName) + '"></label>' +
           '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + Object.keys(ACCENTS).map(a =>

@@ -832,3 +832,12 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 @media (prefers-reduced-motion: reduce) {
   .critter, .critter * { animation: none !important; transition: none !important; }
 }
+
+/* About the Dude: vocabulary words, word chips, and drawn crew members. */
+.story-body strong { font-weight: 700; color: var(--accent-text); }
+.careers.words li, .careers.words li:last-child { font-style: italic; font-weight: 600; background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+.crew .face.art { display: grid; place-items: center; background: var(--surface-2); }
+.crew .face.art svg { width: 84%; height: 84%; overflow: visible; }
+.crew .face.critter-hawk .pose-fly { display: none; }
+.crew .face.art .shadow { fill: rgb(40 25 10 / .16); }
+.crew .face.contain img { object-fit: contain; padding: 4px; background: var(--surface-2); }

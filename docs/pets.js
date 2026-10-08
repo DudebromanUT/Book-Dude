@@ -104,6 +104,22 @@
       '</g></svg>'
   };
 
+  // Gerald is in the crew but doesn't visit (octopuses need a tank).
+  ART.gerald = '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+    '<g fill="none" stroke="#8C5EAA" stroke-width="5" stroke-linecap="round">' +
+      '<path d="M20 34 C12 40 10 50 16 54 C20 57 22 52 19 50"/><path d="M25 37 C22 46 22 55 28 58 C31 59 32 55 29 54"/>' +
+      '<path d="M32 38 C32 47 34 55 40 57 C43 58 44 54 41 53"/><path d="M39 37 C44 44 48 52 54 52 C57 52 57 48 54 48"/>' +
+      '<path d="M44 33 C52 36 58 42 58 34 C58 31 55 31 55 33"/></g>' +
+    '<ellipse cx="32" cy="24" rx="16" ry="15" fill="#9B6FB8"/><ellipse cx="32" cy="35" rx="13" ry="5" fill="#9B6FB8"/>' +
+    '<circle cx="25" cy="14.5" r="2" fill="#B892D0"/><circle cx="38" cy="13" r="1.6" fill="#B892D0"/><circle cx="43" cy="19" r="1.3" fill="#B892D0"/>' +
+    '<ellipse cx="26.5" cy="26" rx="3.4" ry="4" fill="#FFF"/><ellipse cx="37.5" cy="26" rx="3.4" ry="4" fill="#FFF"/>' +
+    '<circle cx="27.3" cy="27" r="1.7" fill="#1E1A18"/><circle cx="38.3" cy="27" r="1.7" fill="#1E1A18"/>' +
+    '<g fill="none" stroke="#3A2A1A" stroke-width="1.6" transform="rotate(-9 32 26)"><circle cx="26.5" cy="26" r="5.2"/><circle cx="37.5" cy="26" r="5.2"/>' +
+      '<path d="M31.7 25.5 Q32 24 32.3 25.5 M21.3 25 L17.5 23 M42.7 25 L46.5 23"/></g>' +
+    '<path d="M28.5 33 Q32 35.5 35.5 33" stroke="#4A2A55" stroke-width="1.4" fill="none" stroke-linecap="round"/>' +
+    '<circle cx="21.5" cy="31" r="2" fill="#E8A9C5" opacity=".7"/><circle cx="42.5" cy="31" r="2" fill="#E8A9C5" opacity=".7"/>' +
+    '</svg>';
+
   const PETS = {
     // BB is a hand drawing (docs/img/bb.webp), so BB waddles instead of stepping and never flips around.
     bb: { img: 'img/bb.webp', w: 152, h: 210, size: 68, speed: 34, kind: 'blanket', sink: 0 },

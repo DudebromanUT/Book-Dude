@@ -69,7 +69,7 @@
     trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/>'
   };
   // The Dude's crew and words live in dude.js so they are easy to edit.
-  const DUDE = Object.assign({ dog: 'Maple', cat: 'Fig', sayings: [], story: [], signoff: 'The Dude', files: [], jar: [], jarFull: '', facts: [] }, window.BOOK_DUDE || {});
+  const DUDE = Object.assign({ dog: 'Maple', cat: 'Fig', sayings: [], story: [], signoff: 'The Dude', files: [], jar: [], jarFull: '', facts: [], pets: {} }, window.BOOK_DUDE || {});
   const fill = (s, vars) => String(s || '').replace(/\{(\w+)\}/g, (m, k) =>
     k === 'dog' ? DUDE.dog : k === 'cat' ? DUDE.cat : vars && Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m);
   const ACCENTS = { leather: 'Leather', rug: 'Rug red', brass: 'Brass', ivy: 'Ivy', teal: 'Teal', navy: 'Navy', plum: 'Plum', berry: 'Berry' };
@@ -205,7 +205,7 @@
     limit: PAGE,
     records: {},
     custom: {},
-    settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}) },
+    settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}), pets: true },
     dudeLine: null,
     dudePs: '',
     offline: 'checking',
@@ -339,6 +339,15 @@
       toast('Could not save on this device. Try again, or export a backup.');
     }
     return next;
+  }
+
+  // One of the Reading Room's pets wanders by each time the app opens (docs/pets.js).
+  function startPets() {
+    if (state.settings.pets && window.BookPets) window.BookPets.start({ dog: DUDE.dog, cat: DUDE.cat, lines: DUDE.pets });
+  }
+  function petsHint() {
+    const hawk = DUDE.pets.hawk && DUDE.pets.hawk.name ? fill(DUDE.pets.hawk.name) : 'the hawk';
+    return 'Bobby Joe, ' + DUDE.dog + ', ' + DUDE.cat + ', and ' + hawk + ' take turns visiting, one each time the app opens. Tap one to hear from it.';
   }
 
   async function saveSetting(key, value) {
@@ -1177,6 +1186,7 @@
           '<label class="field"><span>Your name</span><input id="reader-name" class="input" type="text" maxlength="40" autocomplete="given-name" placeholder="What should the app call you?" value="' + esc(state.settings.readerName) + '"></label>' +
           '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + Object.keys(ACCENTS).map(a =>
             '<button type="button" data-act="accent" data-accent="' + a + '" aria-label="' + ACCENTS[a] + '" aria-pressed="' + (state.settings.accent === a) + '"></button>').join('') + '</div></div>' +
+          '<div class="field"><label class="switch"><input type="checkbox" id="pets-on"' + (state.settings.pets ? ' checked' : '') + '> Visiting pets</label><p class="hint">' + esc(petsHint()) + '</p></div>' +
         '</div></section>' +
         rewardPanelHtml() +
         '<section class="panel"><h2>Backups</h2><p class="lead">Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong.</p>' +
@@ -1991,6 +2001,11 @@
     } else if (t.id === 'started-date' || t.id === 'finished-date') {
       const value = C.day(t.value);
       await save(state.openId, t.id === 'started-date' ? { startedDate: value } : { finishedDate: value });
+    } else if (t.id === 'pets-on') {
+      await saveSetting('pets', t.checked);
+      if (t.checked) startPets();
+      else if (window.BookPets) window.BookPets.stop();
+      toast(t.checked ? 'A pet is on the way.' : 'The pets are taking a nap.');
     } else if (t.id === 'reward-on') {
       await saveReward({ on: t.checked });
       toast(t.checked ? 'The Book Money Jar is on the Progress tab.' : 'The Book Money Jar is hidden.');
@@ -2069,6 +2084,7 @@
     if (typeof s.accent === 'string') state.settings.accent = s.accent;
     if (typeof s.lastExportAt === 'string') state.settings.lastExportAt = s.lastExportAt;
     state.settings.storySeen = s.storySeen === true;
+    state.settings.pets = s.pets !== false;
     if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
     applyAccent();
     if (!loaded.ok) {
@@ -2084,6 +2100,7 @@
     // A brand-new reader meets the Dude first.
     const isNew = !Object.keys(state.records).length && !Object.keys(state.custom).length;
     if (!state.settings.storySeen && isNew) openStory();
+    startPets();
     registerWorker();
   }
 

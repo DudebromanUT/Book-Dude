@@ -219,6 +219,51 @@ window.BOOK_DUDE = {
       text: 'Three hundred points. You know what that means? You’ve been a cowboy, a scientist, a detective, a dragon rider, and who knows what else, all without leaving your chair. That’s the whole secret. You’re officially an Honorary Dude now. (Sorry. It’s the only title I’ve got.)' }
   ],
 
+  // The visiting pets: one comes by each time the app opens, in turn. Tap a pet to hear a line.
+  // Leave a name blank and the pet goes by what it is ("Red-tailed hawk").
+  pets: {
+    bobby: { name: 'Bobby Joe', lines: [
+      'People say secretary birds got their name because our head feathers look like old quill pens. I have never once answered a phone.',
+      'I walk about 20 miles a day. You could read a whole chapter in that time. Maybe two.',
+      'Yes, I can fly. I just prefer to strut. Have you seen these legs?',
+      'These are real eyelashes. Thank you for noticing.',
+      'I stomp on snakes. Also on cliffhangers. Mostly snakes.',
+      'It looks like you’re trying to read a book. Would you like help? Just kidding. You’ve got this.',
+      'Charlotte wrote words in a web. I’d write words with my head feathers, but I don’t have thumbs. Neither does Charlotte.',
+      'Bobby Joe’s reading tip: when a chapter ends on a cliffhanger, read the next one standing up. Very dramatic.'
+    ] },
+    maple: { name: '{dog}', lines: [
+      'Woof. (That means: read the part with the dog again.)',
+      'Welsh terriers were bred to chase foxes out of holes. I chase plot twists.',
+      'Because of Winn-Dixie is my favorite book. Winn-Dixie is a very good dog. So am I. Just saying.',
+      'If you read out loud, I will listen. If you drop a snack, I will listen harder.',
+      'I would like to report that {cat} is asleep on your book again.',
+      'Shiloh is about a kid who would do anything for a dog. I support this message.',
+      'Ginger Pye is a dog who goes missing and comes home. I also come home. Usually right at dinnertime.',
+      'I buried a bookmark in the yard. Now the yard knows where it left off.'
+    ] },
+    fig: { name: '{cat}', lines: [
+      'I’m not asleep on this book. I’m saving your place.',
+      'The rule about me napping on your next book? I wrote that one.',
+      'I knocked your bookmark off the table. You’re welcome.',
+      'Gray stripes. Green eyes. Zero apologies.',
+      'The best reading spot is wherever you were just sitting.',
+      'Mrs. Frisby and the Rats of NIMH sounds like a delicious book. I mean delightful. Delightful.',
+      'Millions of Cats is a true story. Mostly about me.',
+      'The stripes are for speed. The naps are for balance.'
+    ] },
+    hawk: { name: '', lines: [
+      'Kee-eeee-arrr! When an eagle screams in a movie, that’s really a red-tailed hawk like me. Real eagles sound like squeaky toys.',
+      'I can spot a mouse from 100 feet up. I can spot an unfinished chapter from 200.',
+      'In My Side of the Mountain, Sam trains a falcon named Frightful. Falcons are fine. Hawks have red tails. Just pointing that out.',
+      'Brian in Hatchet could have used a hawk’s eyes. They see about eight times better than yours.',
+      'I like sitting up high and looking at everything. That’s why libraries have tall shelves.',
+      'Bobby Joe walks everywhere. I think that’s adorable.',
+      'Fly through the next chapter. That’s what I’d do.',
+      'My tail is red, my eyes are sharp, and my reading list is long.'
+    ] }
+  },
+
   // What the Dude says about her star rating (1 to 5).
   ratings: ['{cat} wouldn’t even nap on it.', 'Meh. {dog} would chew it.', 'Pretty good.', 'Loved it!', 'Dude-level amazing!'],
 

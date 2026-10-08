@@ -37,6 +37,7 @@ ASSETS = [
     'styles.css',
     'core.js',
     'dude.js',
+    'pets.js',
     'app.js',
     'catalog.js',
     'manifest.webmanifest',

@@ -1,6 +1,6 @@
 # Book Dude — The Reading Room
 
-A static, iPhone/iPad-friendly reading app for `DudebromanUT/Book-Dude`, hosted by the Book Dude from the Reading Room, an attic library full of books, with Dewey the Welsh terrier and Footnote the tabby cat.
+A static, iPhone/iPad-friendly reading app for `DudebromanUT/Book-Dude`, hosted by the Book Dude from the Reading Room, an attic library full of books, with Maple the Welsh terrier and Fig the tabby cat.
 
 The catalog includes 637 distinct books, all with descriptions, and 468 sourced AR records. The other 169 remain explicitly unresolved. Source and edition notes are available in each book's details. No account, server database, paid service, or JavaScript build dependencies are needed.
 
@@ -27,7 +27,7 @@ A file opened from the iOS Files preview is not a reliable installation method. 
 
 ## What is included
 
-- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, or community score. Switch between covers (standing on wooden shelves) and a list. **Ask Footnote** opens a random unfinished book from the current results.
+- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, or community score. Switch between covers (standing on wooden shelves) and a list. **Ask Fig** opens a random unfinished book from the current results.
 - Every book gets its own generated cover, with a seal for its award (Newbery Medal or Honor, Beehive, Classic, Pulitzer, Printz, Carnegie, National Book Award). No cover images are downloaded.
 - **My Shelves**: Reading, Want to read, Finished, Paused, Favorites, and My books.
 - **Add your own books** for anything that isn't in the catalog: title, author (optional), AR book level and points (optional; blank stays unknown), and a short description. Use **Add a book** on My Shelves, or search for a title and tap **Add it as my book** when nothing matches (the search text becomes the title). Added books get a "My book" seal and work like every other book: shelves, notes, ratings, quiz points, search, the Progress dashboard, and backups. They can be edited or deleted from the book's page. If the title is already in the catalog, the app offers to open that book instead.
@@ -37,6 +37,8 @@ A file opened from the iOS Files preview is not a reliable installation method. 
 - Earned points are counted by quiz date; books finished are counted by completion date. Currently reading is always a present-day count. Undated completions count only in All time.
 - Awaiting quiz entry means finished books without an entered quiz result. Their known available points are shown separately; unknown values are never counted as zero-value books.
 - A book has one current quiz-result entry. Edit it to correct that result. Multiple attempts and repeated readings are not separate ledger entries in this version.
+- **Book Money Jar** (Progress): every 100 all-time AR points (adjustable) earns a reward, $10 of Barnes & Noble book money by default. The jar fills with coins, cracks jokes as it fills, celebrates when a reward is earned, and shows how many rewards are waiting. A grown-up taps **mark one as given** after handing it over. The points per reward, the reward text, the count already given, and whether the jar shows at all are under More → Book money. Points come from the quiz results entered in the app (honor system).
+- **The Dude's Secret Files** (Progress): 14 short stories from the Dude's old jobs (geologist, chemist, gold miner, cowboy, marine biologist, physicist, doctor, teacher, photographer, botanist, video game developer, geologist again, fairy, and a 1,000-point finale), each unlocked at an all-time point total. The highest one unlocked is her title on the jar.
 - **The Dude**: a speech bubble on Explore with a saying of the day, or a nudge about the book she is reading or the quiz she hasn't entered yet (tap the bubble for another saying), and a **Meet the Dude** story with the crew and the rules of the Reading Room. A brand-new reader sees the story the first time the app opens; after that it is under More and behind the Dude's picture on Explore.
 - **More**: the reader's name (used in greetings), a color (leather, rug red, brass, ivy, teal, navy, plum, or berry), backup and restore, device status, and notes about the data.
 - JSON backup and restore (including added books). On iPhone and iPad, **Save a backup** opens the share sheet (choose **Save to Files**). Restore shows what will change before it changes anything, merges newer book records, and preserves newer device records. Annual goals already on the device take precedence. Unknown book records are retained in backups and totals.
@@ -56,7 +58,7 @@ Changing the site address/path or opening the app in another browser creates a s
 
 ## Change the Dude's story, sayings, or the pets' names
 
-Everything the Dude says lives in `docs/dude.js`: the dog's and cat's names (`dog`, `cat`), the daily `sayings`, and the `story` shown in Meet the Dude. `{dog}` and `{cat}` in any text are replaced with the names. Edit the file, then run `python3 scripts/build.py` so installed apps offer the update.
+Everything the Dude says lives in `docs/dude.js`: the dog's and cat's names (`dog`, `cat`), the daily `sayings`, the `story` shown in Meet the Dude, the Secret `files` (and the point total that unlocks each), and the jar's jokes (`jar`, `jarFull`, `facts`). `{dog}` and `{cat}` in any text are replaced with the names. Edit the file, then run `python3 scripts/build.py` so installed apps offer the update.
 
 The portrait and its crops are in `docs/img/` (`dude.jpg`, `dude-face.jpg`, `dog.jpg`, `cat.jpg`), and the home-screen icons are in `docs/icons/`. Replacing any of them also needs `python3 scripts/build.py`.
 
@@ -71,9 +73,9 @@ Do not manually edit generated catalog.js or sw.js. No automatic fetching of AR 
 
 ## Verification
 
-Run `node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs` and `python3 scripts/build.py --check`. The **Checks** GitHub Action runs both on every push.
+Run `node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs` and `python3 scripts/build.py --check`. The **Checks** GitHub Action runs both on every push.
 
-The tests cover points calculations, date handling, backup migration/validation, added books (validation, totals, backup round-trip, restore merging), stable catalog IDs, and service-worker cache boundaries. Live iOS installation, Safari layout, and the deployed GitHub Pages origin still need a device check after publication.
+The tests cover points calculations, date handling, backup migration/validation, added books (validation, totals, backup round-trip, restore merging), book-money math and settings, stable catalog IDs, and service-worker cache boundaries. Live iOS installation, Safari layout, and the deployed GitHub Pages origin still need a device check after publication.
 
 ## Quick device check after publishing
 

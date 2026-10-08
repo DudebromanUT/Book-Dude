@@ -82,6 +82,33 @@
     return typeof n === 'number' && !Number.isNaN(n) ? n : null;
   }
 
+  const REWARD_DEFAULT = { on: true, every: 100, prize: '$10 of Barnes & Noble book money', paid: 0 };
+
+  /** Book-money settings: every `every` AR points earns `prize`; `paid` counts prizes already handed over. */
+  function reward(o) {
+    o = isPlain(o) ? o : {};
+    const whole = (v, min, max, fallback) => {
+      const n = amount(v, max);
+      return typeof n === 'number' && !Number.isNaN(n) && Number.isInteger(n) && n >= min ? n : fallback;
+    };
+    return {
+      on: o.on === undefined ? REWARD_DEFAULT.on : o.on === true,
+      every: whole(o.every, 1, 10000, REWARD_DEFAULT.every),
+      prize: typeof o.prize === 'string' && o.prize.trim() ? o.prize.trim().slice(0, 80) : REWARD_DEFAULT.prize,
+      paid: whole(o.paid, 0, 10000, REWARD_DEFAULT.paid),
+      updatedAt: stamp(o.updatedAt)
+    };
+  }
+
+  /** Prizes earned from all-time points, prizes still owed, and progress toward the next one. */
+  function rewardStatus(totalPoints, settings) {
+    const cfg = reward(settings);
+    const total = Math.max(0, Number(totalPoints) || 0);
+    const earned = Math.floor(total / cfg.every + 1e-9);
+    const into = Math.max(0, round(total - earned * cfg.every));
+    return { earned, owed: Math.max(0, earned - cfg.paid), into, toGo: round(cfg.every - into), frac: into / cfg.every, every: cfg.every, prize: cfg.prize };
+  }
+
   function isCustomId(id) {
     return safeId(id) && id.indexOf(CUSTOM_PREFIX) === 0 && id.length > CUSTOM_PREFIX.length;
   }
@@ -254,7 +281,9 @@
     }
     const settings = isPlain(data.settings) ? data.settings : {};
     const readerName = typeof settings.readerName === 'string' ? settings.readerName.trim().slice(0, 40) : '';
-    return finish(records, parseGoals(settings.goals), index, { legacy: false, readerName, exportedAt: stamp(data.exportedAt) }, parseCustomBooks(data.customBooks));
+    if (settings.reward !== undefined && settings.reward !== null && !isPlain(settings.reward)) throw new BackupError('The book-money settings in this backup are not readable.');
+    const prize = isPlain(settings.reward) ? reward(settings.reward) : null;
+    return finish(records, parseGoals(settings.goals), index, { legacy: false, readerName, reward: prize, exportedAt: stamp(data.exportedAt) }, parseCustomBooks(data.customBooks));
   }
 
   function parseLegacy(data, index) {
@@ -279,7 +308,7 @@
         updatedAt
       });
     }
-    return finish(records, {}, index, { legacy: true, readerName: '', exportedAt: updatedAt });
+    return finish(records, {}, index, { legacy: true, readerName: '', reward: null, exportedAt: updatedAt });
   }
 
   function finish(records, goals, index, extra, customBooks) {
@@ -305,10 +334,10 @@
   }
 
   /**
-   * Restore: the newer copy of each book record (and each added book) wins; goals already on this device win.
-   * Nothing on the device is removed.
+   * Restore: the newer copy of each book record (and each added book, and the book-money settings) wins;
+   * goals already on this device win. Nothing on the device is removed.
    */
-  function mergeBackup(localRecords, localGoals, incoming, localCustom) {
+  function mergeBackup(localRecords, localGoals, incoming, localCustom, localReward) {
     const time = r => { const t = Date.parse(r.updatedAt); return Number.isNaN(t) ? -Infinity : t; };
     function merge(local, next) {
       const out = Object.assign({}, local);
@@ -324,10 +353,12 @@
     }
     const r = merge(localRecords, incoming.records);
     const b = merge(localCustom, incoming.customBooks);
+    const rewardChanged = !!incoming.reward && (!localReward || time(incoming.reward) > time(localReward));
     return {
       records: r.out, changed: r.changed, added: r.added, updated: r.updated, kept: r.kept,
       customBooks: b.out, changedBooks: b.changed, booksAdded: b.added, booksUpdated: b.updated,
-      goals: Object.assign({}, incoming.goals, localGoals)
+      goals: Object.assign({}, incoming.goals, localGoals),
+      reward: rewardChanged ? incoming.reward : localReward || null, rewardChanged
     };
   }
 
@@ -342,12 +373,15 @@
       exportedAt: now || new Date().toISOString(),
       records: out,
       customBooks: books,
-      settings: { goals: Object.assign({}, settings && settings.goals), readerName: (settings && settings.readerName) || '' }
+      settings: Object.assign(
+        { goals: Object.assign({}, settings && settings.goals), readerName: (settings && settings.readerName) || '' },
+        settings && settings.reward ? { reward: reward(settings.reward) } : {}
+      )
     };
   }
 
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+    reward, rewardStatus, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
   };
 });

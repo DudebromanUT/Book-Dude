@@ -62,13 +62,15 @@
     ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.3"/>',
     share: '<path d="M12 3.5v11M8 7.5l4-4 4 4M6 11H5v9.5h14V11h-1"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     pencil: '<path d="M15.5 5.5l3 3L8 19H5v-3z"/><path d="M13.5 7.5l3 3"/>',
     trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/>'
   };
   // The Dude's crew and words live in dude.js so they are easy to edit.
-  const DUDE = Object.assign({ dog: 'Dewey', cat: 'Footnote', sayings: [], story: [], signoff: 'The Dude' }, window.BOOK_DUDE || {});
-  const fill = s => String(s || '').replace(/\{dog\}/g, DUDE.dog).replace(/\{cat\}/g, DUDE.cat);
+  const DUDE = Object.assign({ dog: 'Maple', cat: 'Fig', sayings: [], story: [], signoff: 'The Dude', files: [], jar: [], jarFull: '', facts: [] }, window.BOOK_DUDE || {});
+  const fill = (s, vars) => String(s || '').replace(/\{(\w+)\}/g, (m, k) =>
+    k === 'dog' ? DUDE.dog : k === 'cat' ? DUDE.cat : vars && Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m);
   const ACCENTS = { leather: 'Leather', rug: 'Rug red', brass: 'Brass', ivy: 'Ivy', teal: 'Teal', navy: 'Navy', plum: 'Plum', berry: 'Berry' };
 
   const icon = (name, cls) => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"' + (cls ? ' class="' + cls + '"' : '') + '>' + ICONS[name] + '</svg>';
@@ -201,7 +203,7 @@
     limit: PAGE,
     records: {},
     custom: {},
-    settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false },
+    settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}) },
     sayingOffset: 0,
     offline: 'checking',
     persisted: null,
@@ -381,10 +383,15 @@
     const name = state.settings.readerName;
     const hey = name ? 'Hey, ' + name + '. ' : '';
     if (!state.sayingOffset) {
+      const cfg = C.reward(state.settings.reward);
+      const total = allTimePoints();
+      const money = C.rewardStatus(total, cfg);
+      if (cfg.on && money.owed) return hey + 'You’ve got book money waiting: ' + prizeText(cfg.prize) + '. Go tell a grown-up!';
       const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
       const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
       const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
       if (quiz) return hey + 'You finished ' + quiz[0].title + '. Took the AR quiz yet? Add your points on its page.';
+      if (cfg.on && total > 0 && money.toGo <= Math.max(5, cfg.every * 0.15)) return hey + 'Only ' + fmtNum(money.toGo) + ' points until book money. ' + DUDE.dog + ' can smell the bookstore.';
       const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
       if (reading) {
         const p = reading[1].progress || 0;
@@ -407,6 +414,7 @@
   function storyHtml() {
     const sections = DUDE.story.map(sec => {
       let html = sec.heading ? '<h2>' + esc(fill(sec.heading)) + '</h2>' : '';
+      if (sec.chips) html += '<ul class="careers">' + sec.chips.map(c => '<li>' + esc(fill(c)) + '</li>').join('') + '</ul>';
       if (sec.paragraphs) html += sec.paragraphs.map(p => '<p>' + esc(fill(p)) + '</p>').join('');
       if (sec.crew) {
         html += '<ul class="crew">' + sec.crew.map(c => '<li><span class="face"><img src="' + esc(c.img) + '" alt="" width="64" height="64" loading="lazy"></span>' +
@@ -420,9 +428,107 @@
     }).join('');
     return sheetBar('Meet the Dude') + '<div class="sheet-body story">' +
       '<figure class="story-figure"><img src="img/dude.jpg" width="960" height="955" alt="The Dude in a worn leather armchair, surrounded by bookshelves, with a Welsh terrier and a tabby cat asleep on the rug"></figure>' +
-      '<div class="story-title"><h1>Meet the Dude</h1><p>Keeper of the Reading Room</p></div>' +
+      '<div class="story-title"><h1>Meet the Dude</h1><p>Real name: unknown</p></div>' +
       '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p></div>' +
       '<div class="row-actions"><button type="button" class="btn primary" data-act="close-sheet">Let’s read</button></div></div>';
+  }
+
+  // ---------- Book money and the Secret Files ----------
+
+  // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
+  const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
+
+  function allTimePoints() {
+    return C.metrics(BOOKS, state.records, '').earned;
+  }
+
+  const JAR_SVG = '<svg viewBox="0 0 120 150" aria-hidden="true" focusable="false"><defs><clipPath id="jar-clip"><path d="M34 30h52v10c12 6 18 17 18 32v50c0 13-9 22-22 22H38c-13 0-22-9-22-22V72c0-15 6-26 18-32z"/></clipPath><linearGradient id="jar-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7D774"/><stop offset="1" stop-color="#D49A2A"/></linearGradient></defs><path class="jar-back" d="M34 30h52v10c12 6 18 17 18 32v50c0 13-9 22-22 22H38c-13 0-22-9-22-22V72c0-15 6-26 18-32z"/><g clip-path="url(#jar-clip)"><g class="jar-fill" data-fill="__FILL__"><path fill="url(#jar-gold)" d="M0 40q15-5 30 0t30 0 30 0 30 0V150H0z"/><g class="jar-coins"><circle cx="34" cy="132" r="8"/><circle cx="56" cy="138" r="8"/><circle cx="80" cy="131" r="8"/><circle cx="96" cy="139" r="7"/><circle cx="45" cy="116" r="8"/><circle cx="69" cy="118" r="8"/><circle cx="88" cy="112" r="7"/><circle cx="28" cy="100" r="7"/><circle cx="56" cy="98" r="8"/><circle cx="80" cy="95" r="7"/><circle cx="40" cy="80" r="7"/><circle cx="66" cy="78" r="8"/><circle cx="90" cy="76" r="6"/><circle cx="52" cy="60" r="7"/><circle cx="76" cy="58" r="7"/></g></g></g><path class="jar-glass" d="M34 30h52v10c12 6 18 17 18 32v50c0 13-9 22-22 22H38c-13 0-22-9-22-22V72c0-15 6-26 18-32z"/><path class="jar-shine" d="M26 74c-3 12-3 32 0 46"/><rect class="jar-lid" x="29" y="17" width="62" height="15" rx="4"/><rect class="jar-label" x="32" y="84" width="56" height="30" rx="4"/><text class="jar-label-text" x="60" y="97" text-anchor="middle">BOOK</text><text class="jar-label-text" x="60" y="108" text-anchor="middle">MONEY</text></svg>';
+
+  function lastFile(total) {
+    let hit = null;
+    for (const f of DUDE.files) if (total >= f.at) hit = f;
+    return hit;
+  }
+  const nextFile = total => DUDE.files.find(f => total < f.at) || null;
+
+  function factLine(total) {
+    if (!total || !DUDE.facts.length) return 'Earn your first points and the Dude will do some very serious math about them.';
+    const vars = { points: fmtNum(total), pages: fmtNum(Math.round(total * 25)), nuggets: fmtNum(Math.max(1, Math.floor(total / 10))) };
+    return fill(DUDE.facts[dayOfYear() % DUDE.facts.length], vars);
+  }
+
+  function jarHtml(total) {
+    const cfg = C.reward(state.settings.reward);
+    if (!cfg.on) return '';
+    const st = C.rewardStatus(total, cfg);
+    const vars = { points: fmtNum(total), toGo: fmtNum(st.toGo), prize: prizeText(cfg.prize) };
+    let line = '';
+    for (const [at, text] of DUDE.jar) if (st.frac >= at) line = text;
+    const full = st.owed > 0;
+    const title = lastFile(total);
+    const next = nextFile(total);
+    return '<section class="jar-card' + (full ? ' full' : '') + '" aria-label="Book Money Jar">' +
+      '<div class="jar" role="img" aria-label="' + esc(fmtNum(st.into) + ' of ' + st.every + ' points in the book money jar') + '">' + JAR_SVG.replace('__FILL__', (full ? 1 : st.frac).toFixed(3)) + '</div>' +
+      '<div class="jar-info"><p class="jar-kicker">Book Money Jar</p>' +
+        '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
+        '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>' +
+        '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p></div>' +
+      (full ? '<div class="jar-owed"><b>' + plural(st.owed, 'reward is', 'rewards are') + ' waiting for a grown-up</b>' +
+        '<button type="button" class="btn small" data-act="reward-given">Grown-up: mark one as given</button></div>' : '') +
+      '<div class="jar-foot">' +
+        '<p class="jar-title"><span>Your title</span><b>' + esc(title ? fill(title.title) : 'Fresh Bookworm') + '</b></p>' +
+        '<p class="jar-next">' + (next ? 'Next Secret File opens at ' + next.at + ' points.' : 'Every Secret File is open. Legend.') + '</p>' +
+        '<p class="jar-fact">' + esc(factLine(total)) + '</p>' +
+        '<p class="jar-tally">' + fmtNum(total) + ' points all time · book money earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '') + '</p>' +
+      '</div></section>';
+  }
+
+  function filesHtml(total) {
+    if (!DUDE.files.length) return '';
+    const open = DUDE.files.filter(f => total >= f.at).length;
+    return '<section><h2 class="section-title">The Dude’s Secret Files <small>' + open + ' of ' + DUDE.files.length + ' unlocked</small></h2>' +
+      '<p class="hint files-hint">A story from each of the Dude’s old jobs. Earn AR points to open them.</p>' +
+      '<div class="files">' + DUDE.files.map((f, i) => {
+        const unlocked = total >= f.at;
+        return '<button type="button" class="file' + (unlocked ? '' : ' locked') + '" data-act="open-file" data-i="' + i + '" aria-label="' +
+          esc(unlocked ? 'Secret file ' + (i + 1) + ': ' + fill(f.title) : 'Locked secret file ' + (i + 1) + ', opens at ' + f.at + ' points') + '">' +
+          '<span class="file-no">File ' + (i + 1) + '</span>' +
+          (unlocked ? '<b>' + esc(fill(f.title)) + '</b><span class="file-job">' + esc(fill(f.job)) + '</span>'
+            : '<b>' + icon('lock') + 'Top secret</b><span class="file-job">Opens at ' + f.at + ' pts</span>') +
+          '</button>';
+      }).join('') + '</div></section>';
+  }
+
+  function openFile(i) {
+    const f = DUDE.files[i];
+    const total = allTimePoints();
+    if (!f) return;
+    if (total < f.at) {
+      toast(fmtNum(Math.round((f.at - total) * 100) / 100) + ' more points to open this one. ' + DUDE.dog + ' is guarding it.');
+      return;
+    }
+    const open = DUDE.files.map((x, j) => (total >= x.at ? j : -1)).filter(j => j >= 0);
+    const pos = open.indexOf(i);
+    const prev = open[pos - 1], next = open[pos + 1];
+    state.openId = null;
+    sheet.innerHTML = sheetBar('Secret file ' + (i + 1)) + '<div class="sheet-body file-sheet">' +
+      '<p class="stamp" aria-hidden="true">Top secret</p>' +
+      '<div><p class="file-label">File ' + (i + 1) + ' · ' + esc(fill(f.job)) + '</p><h1>' + esc(fill(f.title)) + '</h1></div>' +
+      '<div class="file-paper"><img class="file-face" src="img/dude-face.jpg" alt="" width="56" height="56"><p class="desc">' + esc(fill(f.text)) + '</p>' +
+        '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p></div>' +
+      '<div class="row-actions">' +
+        (prev !== undefined ? '<button type="button" class="btn" data-act="open-file" data-i="' + prev + '">Previous file</button>' : '') +
+        (next !== undefined ? '<button type="button" class="btn primary" data-act="open-file" data-i="' + next + '">Next file</button>'
+          : '<button type="button" class="btn primary" data-act="close-sheet">Back to reading</button>') +
+      '</div></div>';
+    if (!sheet.open) sheet.showModal();
+    sheet.scrollTop = 0;
+  }
+
+  async function saveReward(patch) {
+    const next = C.reward(Object.assign({}, state.settings.reward, patch, { updatedAt: new Date().toISOString() }));
+    await saveSetting('reward', next);
+    return next;
   }
 
   function openStory() {
@@ -883,8 +989,10 @@
         '<div class="row-actions"><button type="button" class="btn small primary" data-act="export">' + icon('download') + 'Save a backup</button></div></div>'
       : '';
 
+    const total = allTimePoints();
     main.innerHTML =
       '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>My progress</h1></div></header>' +
+      jarHtml(total) +
       '<div class="chips" role="group" aria-label="Time period">' + years.map(y =>
         '<button type="button" class="chip" data-act="period" data-period="' + y + '" aria-pressed="' + (state.period === y) + '">' + y + '</button>').join('') +
         '<button type="button" class="chip" data-act="period" data-period="all" aria-pressed="' + (state.period === 'all') + '">All time</button></div>' +
@@ -899,6 +1007,7 @@
         '</div>' +
         (year && m.undated ? '<p class="notice soft" role="note">' + plural(m.undated, 'finished book has', 'finished books have') + ' no finish date, so ' + (m.undated === 1 ? 'it counts' : 'they count') + ' only in All time.</p>' : '') +
         backupNudge +
+        filesHtml(total) +
         chartHtml(m, year) +
         (awaitingList.length ? '<section><h2 class="section-title">Ready for a quiz <small>' + awaitingList.length + '</small></h2><div class="list">' +
           awaitingList.map(([b, r]) => row(b, '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished') + '</span>' + quizLine(b, r))).join('') + '</div></section>' : '') +
@@ -906,11 +1015,31 @@
       '</div>';
     applySizes(main);
     revealChip($('.chips', main));
+    // Fill the jar after it is on screen so it pours in.
+    const fillEl = $('.jar-fill', main);
+    if (fillEl) requestAnimationFrame(() => requestAnimationFrame(() => { fillEl.style.transform = 'translateY(' + ((1 - Number(fillEl.dataset.fill)) * 104).toFixed(1) + 'px)'; }));
     const chart = $('.chart', main);
     if (chart) chart.style.setProperty('--cols', chart.dataset.cols);
   }
 
   // ---------- More ----------
+
+  function rewardPanelHtml() {
+    const cfg = C.reward(state.settings.reward);
+    const total = allTimePoints();
+    const st = C.rewardStatus(total, cfg);
+    return '<section class="panel"><h2>Book money <small class="for-grownups">for grown-ups</small></h2>' +
+      '<p class="lead">Turn AR points into a real reward. The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report.</p>' +
+      '<div class="stack">' +
+        '<label class="switch"><input type="checkbox" id="reward-on"' + (cfg.on ? ' checked' : '') + '> Show the Book Money Jar</label>' +
+        '<label class="field"><span>Points for each reward</span><input id="reward-every" class="input" type="text" inputmode="numeric" autocomplete="off" value="' + cfg.every + '"></label>' +
+        '<label class="field"><span>The reward</span><input id="reward-prize" class="input" type="text" maxlength="80" autocomplete="off" value="' + esc(cfg.prize) + '"></label>' +
+        '<div class="stepper"><span class="label" id="paid-label">Rewards already given</span><div class="seg" role="group" aria-labelledby="paid-label">' +
+          '<button type="button" data-act="paid-minus" aria-label="One fewer">−</button><output id="reward-paid">' + cfg.paid + '</output>' +
+          '<button type="button" data-act="paid-plus" aria-label="One more">+</button></div></div>' +
+        '<p class="hint">' + fmtNum(total) + ' points so far · ' + plural(st.earned, 'reward') + ' earned · ' + st.owed + ' waiting to be given.</p>' +
+      '</div></section>';
+  }
 
   function renderMore() {
     const total = Object.keys(state.records).filter(id => !C.isBlank(state.records[id])).length;
@@ -931,13 +1060,14 @@
       '<div class="settings-grid">' +
       '<div>' +
         '<section class="panel meet"><span class="face"><img src="img/dude-face.jpg" alt="" width="96" height="96"></span><div><h2>Meet the Dude</h2>' +
-          '<p class="lead">Keeper of the Reading Room, Head of Cardigans, and world champion at losing glasses.</p>' +
+          '<p class="lead">Geologist, cowboy, doctor, fairy (don’t ask), and now Keeper of the Reading Room.</p>' +
           '<div class="row-actions"><button type="button" class="btn small primary" data-act="story">Read the Dude’s story</button></div></div></section>' +
         '<section class="panel"><h2>Make it yours</h2><div class="stack">' +
           '<label class="field"><span>Your name</span><input id="reader-name" class="input" type="text" maxlength="40" autocomplete="given-name" placeholder="What should the app call you?" value="' + esc(state.settings.readerName) + '"></label>' +
           '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + Object.keys(ACCENTS).map(a =>
             '<button type="button" data-act="accent" data-accent="' + a + '" aria-label="' + ACCENTS[a] + '" aria-pressed="' + (state.settings.accent === a) + '"></button>').join('') + '</div></div>' +
         '</div></section>' +
+        rewardPanelHtml() +
         '<section class="panel"><h2>Backups</h2><p class="lead">Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong.</p>' +
           '<p class="hint">' + (state.settings.lastExportAt ? 'Last backup: ' + esc(fmtDay(localDay(state.settings.lastExportAt))) : 'No backup saved yet.') + ' · ' + plural(total, 'book record') + (added ? ' and ' + plural(added, 'added book') : '') + ' on this device.</p>' +
           '<div class="row-actions"><button type="button" class="btn primary" data-act="export">' + icon('download') + 'Save a backup</button>' +
@@ -1246,11 +1376,20 @@
     const pts = Number(rawPts);
     const r = rec(id);
     const wasBlank = r.earnedPoints === null;
+    const before = allTimePoints();
     await save(id, { earnedPoints: pts, quizDate: date || r.quizDate || today() });
     refreshShelf();
-    if (pts > 0 && wasBlank) celebrate();
+    const after = allTimePoints();
+    const cfg = C.reward(state.settings.reward);
+    const money = cfg.on && C.rewardStatus(after, cfg).earned > C.rewardStatus(before, cfg).earned;
+    const unlocked = DUDE.files.filter(f => before < f.at && after >= f.at);
     const over = b && b._points !== null && pts > b._points;
-    toast(over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.' : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.');
+    let message = over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.'
+      : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.';
+    if (money) message = fill(DUDE.jarFull || 'Book money! You earned {prize}.', { prize: prizeText(cfg.prize) }) + (unlocked.length ? ' Plus a new Secret File!' : '');
+    else if (unlocked.length) message = 'Secret File unlocked: ' + fill(unlocked[unlocked.length - 1].title) + '! Find it on the Progress tab.';
+    if ((pts > 0 && wasBlank) || money || unlocked.length) celebrate();
+    toast(message);
   }
 
   // ---------- Backups ----------
@@ -1309,10 +1448,10 @@
       return;
     }
     await flushNote();
-    const plan = C.mergeBackup(state.records, state.settings.goals, parsed, state.custom);
+    const plan = C.mergeBackup(state.records, state.settings.goals, parsed, state.custom, state.settings.reward);
     const newGoals = Object.keys(parsed.goals).filter(y => !Object.prototype.hasOwnProperty.call(state.settings.goals, y));
     const takeName = !state.settings.readerName && parsed.readerName;
-    if (!plan.added && !plan.updated && !plan.changedBooks.length && !newGoals.length && !takeName) {
+    if (!plan.added && !plan.updated && !plan.changedBooks.length && !newGoals.length && !takeName && !plan.rewardChanged) {
       showConfirm('Already up to date', '<p>Everything in this backup is already on this device (or this device has newer changes).</p>');
       return;
     }
@@ -1324,6 +1463,7 @@
     if (plan.booksAdded) lines.push('<li>' + plural(plan.booksAdded, 'book you added', 'books you added') + ', new to this device</li>');
     if (plan.booksUpdated) lines.push('<li>' + plural(plan.booksUpdated, 'added book', 'added books') + ' with newer details</li>');
     if (newGoals.length) lines.push('<li>' + plural(newGoals.length, 'yearly goal') + ' added</li>');
+    if (plan.rewardChanged) lines.push('<li>Book-money settings from the backup (' + plan.reward.paid + ' already given)</li>');
     showConfirm('Restore this backup?', '<ul>' + lines.join('') + '</ul><p class="hint">Nothing on this device is deleted.' + (parsed.exportedAt ? ' Backup made ' + esc(fmtDay(localDay(parsed.exportedAt))) + '.' : '') + '</p>', 'Restore', async () => {
       const changed = plan.changed.map(id => plan.records[id]);
       try {
@@ -1338,6 +1478,7 @@
       state.records = plan.records;
       if (newGoals.length) await saveSetting('goals', plan.goals);
       if (takeName) await saveSetting('readerName', parsed.readerName);
+      if (plan.rewardChanged) await saveSetting('reward', plan.reward);
       render(true);
       toast('Restored ' + plural(new Set(plan.changed.concat(plan.changedBooks)).size, 'book') + '.');
     });
@@ -1518,6 +1659,17 @@
       });
     },
     export: exportBackup,
+    'open-file': el => openFile(Number(el.dataset.i)),
+    'reward-given': () => {
+      const cfg = C.reward(state.settings.reward);
+      showConfirm('Mark book money as given?', '<p>Tap this after a grown-up hands over ' + esc(prizeText(cfg.prize)) + '. The jar keeps counting toward the next one.</p>', 'Mark as given', async () => {
+        await saveReward({ paid: cfg.paid + 1 });
+        renderProgress();
+        toast('Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
+      });
+    },
+    'paid-minus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: Math.max(0, cfg.paid - 1) }); renderMore(); },
+    'paid-plus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: cfg.paid + 1 }); renderMore(); },
     'add-book': el => openBookForm(null, el.dataset.title || ''),
     'edit-book': () => { flushNote(); openBookForm(state.openId); },
     'cancel-edit': () => openBook(state.openId),
@@ -1609,6 +1761,17 @@
     } else if (t.id === 'started-date' || t.id === 'finished-date') {
       const value = C.day(t.value);
       await save(state.openId, t.id === 'started-date' ? { startedDate: value } : { finishedDate: value });
+    } else if (t.id === 'reward-on') {
+      await saveReward({ on: t.checked });
+      toast(t.checked ? 'The Book Money Jar is on the Progress tab.' : 'The Book Money Jar is hidden.');
+    } else if (t.id === 'reward-every') {
+      const n = Number(t.value.trim());
+      if (!Number.isInteger(n) || n < 1 || n > 10000) { toast('Points for each reward must be a whole number, like 100.'); t.value = C.reward(state.settings.reward).every; return; }
+      await saveReward({ every: n });
+      renderMore();
+    } else if (t.id === 'reward-prize') {
+      await saveReward({ prize: t.value });
+      t.value = state.settings.reward.prize;
     } else if (t.id === 'reader-name') {
       await saveSetting('readerName', t.value.trim().slice(0, 40));
       toast(state.settings.readerName ? 'Hi, ' + state.settings.readerName + '!' : 'Name removed.');
@@ -1659,6 +1822,7 @@
     if (typeof s.accent === 'string') state.settings.accent = s.accent;
     if (typeof s.lastExportAt === 'string') state.settings.lastExportAt = s.lastExportAt;
     state.settings.storySeen = s.storySeen === true;
+    if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
     applyAccent();
     if (!loaded.ok) {
       const warn = $('#storage-warning');

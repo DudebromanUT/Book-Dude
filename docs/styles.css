@@ -527,6 +527,9 @@ dialog.sheet.small { max-width: 520px; }
 .range-row output { font-family: var(--round); font-weight: 800; font-size: 1.15rem; min-width: 52px; text-align: right; }
 input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .stars { display: flex; gap: 4px; }
+.rating-row { display: grid; gap: 4px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line-strong); }
+.rating-says { font-family: var(--serif); font-size: .98rem; color: var(--ink-2); min-height: 1.4em; }
+.tag.my-rating { background: var(--gold-soft); color: color-mix(in srgb, var(--gold) 70%, var(--ink)); }
 .stars button { width: 44px; height: 44px; padding: 0; border: 0; background: none; display: grid; place-items: center; color: var(--line-strong); }
 .stars button svg { width: 32px; height: 32px; fill: currentColor; }
 .stars button[aria-pressed="true"] { color: var(--gold); }

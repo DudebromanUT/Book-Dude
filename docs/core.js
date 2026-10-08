@@ -82,9 +82,12 @@
     return typeof n === 'number' && !Number.isNaN(n) ? n : null;
   }
 
-  const REWARD_DEFAULT = { on: true, every: 100, prize: '$10 of Barnes & Noble book money', paid: 0 };
+  const REWARD_DEFAULT = { on: true, every: 100, perPoint: 1, where: 'your Barnes & Noble account', prize: 'a trip to Barnes & Noble', paid: 0 };
 
-  /** Book-money settings: every `every` AR points earns `prize`; `paid` counts prizes already handed over. */
+  /**
+   * Book-money settings. Every `every` AR points pays out: `perPoint` dollars a point into `where`,
+   * or, with perPoint 0, the non-money `prize`. `paid` counts payouts already made.
+   */
   function reward(o) {
     o = isPlain(o) ? o : {};
     const whole = (v, min, max, fallback) => {
@@ -94,19 +97,26 @@
     return {
       on: o.on === undefined ? REWARD_DEFAULT.on : o.on === true,
       every: whole(o.every, 1, 10000, REWARD_DEFAULT.every),
+      perPoint: (() => { const n = amount(o.perPoint, 1000); return typeof n === 'number' && !Number.isNaN(n) ? round(n) : REWARD_DEFAULT.perPoint; })(),
+      where: typeof o.where === 'string' && o.where.trim() ? o.where.trim().slice(0, 60) : REWARD_DEFAULT.where,
       prize: typeof o.prize === 'string' && o.prize.trim() ? o.prize.trim().slice(0, 80) : REWARD_DEFAULT.prize,
       paid: whole(o.paid, 0, 10000, REWARD_DEFAULT.paid),
       updatedAt: stamp(o.updatedAt)
     };
   }
 
-  /** Prizes earned from all-time points, prizes still owed, and progress toward the next one. */
+  /** Payouts earned from all-time points, payouts still owed, progress toward the next one, and the dollars involved. */
   function rewardStatus(totalPoints, settings) {
     const cfg = reward(settings);
     const total = Math.max(0, Number(totalPoints) || 0);
     const earned = Math.floor(total / cfg.every + 1e-9);
+    const owed = Math.max(0, earned - cfg.paid);
     const into = Math.max(0, round(total - earned * cfg.every));
-    return { earned, owed: Math.max(0, earned - cfg.paid), into, toGo: round(cfg.every - into), frac: into / cfg.every, every: cfg.every, prize: cfg.prize };
+    const payout = round(cfg.every * cfg.perPoint);
+    return {
+      earned, owed, into, toGo: round(cfg.every - into), frac: into / cfg.every, every: cfg.every,
+      money: cfg.perPoint > 0, payout, jarMoney: round(into * cfg.perPoint), owedMoney: round(owed * payout), totalMoney: round(total * cfg.perPoint)
+    };
   }
 
   function isCustomId(id) {

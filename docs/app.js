@@ -108,7 +108,8 @@
     'level-down': 'Hardest first (AR level)',
     'points-down': 'Most AR points',
     'points-up': 'Fewest AR points',
-    score: 'Highest community score'
+    score: 'Highest community score',
+    'my-rating': 'My ratings (best first)'
   };
 
   function parseAwards(b) {
@@ -447,7 +448,7 @@
     const cfg = C.reward(state.settings.reward);
     const total = allTimePoints();
     const money = C.rewardStatus(total, cfg);
-    if (cfg.on && money.owed && has('owed')) return fill(pick(ps.owed), { prize: prizeText(cfg.prize) });
+    if (cfg.on && money.owed && has('owed')) return fill(pick(ps.owed), { prize: rewardLabel(cfg) });
     const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
     const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
     const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
@@ -515,6 +516,10 @@
 
   // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
   const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
+  const moneyFormat = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+  const money = n => { const s = moneyFormat.format(n); return s.endsWith('.00') ? s.slice(0, -3) : s; };
+  // One payout in a sentence: "$100 for your Barnes & Noble account", or the non-money prize.
+  const rewardLabel = cfg => (cfg.perPoint > 0 ? money(cfg.every * cfg.perPoint) + ' for ' + cfg.where : prizeText(cfg.prize));
 
   function allTimePoints() {
     return C.metrics(BOOKS, state.records, '').earned;
@@ -539,25 +544,31 @@
     const cfg = C.reward(state.settings.reward);
     if (!cfg.on) return '';
     const st = C.rewardStatus(total, cfg);
-    const vars = { points: fmtNum(total), toGo: fmtNum(st.toGo), prize: prizeText(cfg.prize) };
+    const vars = { points: fmtNum(total), toGo: fmtNum(st.toGo), prize: rewardLabel(cfg) };
     let line = '';
     for (const [at, text] of DUDE.jar) if (st.frac >= at) line = text;
     const full = st.owed > 0;
     const title = lastFile(total);
     const next = nextFile(total);
     return '<section class="jar-card' + (full ? ' full' : '') + '" aria-label="Book Money Jar">' +
-      '<div class="jar" role="img" aria-label="' + esc(fmtNum(st.into) + ' of ' + st.every + ' points in the book money jar') + '">' + JAR_SVG.replace('__FILL__', (full ? 1 : st.frac).toFixed(3)) + '</div>' +
+      '<div class="jar" role="img" aria-label="' + esc(st.money ? money(st.jarMoney) + ' of ' + money(st.payout) + ' in the book money jar' : fmtNum(st.into) + ' of ' + st.every + ' points in the book money jar') + '">' +
+        JAR_SVG.replace('__FILL__', (full ? 1 : st.frac).toFixed(3)) + '</div>' +
       '<div class="jar-info"><p class="jar-kicker">Book Money Jar</p>' +
-        '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
-        '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>' +
+        (st.money
+          ? '<p class="jar-count"><span class="big">' + money(st.jarMoney) + '</span> <span class="of">of ' + money(st.payout) + '</span></p>' +
+            '<p class="jar-goal">' + fmtNum(st.into) + ' of ' + st.every + ' points. At ' + st.every + ', ' + money(st.payout) + ' goes into ' + esc(cfg.where) + '.</p>'
+          : '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
+            '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>') +
         '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p></div>' +
-      (full ? '<div class="jar-owed"><b>' + plural(st.owed, 'reward is', 'rewards are') + ' waiting for a grown-up</b>' +
-        '<button type="button" class="btn small" data-act="reward-given">Grown-up: mark one as given</button></div>' : '') +
+      (full ? '<div class="jar-owed"><b>' + (st.money ? money(st.owedMoney) + ' is waiting to go into ' + esc(cfg.where) : plural(st.owed, 'reward is', 'rewards are') + ' waiting for a grown-up') + '</b>' +
+        '<button type="button" class="btn small" data-act="reward-given">' + (st.money ? 'Grown-up: mark as deposited' : 'Grown-up: mark one as given') + '</button></div>' : '') +
       '<div class="jar-foot">' +
         '<p class="jar-title"><span>Your title</span><b>' + esc(title ? fill(title.title) : 'Fresh Bookworm') + '</b></p>' +
         '<p class="jar-next">' + (next ? 'Next Secret File opens at ' + next.at + ' points.' : 'Every Secret File is open. Legend.') + '</p>' +
         '<p class="jar-fact">' + esc(factLine(total)) + '</p>' +
-        '<p class="jar-tally">' + fmtNum(total) + ' points all time · book money earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '') + '</p>' +
+        '<p class="jar-tally">' + (st.money
+          ? fmtNum(total) + ' points all time = ' + money(st.totalMoney) + ' · payouts earned: ' + st.earned + (cfg.paid ? ', deposited: ' + cfg.paid : '')
+          : fmtNum(total) + ' points all time · rewards earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '')) + '</p>' +
       '</div></section>';
   }
 
@@ -655,6 +666,9 @@
     return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
   }
   const mineTag = b => (b._custom ? '<span class="tag mine">Added by you</span>' : '');
+  const RATING_SAYS = ['Fig wouldn’t even nap on it.', 'Meh. Maple would chew it.', 'Pretty good.', 'Loved it!', 'Dude-level amazing!'];
+  const ratingSays = n => fill((DUDE.ratings && DUDE.ratings[n - 1]) || RATING_SAYS[n - 1] || '');
+  const ratingTag = r => (r && r.rating ? '<span class="tag my-rating" title="My rating">★ ' + r.rating + '</span>' : '');
 
   function flagText(r) {
     if (!r || !r.status) return '';
@@ -671,6 +685,7 @@
     bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
     if (r && r.status) bits.push(flagText(r));
     if (r && r.favorite) bits.push('favorite');
+    if (r && r.rating) bits.push('you rated it ' + r.rating + ' out of 5');
     return bits.join('. ');
   }
 
@@ -681,7 +696,7 @@
     return '<button type="button" class="card" data-act="open" data-id="' + esc(b.book_id) + '" aria-label="' + esc(bookLabel(b, r)) + '">' +
       '<span class="cover-wrap">' + cover(b) + flag + heart + '</span>' +
       '<span class="card-meta" aria-hidden="true"><span class="t">' + esc(b.title) + '</span><span class="a">' + esc(b.author) + '</span>' +
-      '<span class="tags">' + levelTag(b) + pointsTag(b) + '</span></span></button>';
+      '<span class="tags">' + ratingTag(r) + levelTag(b) + pointsTag(b) + '</span></span></button>';
   }
 
   function row(b, sub) {
@@ -740,6 +755,10 @@
       case 'points-down': return nullsLast('_points', -1);
       case 'points-up': return nullsLast('_points', 1);
       case 'score': return nullsLast('_score', -1);
+      case 'my-rating': {
+        const mine = b => { const r = state.records[b.book_id]; return r && r.rating ? r.rating : 0; };
+        return (a, b) => mine(b) - mine(a) || byTitle(a, b);
+      }
       default: return (a, b) => b._year - a._year || byTitle(a, b);
     }
   }
@@ -827,7 +846,7 @@
   function listSub(b) {
     const r = state.records[b.book_id];
     const a = b._awards[0];
-    return levelTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
+    return ratingTag(r) + levelTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
       (r && r.status ? '<span class="tag">' + esc(flagText(r)) + '</span>' : '');
   }
 
@@ -956,7 +975,7 @@
       const p = r.progress || 0;
       return '<span class="bar"><i data-w="' + p + '"></i></span><span>' + p + '%</span>';
     }
-    if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + quizLine(b, r);
+    if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + ratingTag(r) + quizLine(b, r);
     if (r.status === 'paused') return '<span>Paused' + (r.progress ? ' at ' + r.progress + '%' : '') + '</span>';
     if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + levelTag(b) + pointsTag(b);
     return levelTag(b) + pointsTag(b);
@@ -1109,12 +1128,18 @@
       '<p class="lead">Turn AR points into a real reward. The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report.</p>' +
       '<div class="stack">' +
         '<label class="switch"><input type="checkbox" id="reward-on"' + (cfg.on ? ' checked' : '') + '> Show the Book Money Jar</label>' +
-        '<label class="field"><span>Points for each reward</span><input id="reward-every" class="input" type="text" inputmode="numeric" autocomplete="off" value="' + cfg.every + '"></label>' +
-        '<label class="field"><span>The reward</span><input id="reward-prize" class="input" type="text" maxlength="80" autocomplete="off" value="' + esc(cfg.prize) + '"></label>' +
-        '<div class="stepper"><span class="label" id="paid-label">Rewards already given</span><div class="seg" role="group" aria-labelledby="paid-label">' +
+        '<div class="two"><label class="field"><span>Dollars per point</span><input id="reward-per" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.perPoint + '"></label>' +
+        '<label class="field"><span>Points per payout</span><input id="reward-every" class="input" type="text" inputmode="numeric" autocomplete="off" value="' + cfg.every + '"></label></div>' +
+        (st.money
+          ? '<label class="field"><span>Where the money goes</span><input id="reward-where" class="input" type="text" maxlength="60" autocomplete="off" value="' + esc(cfg.where) + '"></label>'
+          : '<label class="field"><span>The reward</span><input id="reward-prize" class="input" type="text" maxlength="80" autocomplete="off" value="' + esc(cfg.prize) + '"></label>') +
+        '<div class="stepper"><span class="label" id="paid-label">' + (st.money ? 'Payouts already deposited' : 'Rewards already given') + '</span><div class="seg" role="group" aria-labelledby="paid-label">' +
           '<button type="button" data-act="paid-minus" aria-label="One fewer">−</button><output id="reward-paid">' + cfg.paid + '</output>' +
           '<button type="button" data-act="paid-plus" aria-label="One more">+</button></div></div>' +
-        '<p class="hint">' + fmtNum(total) + ' points so far · ' + plural(st.earned, 'reward') + ' earned · ' + st.owed + ' waiting to be given.</p>' +
+        '<p class="hint">' + (st.money
+          ? money(cfg.perPoint) + ' a point × ' + cfg.every + ' points = ' + money(st.payout) + ' each payout. ' + fmtNum(total) + ' points so far · ' + plural(st.earned, 'payout') + ' earned · ' + money(st.owedMoney) + ' waiting to be deposited.'
+          : fmtNum(total) + ' points so far · ' + plural(st.earned, 'reward') + ' earned · ' + st.owed + ' waiting to be given.') +
+          ' Set dollars per point to 0 for a reward that isn’t money.</p>' +
       '</div></section>';
   }
 
@@ -1214,13 +1239,16 @@
         '<label class="field"><span>Started on</span><input id="started-date" class="input" type="date" value="' + esc(r.startedDate) + '" max="' + today() + '"></label></div>';
     }
     if (r.status === 'finished') {
-      extra += '<div class="box"><label class="field"><span>Finished on</span><input id="finished-date" class="input" type="date" value="' + esc(r.finishedDate) + '" max="' + today() + '"></label>' +
-        '<div class="field"><span class="label" id="rating-label">My rating</span><div class="stars" role="group" aria-labelledby="rating-label">' +
-        [1, 2, 3, 4, 5].map(n => '<button type="button" data-act="rate" data-n="' + n + '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '" aria-pressed="' + (r.rating !== null && n <= r.rating) + '">' + icon('star') + '</button>').join('') + '</div></div></div>';
+      extra += '<div class="box"><label class="field"><span>Finished on</span><input id="finished-date" class="input" type="date" value="' + esc(r.finishedDate) + '" max="' + today() + '"></label></div>';
     }
     if (r.status === 'finished' || r.earnedPoints !== null) extra += quizBox(b, r);
     return '<div class="shelf-head"><h3 class="label">My shelf</h3><button type="button" class="fav-btn" data-act="fav" aria-pressed="' + r.favorite + '">' + icon('heart') + '<span>Favorite</span></button></div>' +
-      '<div class="status-grid" role="group" aria-label="Shelf">' + statusButtons(r) + '</div>' + (extra ? '<div class="stack">' + extra + '</div>' : '');
+      '<div class="status-grid" role="group" aria-label="Shelf">' + statusButtons(r) + '</div>' +
+      '<div class="rating-row"><span class="label" id="rating-label">My rating</span>' +
+        '<div class="stars" role="group" aria-labelledby="rating-label">' +
+        [1, 2, 3, 4, 5].map(n => '<button type="button" data-act="rate" data-n="' + n + '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '" aria-pressed="' + (r.rating !== null && n <= r.rating) + '">' + icon('star') + '</button>').join('') + '</div>' +
+        '<span class="rating-says" id="rating-says" aria-live="polite">' + esc(r.rating ? ratingSays(r.rating) : 'Tap a star to rate it. Tap it again to clear.') + '</span></div>' +
+      (extra ? '<div class="stack">' + extra + '</div>' : '');
   }
 
   function sheetBar(title) {
@@ -1462,7 +1490,7 @@
     const over = b && b._points !== null && pts > b._points;
     let message = over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.'
       : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.';
-    if (money) message = fill(DUDE.jarFull || 'Book money! You earned {prize}.', { prize: prizeText(cfg.prize) }) + (unlocked.length ? ' Plus a new Secret File!' : '');
+    if (money) message = fill(DUDE.jarFull || 'Book money! You earned {prize}.', { prize: rewardLabel(cfg) }) + (unlocked.length ? ' Plus a new Secret File!' : '');
     else if (unlocked.length) message = 'Secret File unlocked: ' + fill(unlocked[unlocked.length - 1].title) + '! Find it on the Progress tab.';
     if ((pts > 0 && wasBlank) || money || unlocked.length) celebrate();
     toast(message);
@@ -1724,6 +1752,9 @@
       const n = Number(el.dataset.n);
       const r = await save(state.openId, { rating: rec(state.openId).rating === n ? null : n });
       $$('[data-act="rate"]', sheet).forEach(s => s.setAttribute('aria-pressed', String(r.rating !== null && Number(s.dataset.n) <= r.rating)));
+      const says = $('#rating-says', sheet);
+      if (says) says.textContent = r.rating ? ratingSays(r.rating) : 'Rating cleared.';
+      if (r.rating === 5) celebrate();
     },
     'clear-quiz': () => {
       showConfirm('Clear this quiz result?', '<p>The book stays Finished. It will show as awaiting a quiz entry again.</p>', 'Clear result', async () => {
@@ -1736,11 +1767,16 @@
     'open-file': el => openFile(Number(el.dataset.i)),
     'reward-given': () => {
       const cfg = C.reward(state.settings.reward);
-      showConfirm('Mark book money as given?', '<p>Tap this after a grown-up hands over ' + esc(prizeText(cfg.prize)) + '. The jar keeps counting toward the next one.</p>', 'Mark as given', async () => {
-        await saveReward({ paid: cfg.paid + 1 });
-        renderProgress();
-        toast('Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
-      });
+      const cash = cfg.perPoint > 0;
+      const payout = money(cfg.every * cfg.perPoint);
+      showConfirm(cash ? 'Mark ' + payout + ' as deposited?' : 'Mark book money as given?',
+        cash ? '<p>Tap this after ' + esc(payout) + ' goes into ' + esc(cfg.where) + '. The jar keeps counting toward the next ' + esc(payout) + '.</p>'
+          : '<p>Tap this after a grown-up hands over ' + esc(prizeText(cfg.prize)) + '. The jar keeps counting toward the next one.</p>',
+        cash ? 'Mark as deposited' : 'Mark as given', async () => {
+          await saveReward({ paid: cfg.paid + 1 });
+          renderProgress();
+          toast(cash ? payout + ' deposited! Enjoy the bookstore. (Socks required.)' : 'Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
+        });
     },
     'paid-minus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: Math.max(0, cfg.paid - 1) }); renderMore(); },
     'paid-plus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: cfg.paid + 1 }); renderMore(); },
@@ -1843,6 +1879,14 @@
       if (!Number.isInteger(n) || n < 1 || n > 10000) { toast('Points for each reward must be a whole number, like 100.'); t.value = C.reward(state.settings.reward).every; return; }
       await saveReward({ every: n });
       renderMore();
+    } else if (t.id === 'reward-per') {
+      const raw = t.value.trim().replace('$', '').replace(',', '.');
+      if (!/^\d+(\.\d{1,2})?$/.test(raw) || Number(raw) > 1000) { toast('Dollars per point must be a number, like 1 or 0.50.'); t.value = C.reward(state.settings.reward).perPoint; return; }
+      await saveReward({ perPoint: Number(raw) });
+      renderMore();
+    } else if (t.id === 'reward-where') {
+      await saveReward({ where: t.value });
+      t.value = state.settings.reward.where;
     } else if (t.id === 'reward-prize') {
       await saveReward({ prize: t.value });
       t.value = state.settings.reward.prize;

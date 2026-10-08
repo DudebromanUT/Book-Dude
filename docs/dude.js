@@ -190,36 +190,40 @@ window.BOOK_DUDE = {
   signoff: 'The Dude',
 
   // The Secret Files: one of the Dude's old jobs unlocks at each point total (all-time AR points).
+  // Spaced for about 250 points a year: one every few weeks, with the finale at 300.
   files: [
     { at: 5, job: 'Geologist', title: 'Junior Rock Licker',
       text: 'My first job was geologist. Here’s a real fact: geologists lick rocks. A wet rock shows its true colors. I licked about four thousand rocks. Maybe four thousand and one. My tongue still knows what granite tastes like. Gravelly. Do not recommend.' },
-    { at: 15, job: 'Chemist', title: 'Bouncy Pudding Chemist',
+    { at: 20, job: 'Chemist', title: 'Bouncy Pudding Chemist',
       text: 'As a chemist, I tried to invent a pudding that wouldn’t spill. It worked too well. It bounced. Off the table, off the ceiling, out the window, and as far as I know, it is still bouncing somewhere in Nevada. If you see it, don’t eat it.' },
-    { at: 30, job: 'Gold miner', title: 'Pea-Sized Gold Miner',
+    { at: 40, job: 'Gold miner', title: 'Pea-Sized Gold Miner',
       text: 'I spent a whole summer panning for gold in a freezing mountain stream. I found exactly one nugget, about the size of a pea. I traded it for a used copy of Treasure Island. Best trade I ever made. The book had way more treasure in it.' },
-    { at: 50, job: 'Cowboy', title: 'Cowboy Who Lost the Cows',
+    { at: 60, job: 'Cowboy', title: 'Cowboy Who Lost the Cows',
       text: 'I was a cowboy for one long season. My horse was named Pancake. Every night I read by the campfire, and every morning the cows were gone. I finished eleven books and lost forty-two cows. Pancake was not impressed. The cows were fine. They went home. Cows know the way.' },
-    { at: 75, job: 'Marine biologist', title: 'Octopus Wrangler',
+    { at: 80, job: 'Marine biologist', title: 'Octopus Wrangler',
       text: 'Out on the ocean I studied octopuses. One of them, Gerald, could open jars, unscrew bottles, and take the glasses right off my face. That’s when I started losing my glasses. I like to think Gerald is wearing them somewhere, reading.' },
     { at: 100, job: 'Physicist', title: 'Bedtime Physicist',
       text: 'As a physicist, I made one important discovery: bedtime arrives 40% faster when you are in the middle of a good chapter. I measured it very carefully, with a stopwatch and a flashlight under the covers. Nobody gave me a prize. I know I’m right.' },
-    { at: 150, job: 'Doctor', title: 'Dr. Two-Chapters',
+    { at: 125, job: 'Doctor', title: 'Dr. Two-Chapters',
       text: 'When I was a doctor, I gave every patient the same prescription: two chapters before bed, and call me in the morning. Sniffles? Two chapters. Grumpy? Two chapters. Broken arm? Okay, a cast. And then two chapters.' },
-    { at: 200, job: 'Teacher', title: 'Teacher of the Year (Unofficial)',
+    { at: 150, job: 'Teacher', title: 'Teacher of the Year (Unofficial)',
       text: 'I taught fifth grade. My class read so many books that the library ran out of shelves, and we had to build new ones out of pizza boxes. They held up surprisingly well. They smelled amazing.' },
-    { at: 275, job: 'Photographer', title: 'Blurry Hummingbird Photographer',
+    { at: 175, job: 'Photographer', title: 'Blurry Hummingbird Photographer',
       text: 'I spent three years trying to photograph a hummingbird. I took four thousand pictures of blurry hummingbirds and one perfect, crystal-clear picture of my own thumb. It’s framed. It’s on the wall. Look for it.' },
-    { at: 350, job: 'Botanist', title: 'Plant Whisperer',
+    { at: 200, job: 'Botanist', title: 'Plant Whisperer',
       text: 'As a botanist, I grew a plant that only grows when someone reads out loud to it. It’s the one hanging by the bookshelf. Its name is Chapter. If it ever looks droopy, you know what to do.' },
-    { at: 450, job: 'Video game developer', title: 'Final Boss Designer',
+    { at: 225, job: 'Video game developer', title: 'Final Boss Designer',
       text: 'I made exactly one video game. The final boss could only be defeated by reading it a bedtime story. It sold eleven copies, all to librarians. All eleven of them beat it on the first try.' },
-    { at: 600, job: 'Geologist (again)', title: 'Geologist, Again',
+    { at: 250, job: 'Geologist (again)', title: 'Geologist, Again',
       text: 'I went back to geology because I missed the rocks. The rocks did not miss me. Rocks are like that. I licked one, for old times’ sake, and decided I’d had enough.' },
-    { at: 800, job: 'Fairy', title: 'Tooth Fairy, Retired',
+    { at: 275, job: 'Fairy', title: 'Tooth Fairy, Retired',
       text: 'Okay. Fine. For one summer, and I am not explaining how, I was a tooth fairy. Tiny wings. Tiny hat. Very long nights. I got paid in quarters, which is how I bought the armchair. The wings are in a box in the attic. No, you can’t see them. They itch.' },
-    { at: 1000, job: 'All of them', title: 'Honorary Dude',
-      text: 'A thousand points. You know what that means? You’ve been a cowboy, a scientist, a detective, a dragon rider, and who knows what else, all without leaving your chair. That’s the whole secret. You’re officially an Honorary Dude now. (Sorry. It’s the only title I’ve got.)' }
+    { at: 300, job: 'All of them', title: 'Honorary Dude',
+      text: 'Three hundred points. You know what that means? You’ve been a cowboy, a scientist, a detective, a dragon rider, and who knows what else, all without leaving your chair. That’s the whole secret. You’re officially an Honorary Dude now. (Sorry. It’s the only title I’ve got.)' }
   ],
+
+  // What the Dude says about her star rating (1 to 5).
+  ratings: ['{cat} wouldn’t even nap on it.', 'Meh. {dog} would chew it.', 'Pretty good.', 'Loved it!', 'Dude-level amazing!'],
 
   // The Book Money Jar's reaction, by how full it is (0 to 1). The last matching line wins.
   jar: [

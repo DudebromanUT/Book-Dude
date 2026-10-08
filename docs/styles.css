@@ -586,8 +586,18 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
   border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: rotate(45deg);
 }
 .bubble .who { display: block; font-size: .7rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-text); margin-bottom: 3px; }
-.bubble .line { display: block; font-family: var(--serif); font-size: 1.05rem; line-height: 1.38; }
-.bubble.pop .line { animation: pop .25s ease; }
+.bubble .line {
+  display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer;
+  font-family: var(--serif); font-size: 1.05rem; line-height: 1.4;
+}
+.bubble .line.pop { animation: pop .25s ease; }
+.bubble-link {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 10px 4px 8px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-soft); color: var(--accent-text);
+  font-size: .8rem; font-weight: 700; max-width: 100%;
+}
+.bubble-link svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bubble .ps { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-strong); font-size: .86rem; color: var(--ink-2); line-height: 1.4; }
 .btn img.face { width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--surface); }
 .pet { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--line-strong), var(--shadow); }
 

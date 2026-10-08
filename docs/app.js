@@ -204,7 +204,8 @@
     records: {},
     custom: {},
     settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}) },
-    sayingOffset: 0,
+    dudeLine: null,
+    dudePs: '',
     offline: 'checking',
     persisted: null,
     storage: 'loading',
@@ -378,37 +379,114 @@
     return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
   }
 
-  // A nudge about her own books first; otherwise the saying of the day. Tapping the bubble cycles sayings.
-  function dudeLine() {
-    const name = state.settings.readerName;
-    const hey = name ? 'Hey, ' + name + '. ' : '';
-    if (!state.sayingOffset) {
-      const cfg = C.reward(state.settings.reward);
-      const total = allTimePoints();
-      const money = C.rewardStatus(total, cfg);
-      if (cfg.on && money.owed) return hey + 'You’ve got book money waiting: ' + prizeText(cfg.prize) + '. Go tell a grown-up!';
-      const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
-      const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
-      const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
-      if (quiz) return hey + 'You finished ' + quiz[0].title + '. Took the AR quiz yet? Add your points on its page.';
-      if (cfg.on && total > 0 && money.toGo <= Math.max(5, cfg.every * 0.15)) return hey + 'Only ' + fmtNum(money.toGo) + ' points until book money. ' + DUDE.dog + ' can smell the bookstore.';
-      const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
-      if (reading) {
-        const p = reading[1].progress || 0;
-        if (!p) return hey + 'How’s ' + reading[0].title + ' going?';
-        return hey + 'You’re ' + p + '% through ' + reading[0].title + '. ' + (p < 30 ? 'Good start.' : p < 75 ? 'Keep going.' : 'Almost there!');
+  // Every line the Dude can say: his one-liners plus jokes tied to books in the catalog.
+  const DUDE_KEY = UI_KEY + ':dude';
+  const DUDE_LINES = (() => {
+    const out = DUDE.sayings.map(text => ({ text, title: '' }));
+    for (const title of Object.keys(DUDE.bookJokes || {})) for (const text of DUDE.bookJokes[title]) out.push({ text, title });
+    return out.length ? out : [{ text: 'Shoes off. Socks on. What are we reading?', title: '' }];
+  })();
+  const pick = list => list[Math.floor(Math.random() * list.length)];
+
+  function bookByTitle(title) {
+    if (!title) return null;
+    const t = C.fold(title);
+    return BOOKS.find(b => !b._custom && C.fold(b.title) === t) || null;
+  }
+
+  // A shuffled deck, saved between launches, so she hears every line before any repeats.
+  // `recent` remembers the last few lines shown so a shelf joke can't come right back.
+  function loadDeck() {
+    let deck = null;
+    try { deck = JSON.parse(localStorage.getItem(DUDE_KEY) || 'null'); } catch (e) { deck = null; }
+    const valid = deck && Array.isArray(deck.order) && deck.n === DUDE_LINES.length && deck.order.length === DUDE_LINES.length;
+    if (!valid) deck = { n: DUDE_LINES.length, order: [], pos: 0, recent: [] };
+    if (!Array.isArray(deck.recent)) deck.recent = [];
+    if (deck.pos >= deck.order.length) {
+      const last = deck.order[deck.order.length - 1];
+      const order = DUDE_LINES.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
       }
+      if (order.length > 1 && order[0] === last) [order[0], order[1]] = [order[1], order[0]];
+      deck.order = order;
+      deck.pos = 0;
     }
-    const list = DUDE.sayings.length ? DUDE.sayings : ['Shoes off. Socks on. What are we reading?'];
-    const line = fill(list[(dayOfYear() + state.sayingOffset) % list.length]);
-    return state.sayingOffset ? line : hey + line;
+    return deck;
+  }
+
+  function showLine(deck, index) {
+    deck.recent = deck.recent.filter(i => i !== index).concat(index).slice(-8);
+    try { localStorage.setItem(DUDE_KEY, JSON.stringify(deck)); } catch (e) { /* storage blocked: the next launch reshuffles */ }
+    return DUDE_LINES[index] || DUDE_LINES[0];
+  }
+
+  function nextDeckLine() {
+    const deck = loadDeck();
+    const index = deck.order[deck.pos];
+    deck.pos += 1;
+    return showLine(deck, index);
+  }
+
+  // Now and then the Dude jokes about a book already on one of her shelves (never one he just told).
+  function shelfJoke() {
+    const deck = loadDeck();
+    const mine = new Set(Object.keys(state.records).filter(id => state.records[id].status || state.records[id].favorite));
+    const pool = DUDE_LINES.map((l, i) => i).filter(i => {
+      const b = bookByTitle(DUDE_LINES[i].title);
+      return b && mine.has(b.book_id) && !deck.recent.includes(i);
+    });
+    return pool.length ? showLine(deck, pick(pool)) : null;
+  }
+
+  // The P.S. under his line: book money waiting, a quiz to enter, nearly there, or the book she's reading.
+  function psLine() {
+    const ps = DUDE.ps || {};
+    const has = key => Array.isArray(ps[key]) && ps[key].length;
+    const cfg = C.reward(state.settings.reward);
+    const total = allTimePoints();
+    const money = C.rewardStatus(total, cfg);
+    if (cfg.on && money.owed && has('owed')) return fill(pick(ps.owed), { prize: prizeText(cfg.prize) });
+    const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
+    const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
+    const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
+    if (quiz && has('quiz')) return fill(pick(ps.quiz), { title: quiz[0].title });
+    if (cfg.on && total > 0 && money.toGo <= Math.max(5, cfg.every * 0.15) && has('close')) return fill(pick(ps.close), { toGo: fmtNum(money.toGo) });
+    const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
+    if (reading) {
+      const p = reading[1].progress || 0;
+      const key = p ? 'reading' : 'readingStart';
+      if (has(key)) return fill(pick(ps[key]), { title: reading[0].title, p });
+    }
+    return '';
+  }
+
+  // A fresh line every time the app opens or comes back after a while.
+  function newDudeLine() {
+    state.dudeLine = (Math.random() < 0.3 && shelfJoke()) || nextDeckLine();
+    state.dudePs = psLine();
   }
 
   function dudeHtml() {
+    if (!state.dudeLine) newDudeLine();
+    const line = state.dudeLine;
+    const text = fill(line.text);
+    const b = bookByTitle(line.title);
     return '<section class="dude" aria-label="The Dude">' +
       '<button type="button" class="dude-avatar" data-act="story" aria-label="Meet the Dude"><img src="img/dude-face.jpg" alt="" width="60" height="60"></button>' +
-      '<button type="button" class="bubble" data-act="next-saying" aria-live="polite"><span class="who">The Dude says</span><span class="line">' + esc(dudeLine()) + '</span></button>' +
-      '</section>';
+      '<div class="bubble" aria-live="polite"><span class="who">The Dude says</span>' +
+        '<button type="button" class="line" data-act="next-saying" title="Tap for another">' + esc(text) + '</button>' +
+        (b ? '<button type="button" class="bubble-link" data-act="open" data-id="' + esc(b.book_id) + '">' + icon('book') + esc(b.title) + '</button>' : '') +
+        (state.dudePs ? '<p class="ps">' + esc(state.dudePs) + '</p>' : '') +
+      '</div></section>';
+  }
+
+  function refreshBubble(pop) {
+    const old = $('.dude', main);
+    if (!old) return;
+    old.outerHTML = dudeHtml();
+    if (pop) { const line = $('.dude .line', main); if (line) line.classList.add('pop'); }
   }
 
   function storyHtml() {
@@ -711,10 +789,9 @@
   }
 
   function renderExplore() {
-    state.sayingOffset = 0;
     const f = state.filters;
     main.innerHTML =
-      '<header class="view-head"><div><p class="kicker">The Reading Room</p><h1>Find your next book</h1></div><span id="offline-pill">' + offlinePill() + '</span></header>' +
+      '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>Find your next book</h1></div><span id="offline-pill">' + offlinePill() + '</span></header>' +
       dudeHtml() +
       installTip() +
       '<div class="search" role="search">' +
@@ -1328,8 +1405,7 @@
   sheet.addEventListener('close', () => {
     flushNote();
     state.openId = null;
-    // Her books changed, so let the Dude talk about them again.
-    if (state.dirty) { state.dirty = false; state.sayingOffset = 0; render(true); }
+    if (state.dirty) { state.dirty = false; render(true); }
   });
   sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
   confirmBox.addEventListener('click', e => { if (e.target === confirmBox) confirmBox.close(); });
@@ -1545,8 +1621,9 @@
     if (state.tab === 'explore') {
       if (keepScroll && $('#results')) {
         updateResults();
-        const line = $('.bubble .line');
-        if (line) line.textContent = dudeLine();
+        // Her books changed, so the P.S. may have news.
+        state.dudePs = psLine();
+        refreshBubble();
       } else renderExplore();
     } else if (state.tab === 'shelves') renderShelves();
     else if (state.tab === 'progress') renderProgress();
@@ -1621,12 +1698,9 @@
       toast(DUDE.cat + ' fell asleep on this one. That means it’s good.');
     },
     story: () => openStory(),
-    'next-saying': el => {
-      state.sayingOffset += 1;
-      $('.line', el).textContent = dudeLine();
-      el.classList.remove('pop');
-      void el.offsetWidth;
-      el.classList.add('pop');
+    'next-saying': () => {
+      state.dudeLine = nextDeckLine();
+      refreshBubble(true);
     },
     'dismiss-tip': () => { state.installTipDismissed = true; saveUi(); const tip = $('#install-tip'); if (tip) tip.remove(); },
     shelf: el => { state.shelf = el.dataset.shelf; saveUi(); renderShelves(); },
@@ -1801,7 +1875,16 @@
   });
   window.addEventListener('hashchange', route);
   window.addEventListener('pagehide', flushNote);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNote(); });
+  // Coming back to the app after a while counts as opening it: the Dude has something new to say.
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { flushNote(); hiddenAt = Date.now(); return; }
+    if (hiddenAt && Date.now() - hiddenAt > 30000) {
+      newDudeLine();
+      if (state.tab === 'explore' && !sheet.open) refreshBubble(true);
+    }
+    hiddenAt = 0;
+  });
 
   // ---------- Start ----------
 
@@ -1832,6 +1915,7 @@
     if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(p => { state.persisted = p; }).catch(() => {});
     const initial = location.hash.slice(1);
     state.tab = TABS.includes(initial) ? initial : 'explore';
+    newDudeLine();
     render();
     // A brand-new reader meets the Dude first.
     const isNew = !Object.keys(state.records).length && !Object.keys(state.custom).length;

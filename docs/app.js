@@ -1331,6 +1331,7 @@
     facts.push(['Ages', b.ages ? esc(b.ages) : '<span class="hint">Not listed</span>']);
     facts.push(['Genre', b.genre ? esc(b.genre) : '<span class="hint">Not listed</span>']);
     if (b.score) facts.push(['Community score', esc(b.score) + ' out of 5 <span class="hint">(supplied, believed Goodreads, not verified)</span>']);
+    if (b.isbn13) facts.push(['ISBN', esc(b.isbn13) + (b.isbn10 ? ' <span class="hint">(' + esc(b.isbn10) + ')</span>' : '')]);
     if (b.ol_work) facts.push(['Open Library rating', (b._ol !== null ? '<b>' + esc(b._ol.toFixed(2)) + '</b> out of 5 <span class="hint">(' + plural(b._olCount, 'reader rating') + ')</span>' : '<span class="hint">No ratings yet</span>') + ' · ' + links('https://openlibrary.org/works/' + b.ol_work, 'See it')]);
     if (b.cover) facts.push(['Cover', /^OL\d+[MW]$/.test(b.cover_ol || '') ? links('https://openlibrary.org/' + (b.cover_ol.endsWith('W') ? 'works/' : 'books/') + b.cover_ol, 'Open Library') : 'Open Library']);
     const descSource = b.description_source ? ' · ' + links(b.description_source) : '';

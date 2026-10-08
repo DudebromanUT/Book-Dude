@@ -45,11 +45,12 @@ def get_json(url):
 
 
 def work_for(row, choices):
+    # The ol_work column is the source of truth once it is filled (fix a wrong match there).
+    if row.get('ol_work'):
+        return row['ol_work']
     choice = choices.get(row['book_id'], {})
     if choice.get('work'):
         return choice['work']
-    if row.get('ol_work'):
-        return row['ol_work']
     works = covers.find_works(row)
     return works[0]['key'].rsplit('/', 1)[-1] if works else ''
 

@@ -212,10 +212,10 @@
   "pick": "auto"
  },
  "abraham-lincoln-friend-of-the-people--clara-ingram-judson": {
-  "file": "23abe17c4156.webp",
-  "cover": 6380875,
-  "edition": "OL6071664M",
-  "work": "OL15122564W",
+  "file": "26685985f845.webp",
+  "cover": 9616990,
+  "edition": "OL17440352M",
+  "work": "OL183477W",
   "pick": "auto"
  },
  "abraham-lincoln-s-world--genevieve-foster": {
@@ -352,14 +352,14 @@
  "america-is-born--gerald-w-johnson": {
   "file": null,
   "pick": "none",
-  "work": "OL31630984W",
+  "work": "OL4087681W",
   "why": "no usable cover found"
  },
  "america-moves-forward--gerald-w-johnson": {
-  "file": "8a780df99f8e.webp",
-  "cover": 14867344,
-  "edition": "OL46897731M",
-  "work": "OL34581973W",
+  "file": "b9ef2db2d9be.webp",
+  "cover": 6382564,
+  "edition": "OL5796148M",
+  "work": "OL4087682W",
   "pick": "auto"
  },
  "american-born-chinese--gene-luen-yang": {
@@ -862,11 +862,9 @@
   "pick": "auto"
  },
  "dragon-rider--cornelia-funke": {
-  "file": "543f86e602e2.webp",
-  "cover": 12541476,
-  "edition": "OL33912573M",
-  "work": "OL25320490W",
-  "pick": "auto"
+  "file": "eedb293ad4ba.webp",
+  "cover": 6715130,
+  "pick": "chosen"
  },
  "dragon-s-gate--laurence-yep": {
   "file": "70d8ecef8fd5.webp",
@@ -883,12 +881,11 @@
   "shape": "square"
  },
  "dragonwings--laurence-yep": {
-  "file": "a2bc2d22d044.webp",
-  "cover": 4466047,
-  "edition": "OL5043070M",
-  "work": "OL451168W",
-  "pick": "auto",
-  "check": "small picture"
+  "file": "552edf2fc6b0.webp",
+  "cover": 49914,
+  "edition": "OL3963822M",
+  "work": "OL451098W",
+  "pick": "auto"
  },
  "duck-and-moose-duck-moves-in--kirk-reedstrom": {
   "file": "a9fc8c5f170f.webp",
@@ -1114,11 +1111,12 @@
   "pick": "auto"
  },
  "frontier-living--edwin-tunis": {
-  "file": "32b562652735.webp",
-  "cover": 14965968,
-  "edition": "OL43116229M",
-  "work": "OL12573866W",
-  "pick": "auto"
+  "file": "9a59cb37de7c.webp",
+  "cover": 851570,
+  "edition": "OL6900446M",
+  "work": "OL61516W",
+  "pick": "auto",
+  "shape": "short"
  },
  "gandhi-fighter-without-a-sword--jeanette-eaton": {
   "file": "1ceb2af95403.webp",
@@ -1573,12 +1571,10 @@
   "pick": "auto"
  },
  "leader-by-destiny--jeanette-eaton": {
-  "file": "ca410dbd4d96.webp",
-  "cover": 15001421,
-  "edition": "OL45604981M",
-  "work": "OL33646535W",
-  "pick": "auto",
-  "check": "no color"
+  "file": "eae1015a63c3.webp",
+  "cover": 10229460,
+  "work": "OL15837695W",
+  "pick": "auto"
  },
  "letters-to-the-lost--brigid-kemmerer": {
   "file": "10ee3bfea681.webp",
@@ -2214,10 +2210,12 @@
   "pick": "auto"
  },
  "pigtail-of-ah-lee-ben-loo--john-bennett": {
-  "file": null,
-  "pick": "none",
-  "work": "OL3509162W",
-  "why": "no usable cover found"
+  "file": "97fdb07a4dfb.webp",
+  "cover": 9286214,
+  "edition": "OL27922970M",
+  "work": "OL7923541W",
+  "pick": "auto",
+  "shape": "square"
  },
  "pran-of-albania--elizabeth-miller": {
   "file": "3f059ff636af.webp",
@@ -3185,10 +3183,10 @@
   "pick": "auto"
  },
  "the-great-wheel--robert-lawson": {
-  "file": "44a40feea5d1.webp",
-  "cover": 14919703,
-  "edition": "OL45694304M",
-  "work": "OL33727691W",
+  "file": "733d7572322d.webp",
+  "cover": 571062,
+  "edition": "OL1717442M",
+  "work": "OL4234951W",
   "pick": "auto"
  },
  "the-grey-king--susan-cooper": {
@@ -3690,12 +3688,11 @@
   "pick": "auto"
  },
  "the-slave-dancer--paula-fox": {
-  "file": "a43831f52258.webp",
-  "cover": 12758403,
-  "edition": "OL9934661M",
-  "work": "OL27957909W",
-  "pick": "auto",
-  "check": "no color"
+  "file": "93d8d429bd04.webp",
+  "cover": 283453,
+  "edition": "OL7523636M",
+  "work": "OL67354W",
+  "pick": "auto"
  },
  "the-story-of-appleby-capple--anne-parrish": {
   "file": "1810a9dd0b1c.webp",
@@ -4089,12 +4086,11 @@
   "pick": "auto"
  },
  "to-be-a-slave--julius-lester": {
-  "file": "ef700bc4a478.webp",
-  "cover": 13886019,
-  "edition": "OL11142785M",
-  "work": "OL34963159W",
-  "pick": "auto",
-  "shape": "square"
+  "file": "5491909116fa.webp",
+  "cover": 10837830,
+  "edition": "OL32182335M",
+  "work": "OL1814435W",
+  "pick": "auto"
  },
  "to-kill-a-mockingbird--harper-lee": {
   "file": "d50e20c77e7f.webp",
@@ -4164,10 +4160,10 @@
   "pick": "auto"
  },
  "twenty-thousand-leagues-under-the-sea--jules-verne": {
-  "file": "c2f4c227a522.webp",
-  "cover": 15048790,
-  "edition": "OL59005791M",
-  "work": "OL43320150W",
+  "file": "64eedc9f39ec.webp",
+  "cover": 15225616,
+  "edition": "OL62083263M",
+  "work": "OL1099280W",
   "pick": "auto"
  },
  "up-a-road-slowly--irene-hunt": {
@@ -4364,7 +4360,7 @@
  "wonderful-year--nancy-barnes": {
   "file": null,
   "pick": "none",
-  "work": "OL15425884W",
+  "work": "OL5933380W",
   "why": "no usable cover found"
  },
  "wringer--jerry-spinelli": {

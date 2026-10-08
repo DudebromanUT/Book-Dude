@@ -77,6 +77,14 @@ def fail(errors):
     sys.exit(1)
 
 
+def isbn13_ok(s):
+    return bool(re.fullmatch(r'97[89]\d{10}', s)) and sum(int(c) * (3 if i % 2 else 1) for i, c in enumerate(s)) % 10 == 0
+
+
+def isbn10_ok(s):
+    return bool(re.fullmatch(r'\d{9}[\dX]', s)) and sum((10 - i) * (10 if c == 'X' else int(c)) for i, c in enumerate(s)) % 11 == 0
+
+
 def read_books():
     with CSV_PATH.open(encoding='utf-8-sig', newline='') as f:
         reader = csv.DictReader(f)
@@ -136,6 +144,10 @@ def validate(rows):
             errors.append(f'{where}: ol_rating "{r["ol_rating"]}" must be a number from 0 to 5')
         if r.get('ol_ratings') and not r['ol_ratings'].isdigit():
             errors.append(f'{where}: ol_ratings "{r["ol_ratings"]}" must be a whole number')
+        if r.get('isbn13') and not isbn13_ok(r['isbn13']):
+            errors.append(f'{where}: isbn13 "{r["isbn13"]}" is not a valid 13-digit ISBN (digits only, no dashes)')
+        if r.get('isbn10') and (not isbn10_ok(r['isbn10']) or r['isbn10'][:9] != r.get('isbn13', '')[3:12]):
+            errors.append(f'{where}: isbn10 "{r["isbn10"]}" is not a valid 10-digit ISBN for the same book as isbn13')
         if r.get('ol_work') and not re.match(r'^OL\d+W$', r['ol_work']):
             errors.append(f'{where}: ol_work "{r["ol_work"]}" must look like OL12345W')
         if r['ar_points'] and not r.get('ar_source'):

@@ -79,6 +79,12 @@ Then run `python3 scripts/build.py`. Cover file names are hashes of the pictures
 
 `python3 scripts/ratings.py` fetches each book's reader rating from Open Library (the same work chosen for its cover) into four columns of `docs/books.csv`: `ol_work`, `ol_rating` (average out of 5), `ol_ratings` (how many readers rated it), and `ol_checked` (the day it was fetched). Run it now and then, since ratings change, then run `python3 scripts/build.py`. Each book's page shows the rating with a link to Open Library. **Highest Open Library rating** in Explore's sort ranks books with at least 5 ratings by their average first, then books with fewer ratings, then books nobody has rated; while that sort is on, the cards show the Open Library rating and how many ratings it has instead of the community score.
 
+## ISBNs
+
+`python3 scripts/isbns.py` gives each book an ISBN in `docs/books.csv` (`isbn13`, plus `isbn10` when there is one; for a print book the 10-digit ISBN is usually also its Amazon product number). It picks one English print edition from the book's Open Library work: the edition whose cover the app shows when it qualifies, otherwise a recent paperback or hardcover from the English-language ISBN groups that US and UK stores list (978-0, 978-1, 979-8). Audiobooks, e-books, large print, study guides, library rebinds, and editions that are probably translations are skipped. Books that already have an ISBN keep it, so a hand-typed ISBN is never replaced; `--redo` picks again for every book. About 40 books have none: the newest titles that are not on Open Library yet, and out-of-print books from before ISBNs existed. Each book's page shows its ISBN, and `build.py` rejects an ISBN whose check digit is wrong.
+
+The Open Library work in `ol_work` is the source of truth for ratings and ISBNs. The scripts match books by title, author, and edition (which finds books Open Library files under another title, such as *Dragon Rider* under its German title) and prefer the work with the most editions, since duplicates and stray records usually have one or two. To fix a wrong match, put the right `OL...W` in `ol_work` and run `ratings.py` and `isbns.py --redo`.
+
 ## Update the book catalog
 
 1. Edit `docs/books.csv`. **Keep each existing `book_id` unchanged**, even when correcting a title or author. For a genuinely new book, leave `book_id` blank and the build assigns a new unique one (written back into the CSV). IDs starting with `mine:` are reserved for books added in the app.

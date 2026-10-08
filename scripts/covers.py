@@ -113,32 +113,45 @@ def fetch(url, binary=False):
 
 # ---------- Finding the book and its editions ----------
 
+def squash(text):
+    return norm(text).replace(' ', '')
+
+
 def find_works(book):
-    """Open Library works that could be this book, best match first."""
+    """Open Library works that could be this book, best match first.
+
+    Searches by title and author, and by edition, which also finds books filed under another title
+    (Dragon Rider is under its German title, Drachenreiter). Among the matches, the work with the
+    most editions comes first: duplicates and stray records usually have only one or two.
+    """
     title, author = book['title'], book['author']
     # Open Library finds "H. G. Wells" but not "H.G. Wells".
     first = re.sub(r'\.(?=\S)', '. ', re.split(r';| and | with |illustrated by', author)[0].strip())
     last = (sorted(surnames(author), key=len) or [''])[-1]
-    fields = 'key,title,subtitle,author_name,cover_i,cover_edition_key,edition_count'
-    tries = [[{'title': title, 'author': first}, {'title': main_title(title), 'author': last}], [{'q': main_title(title) + ' ' + last}]]
-    names = surnames(author)
-    for group in tries:
-        ranked, seen = [], set()
-        docs = [d for params in group for d in (fetch(OL + '/search.json?' + urllib.parse.urlencode({**params, 'fields': fields, 'limit': 10})) or {}).get('docs', [])]
-        for doc in docs:
+    fields = 'key,title,subtitle,author_name,cover_i,cover_edition_key,edition_count,editions,editions.key,editions.title'
+    searches = [{'title': title, 'author': first}, {'title': main_title(title), 'author': last}, {'q': main_title(title).strip() + ' ' + first, 'lang': 'en'}]
+    # "DeJong" and "De Jong" are the same author.
+    names = {squash(n) for n in surnames(author)}
+    # "March: Book Three" must not match plain "March".
+    volume = re.search(r':.*\b(book|volume|vol|part)\b', title, re.I)
+    ranked, seen = [], set()
+    for params in searches:
+        for doc in (fetch(OL + '/search.json?' + urllib.parse.urlencode({**params, 'fields': fields, 'limit': 10})) or {}).get('docs', []):
             if doc.get('key') in seen:
                 continue
             seen.add(doc.get('key'))
-            by = norm(' '.join(doc.get('author_name', [])))
-            if names and not any(re.search(r'\b' + re.escape(n) + r'\b', by) for n in names):
+            by = squash(' '.join(doc.get('author_name', [])))
+            if names and not any(n in by for n in names):
                 continue
             full = doc.get('title', '') + (': ' + doc['subtitle'] if doc.get('subtitle') else '')
-            match = max(title_match(title, doc.get('title', '')), title_match(title, full))
+            eds = (doc.get('editions') or {}).get('docs', [])
+            ed_title = eds[0].get('title', '') if eds else ''
+            if volume and not any(words(title) <= words(t) for t in (full, ed_title)):
+                continue
+            match = max(title_match(title, doc.get('title', '')), title_match(title, full), title_match(title, ed_title) if ed_title else 0)
             if match:
-                ranked.append(((match, bool(doc.get('cover_i')), doc.get('edition_count', 0)), doc))
-        if ranked:
-            return [doc for _, doc in sorted(ranked, key=lambda r: r[0], reverse=True)][:3]
-    return []
+                ranked.append(((match, doc.get('edition_count', 0), bool(doc.get('cover_i'))), doc))
+    return [doc for _, doc in sorted(ranked, key=lambda r: r[0], reverse=True)][:3]
 
 
 def year_of(text):
@@ -170,7 +183,7 @@ def candidates(book, work):
             score -= 60
         title = ed.get('title', '') + (': ' + ed['subtitle'] if ed.get('subtitle') else '')
         if not title_match(book['title'], title) and not title_match(book['title'], ed.get('title', '')):
-            score -= 60
+            score -= 100  # Another book, or the same book under another language's title.
         year = year_of(ed.get('publish_date'))
         if year:
             score += max(0, min(year, 2024) - 1960) / 4

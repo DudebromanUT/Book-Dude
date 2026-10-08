@@ -9,12 +9,15 @@ Adds or refreshes four columns:
   amz_checked  the day it was fetched
 
 Looks a book up by its isbn10 (from isbns.py) and falls back to a title-and-author search.
+An ISBN can lead to an edition Amazon keeps apart from the book's main listing (a few ratings,
+or none); --recheck-below N searches by title for books with fewer than N ratings and keeps
+whichever listing has more.
 Each successful lookup costs 5 credits (about $0.0009); failed lookups are free. Books checked
 before are skipped unless --redo is given.
 
 The API key is read from the AMAZON_SCRAPER_API_KEY environment variable and never written anywhere.
 
-Usage: python3 scripts/amazon.py [--redo] [--limit N]
+Usage: python3 scripts/amazon.py [--redo] [--limit N] [--recheck-below N]
 Then run python3 scripts/build.py.
 """
 import datetime
@@ -98,7 +101,11 @@ def main():
             fields.append(col)
         for r in rows:
             r.setdefault(col, '')
-    todo = [r for r in rows if redo or not r['amz_checked']][:limit]
+    recheck = int(args[args.index('--recheck-below') + 1]) if '--recheck-below' in args else None
+    if recheck:
+        todo = [r for r in rows if r['amz_checked'] and int(r['amz_ratings'] or 0) < recheck][:limit]
+    else:
+        todo = [r for r in rows if redo or not r['amz_checked']][:limit]
     today = datetime.date.today().isoformat()
     lock, stats = threading.Lock(), {'done': 0, 'found': 0}
 
@@ -106,7 +113,15 @@ def main():
         build.CSV_PATH.write_text(build.csv_text(fields, rows), encoding='utf-8', newline='')
 
     def look(r):
-        found = by_isbn(r, key) or by_search(r, key)
+        if recheck:
+            found = by_search(r, key)
+            if not found or int(found.get('count') or 0) <= int(r['amz_ratings'] or 0):
+                found = None  # Keep what we had.
+                with lock:
+                    stats['done'] += 1
+                return
+        else:
+            found = by_isbn(r, key) or by_search(r, key)
         with lock:
             if found:
                 r['amz_asin'] = found['asin'] or ''

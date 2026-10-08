@@ -8,6 +8,12 @@ const PREFIX = 'reading-room:' + SCOPE + ':';
 const CACHE = PREFIX + VERSION;
 const URLS = ASSETS.map(path => new URL(path, SCOPE).href);
 const SHELL = new URL('index.html', SCOPE).href;
+// Book covers are saved separately, a few at a time after the app itself is ready, in a cache that
+// outlives app updates. Each file name is a hash of the picture, so a changed cover is a new file.
+const COVERS = __COVERS__;
+const COVER_CACHE = 'reading-room-covers:' + SCOPE;
+const COVER_URLS = COVERS.map(path => new URL(path, SCOPE).href);
+const COVER_SET = new Set(COVER_URLS);
 
 self.addEventListener('install', event => {
   // Bypass the HTTP cache so a new version never stores stale files.
@@ -23,9 +29,43 @@ self.addEventListener('activate', event => {
 });
 
 // A waiting update activates only when the reader taps "Update app".
+// The page asks for covers once it is running; this keeps the first install quick.
 self.addEventListener('message', event => {
   if (event.data === 'ACTIVATE') self.skipWaiting();
+  else if (event.data === 'COVERS') event.waitUntil(saveCovers());
 });
+
+let saving = null;
+function saveCovers() {
+  if (!saving) saving = fillCovers().finally(() => { saving = null; });
+  return saving;
+}
+
+async function tell(message) {
+  const pages = await self.clients.matchAll({ type: 'window' });
+  pages.forEach(page => page.postMessage(message));
+}
+
+async function fillCovers() {
+  const cache = await caches.open(COVER_CACHE);
+  const have = new Set((await cache.keys()).map(request => request.url));
+  await Promise.all([...have].filter(url => !COVER_SET.has(url)).map(url => cache.delete(url)));
+  const todo = COVER_URLS.filter(url => !have.has(url));
+  let saved = COVER_URLS.length - todo.length;
+  let next = 0;
+  const worker = async () => {
+    while (next < todo.length) {
+      const url = todo[next++];
+      const response = await fetch(url).catch(() => null);
+      if (!response || !response.ok) return; // Offline or failing: try again next time the app opens.
+      await cache.put(url, response);
+      saved++;
+      if (saved % 25 === 0) await tell({ type: 'covers', saved, total: COVER_URLS.length });
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  await tell({ type: 'covers', saved, total: COVER_URLS.length, done: true });
+}
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -38,6 +78,13 @@ self.addEventListener('fetch', event => {
     if (clean === SCOPE || clean === SHELL) key = SHELL;
   } else if (URLS.includes(clean)) {
     key = clean;
+  } else if (COVER_SET.has(clean)) {
+    // A cover not saved yet comes from the network (and is kept); offline, the page shows its own cover instead.
+    event.respondWith(caches.open(COVER_CACHE).then(cache => cache.match(clean).then(hit => hit || fetch(request).then(response => {
+      if (response.ok) cache.put(clean, response.clone());
+      return response;
+    }))));
+    return;
   }
   if (!key) return;
   event.respondWith(caches.open(CACHE).then(cache => cache.match(key)).then(hit => hit || fetch(request)));

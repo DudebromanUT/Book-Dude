@@ -304,6 +304,18 @@ textarea.input { min-height: 120px; resize: vertical; line-height: 1.5; }
 .cover.thumb { padding: 0; border-radius: 2px 6px 6px 2px; display: grid; place-items: center; }
 .cover.thumb .cover-title, .cover.thumb .cover-author, .cover.thumb .seal { display: none; }
 .cover.thumb .cover-initial { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-family: var(--book); font-weight: 700; font-size: 24px; font-size: 46cqi; line-height: 1; }
+/* Real cover art: the homemade cover waits underneath, and the spine shading sits on top so it still looks like a book. */
+.cover-art { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; background: var(--c1); }
+.cover.has-art > .cover-title, .cover.has-art > .cover-author, .cover.has-art > .cover-initial { visibility: hidden; }
+.cover.has-art::after {
+  z-index: 2;
+  background: linear-gradient(90deg, rgb(0 0 0 / .22) 0 2px, rgb(255 255 255 / .22) 2px 4px, rgb(0 0 0 / .08) 4px 7px, transparent 10px),
+    linear-gradient(100deg, rgb(255 255 255 / .1), transparent 30%, rgb(0 0 0 / .06));
+}
+.cover.shape-short { aspect-ratio: 4 / 5; }
+.cover.shape-square { aspect-ratio: 1; }
+.cover.shape-wide { aspect-ratio: 4 / 3; }
+.cover.has-art .seal { z-index: 3; width: 27%; right: 4%; bottom: 4%; padding: 3%; font-size: 3.7cqi; letter-spacing: .02em; box-shadow: 0 0 0 2px rgb(255 255 255 / .5) inset, 0 0 0 1.5px rgb(255 255 255 / .85), 0 2px 5px rgb(0 0 0 / .45); }
 
 .seal {
   position: absolute; z-index: 2; right: 7%; bottom: 22%; width: 30%; aspect-ratio: 1; border-radius: 50%;
@@ -369,15 +381,16 @@ textarea.input { min-height: 120px; resize: vertical; line-height: 1.5; }
 .heart { position: absolute; z-index: 3; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / .92); box-shadow: 0 1px 4px rgb(0 0 0 / .2); }
 .heart svg { width: 16px; height: 16px; fill: var(--coral); stroke: none; }
 @media (prefers-color-scheme: dark) { .heart { background: rgb(20 24 30 / .9); } }
-.cover-wrap { position: relative; }
-/* In the cover grid, every row of books stands on a wooden shelf. */
-.grid .cover-wrap { margin-bottom: 12px; }
-.grid .cover-wrap::after {
+.cover-slot { display: block; position: relative; }
+.cover-wrap { display: block; position: relative; }
+/* In the cover grid, every row of books stands on a wooden shelf; shorter picture books stand on it too. */
+.grid .cover-slot { aspect-ratio: 2 / 3; max-width: 100%; display: flex; flex-direction: column; justify-content: flex-end; margin-bottom: 12px; }
+.grid .cover-slot::after {
   content: ""; position: absolute; left: -9px; right: -9px; bottom: -12px; height: 12px; border-radius: 2px;
   background: var(--grain), linear-gradient(var(--wood-light), var(--wood) 42%, var(--wood-dark));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .18), 0 8px 10px -6px rgb(40 20 5 / .55);
 }
-@media (min-width: 560px) { .grid .cover-wrap::after { left: -11px; right: -11px; } }
+@media (min-width: 560px) { .grid .cover-slot::after { left: -11px; right: -11px; } }
 
 .list { display: grid; gap: 10px; }
 .row {

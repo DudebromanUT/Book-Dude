@@ -208,6 +208,7 @@
     dudeLine: null,
     dudePs: '',
     offline: 'checking',
+    covers: null,
     persisted: null,
     storage: 'loading',
     installTipDismissed: false,
@@ -650,12 +651,17 @@
 
   // ---------- Pieces ----------
 
+  // Real cover art sits on top of the homemade cover, which shows through if the picture can't load.
+  // Picture books keep their real shape (height of the 280-wide picture for each).
+  const COVER_SHAPES = { tall: 420, short: 350, square: 280, wide: 210 };
   function cover(b, size) {
     const seal = b._seal && size !== 'thumb' ? '<span class="seal ' + b._seal[0] + '">' + b._seal[1] + '</span>' : '';
     const initial = esc(b._sortTitle.charAt(0).toUpperCase());
-    return '<span class="cover p' + b._pal + ' m' + b._motif + (size ? ' ' + size : '') + '" aria-hidden="true">' +
+    const shape = COVER_SHAPES[b.cover_shape] ? b.cover_shape : 'tall';
+    const art = b.cover ? '<img class="cover-art" src="covers/' + esc(b.cover) + '" alt="" width="280" height="' + COVER_SHAPES[shape] + '" loading="lazy" decoding="async">' : '';
+    return '<span class="cover p' + b._pal + ' m' + b._motif + (size ? ' ' + size : '') + (art ? ' has-art' + (shape !== 'tall' ? ' shape-' + shape : '') : '') + '" aria-hidden="true">' +
       '<span class="cover-title">' + esc(b.title) + '</span><span class="cover-initial">' + initial + '</span>' +
-      '<span class="cover-author">' + esc(b.author) + '</span>' + seal + '</span>';
+      '<span class="cover-author">' + esc(b.author) + '</span>' + art + seal + '</span>';
   }
 
   function levelTag(b) {
@@ -694,7 +700,7 @@
     const flag = r && r.status ? '<span class="flag ' + r.status + '">' + esc(flagText(r)) + '</span>' : '';
     const heart = r && r.favorite ? '<span class="heart">' + icon('heart') + '</span>' : '';
     return '<button type="button" class="card" data-act="open" data-id="' + esc(b.book_id) + '" aria-label="' + esc(bookLabel(b, r)) + '">' +
-      '<span class="cover-wrap">' + cover(b) + flag + heart + '</span>' +
+      '<span class="cover-slot"><span class="cover-wrap">' + cover(b) + flag + heart + '</span></span>' +
       '<span class="card-meta" aria-hidden="true"><span class="t">' + esc(b.title) + '</span><span class="a">' + esc(b.author) + '</span>' +
       '<span class="tags">' + ratingTag(r) + levelTag(b) + pointsTag(b) + '</span></span></button>';
   }
@@ -1183,6 +1189,7 @@
           (state.storage === 'memory' ? item('warn', 'Not saving', 'This browser is blocking storage (Private Browsing can do this). Changes will be lost when the app closes.') :
             state.persisted === true ? item('ok', 'Storage protected', 'This device has agreed to keep your journal.') :
             item('', 'Saved on this device', 'Clearing website data or deleting the app removes your journal. Save backups now and then.')) +
+          coversItem(item) +
           (standalone ? item('ok', 'Installed', 'Running from the Home Screen.') : item('', 'Running in the browser', 'For the best experience, add the app to your Home Screen: tap Share, then Add to Home Screen. The Home Screen app keeps its own separate journal.')) +
         '</ul></section>' +
         '<section class="panel"><h2>About the books</h2><p class="lead">' + plural(CATALOG_BOOKS.length, 'book') + ' from Newbery, Beehive, Printz, Pulitzer, Carnegie, National Book Award, and classics lists. ' +
@@ -1288,6 +1295,7 @@
     facts.push(['Ages', b.ages ? esc(b.ages) : '<span class="hint">Not listed</span>']);
     facts.push(['Genre', b.genre ? esc(b.genre) : '<span class="hint">Not listed</span>']);
     if (b.score) facts.push(['Community score', esc(b.score) + ' out of 5 <span class="hint">(supplied, believed Goodreads, not verified)</span>']);
+    if (b.cover) facts.push(['Cover', /^OL\d+[MW]$/.test(b.cover_ol || '') ? links('https://openlibrary.org/' + (b.cover_ol.endsWith('W') ? 'works/' : 'books/') + b.cover_ol, 'Open Library') : 'Open Library']);
     const descSource = b.description_source ? ' · ' + links(b.description_source) : '';
 
     const ar = [];
@@ -1608,12 +1616,33 @@
     $('#update').hidden = false;
   }
 
+  const COVER_TOTAL = new Set(CATALOG_BOOKS.filter(b => b.cover).map(b => b.cover)).size;
+  function coversItem(item) {
+    const c = state.covers;
+    if (!COVER_TOTAL || !c) return '';
+    if (c.saved >= c.total) return item('ok', 'Book covers saved', plural(c.total, 'cover') + ' work without internet.');
+    return item('', 'Saving book covers… ' + fmtNum(c.saved) + ' of ' + fmtNum(c.total), c.done ? 'The rest will save next time the app opens on Wi-Fi. Until then, the Dude’s homemade covers fill in.' : 'Keep the app open on Wi-Fi for a minute.');
+  }
+
+  function askForCovers() {
+    if (COVER_TOTAL && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('COVERS');
+  }
+
   function registerWorker() {
     const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (!('serviceWorker' in navigator) || !secure) { setOffline('unsupported'); return; }
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (updating) location.reload();
+      else askForCovers();
     });
+    navigator.serviceWorker.addEventListener('message', e => {
+      const d = e.data;
+      if (!d || d.type !== 'covers') return;
+      state.covers = { saved: Number(d.saved) || 0, total: Number(d.total) || 0, done: !!d.done };
+      const typing = document.activeElement && main.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      if (state.tab === 'more' && !sheet.open && !typing) renderMore();
+    });
+    window.addEventListener('online', askForCovers);
     navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).then(reg => {
       const watch = w => {
         if (!w) return;
@@ -1627,7 +1656,7 @@
       if (reg.active) setOffline('ready');
       else { setOffline('saving'); watch(reg.installing || reg.waiting); }
       reg.addEventListener('updatefound', () => watch(reg.installing));
-      navigator.serviceWorker.ready.then(() => setOffline('ready'));
+      navigator.serviceWorker.ready.then(() => { setOffline('ready'); askForCovers(); });
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && navigator.onLine !== false) reg.update().catch(() => {});
       });
@@ -1828,6 +1857,14 @@
       });
     }
   };
+
+  // A cover picture that can't load (offline before it was saved) steps aside for the homemade cover.
+  document.addEventListener('error', e => {
+    const img = e.target;
+    if (!img || !img.classList || !img.classList.contains('cover-art')) return;
+    if (img.parentNode) img.parentNode.classList.remove('has-art', 'shape-short', 'shape-square', 'shape-wide');
+    img.remove();
+  }, true);
 
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-act]');

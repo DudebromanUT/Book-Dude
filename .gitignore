@@ -3,3 +3,4 @@ book-dude-backup-*.json
 __pycache__/
 .DS_Store
 node_modules/
+scripts/.cover-cache/

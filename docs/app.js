@@ -109,9 +109,9 @@
     'level-down': 'Hardest first (AR level)',
     'points-down': 'Most AR points',
     'points-up': 'Fewest AR points',
-    score: 'Highest community score',
-    'ol-rating': 'Highest Open Library rating',
     'amz-rating': 'Highest Amazon rating',
+    'ol-rating': 'Highest Open Library rating',
+    score: 'Highest original list score',
     'my-rating': 'My ratings (best first)'
   };
 
@@ -687,10 +687,9 @@
   function levelTag(b) {
     return b._level !== null ? '<span class="tag" title="AR book level">Lvl ' + esc(b.ar_level) + '</span>' : '';
   }
-  // Book cards and lists show the community score (supplied with the list, believed Goodreads); the AR level is on the book's page.
-  // Books she added have no community score, so they keep the level she entered.
+  // The score that came with the original book list (source never confirmed). Cards show it only while sorting by it.
   function scoreTag(b) {
-    return b._score !== null ? '<span class="tag score" title="Community score, out of 5">Score ' + esc(b.score) + '</span>' : '';
+    return b._score !== null ? '<span class="tag score" title="Score from the original book list, out of 5">List ' + esc(b.score) + '</span>' : '';
   }
   // Sorting by Open Library rating shows that rating on the cards instead.
   const OL_MIN_RATINGS = 5;
@@ -702,7 +701,9 @@
   function amzTag(b) {
     return b._amz !== null ? '<span class="tag score" title="Amazon rating, out of 5, from ' + plural(b._amzCount, 'rating') + '">Amazon ' + b._amz.toFixed(1) + ' (' + compact(b._amzCount) + ')</span>' : '';
   }
-  const browseTag = b => (b._custom ? levelTag(b) : state.sort === 'ol-rating' ? olTag(b) : state.sort === 'amz-rating' ? amzTag(b) : scoreTag(b));
+  // Book cards and lists show the Amazon rating (the most ratings by far); sorting by another score shows that score instead.
+  // The AR level is on the book's page. Books she added have no ratings, so they keep the level she entered.
+  const browseTag = b => (b._custom ? levelTag(b) : state.sort === 'ol-rating' ? olTag(b) : state.sort === 'score' ? scoreTag(b) : amzTag(b));
   function pointsTag(b) {
     if (b._points !== null) return '<span class="tag pts">' + fmtNum(b._points) + (b._points === 1 ? ' pt' : ' pts') + '</span>';
     return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
@@ -723,7 +724,7 @@
     const a = b._awards[0];
     if (a) bits.push([a.award, a.category, a.year].filter(Boolean).join(' '));
     if (b._custom) bits.push('added by you');
-    if (b._score !== null) bits.push('community score ' + b.score + ' out of 5');
+    if (b._amz !== null) bits.push('Amazon rating ' + b._amz.toFixed(1) + ' out of 5 from ' + plural(b._amzCount, 'rating'));
     if (b._level !== null) bits.push('book level ' + b.ar_level);
     bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
     if (r && r.status) bits.push(flagText(r));
@@ -1243,7 +1244,7 @@
         '<section class="panel"><h2>About the books</h2><p class="lead">' + plural(CATALOG_BOOKS.length, 'book') + ' from Newbery, Beehive, Printz, Pulitzer, Carnegie, National Book Award, and classics lists. ' +
           withPoints + ' have AR details from a checked source; the other ' + (CATALOG_BOOKS.length - withPoints) + ' are not verified yet, and a blank never means zero.' +
           (added ? ' You added ' + plural(added, 'more book') + ' yourself.' : '') + '</p>' +
-          '<p class="hint">Always confirm the quiz and edition with your school before counting points. Community scores were supplied with the list and are believed to be from Goodreads, but are not verified. Each book shows where its information came from.</p></section>' +
+          '<p class="hint">Always confirm the quiz and edition with your school before counting points. Amazon and Open Library ratings were collected in October 2026; the original list’s scores came with the list and their source was never confirmed. Each book shows where its information came from.</p></section>' +
         '<section class="panel"><h2>Privacy</h2><p class="lead">No accounts, no ads, no tracking. Nothing you write leaves this device unless you save a backup file. Links to book sources open other websites.</p></section>' +
       '</div></div>';
   }
@@ -1343,10 +1344,10 @@
     facts.push(['Year', esc(b.year) + (b.year_type === 'Publication' ? ' (published)' : ' (award year)')]);
     facts.push(['Ages', b.ages ? esc(b.ages) : '<span class="hint">Not listed</span>']);
     facts.push(['Genre', b.genre ? esc(b.genre) : '<span class="hint">Not listed</span>']);
-    if (b.score) facts.push(['Community score', esc(b.score) + ' out of 5 <span class="hint">(supplied, believed Goodreads, not verified)</span>']);
-    if (b.isbn13) facts.push(['ISBN', esc(b.isbn13) + (b.isbn10 ? ' <span class="hint">(' + esc(b.isbn10) + ')</span>' : '')]);
     if (b.amz_asin) facts.push(['Amazon rating', (b._amz !== null ? '<b>' + esc(b._amz.toFixed(1)) + '</b> out of 5 <span class="hint">(' + plural(b._amzCount, 'rating') + ')</span>' : '<span class="hint">No ratings yet</span>') + ' · ' + links('https://www.amazon.com/dp/' + b.amz_asin, 'See it')]);
     if (b.ol_work) facts.push(['Open Library rating', (b._ol !== null ? '<b>' + esc(b._ol.toFixed(2)) + '</b> out of 5 <span class="hint">(' + plural(b._olCount, 'reader rating') + ')</span>' : '<span class="hint">No ratings yet</span>') + ' · ' + links('https://openlibrary.org/works/' + b.ol_work, 'See it')]);
+    if (b.score) facts.push(['Original list score', esc(b.score) + ' out of 5 <span class="hint">(came with the book list; source not confirmed)</span>']);
+    if (b.isbn13) facts.push(['ISBN', esc(b.isbn13) + (b.isbn10 ? ' <span class="hint">(' + esc(b.isbn10) + ')</span>' : '')]);
     if (b.cover) facts.push(['Cover', /^OL\d+[MW]$/.test(b.cover_ol || '') ? links('https://openlibrary.org/' + (b.cover_ol.endsWith('W') ? 'works/' : 'books/') + b.cover_ol, 'Open Library') : 'Open Library']);
     const descSource = b.description_source ? ' · ' + links(b.description_source) : '';
 

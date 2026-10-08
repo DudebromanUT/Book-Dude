@@ -44,3 +44,16 @@ test('backup validation rejects bad added books', () => {
   assert.throws(() => C.parseBackup({ app: 'reading-room', version: 1, records: {}, customBooks: [] }, books));
   assert.equal(C.parseBackup({ app: 'reading-room', version: 1, records: {} }, books).customCount, 0);
 });
+
+test('a cover photo she took stays with her book through backups, and anything else is dropped', () => {
+  const photo = 'data:image/jpeg;base64,' + 'A'.repeat(4000) + '==';
+  const b = mine({ photo });
+  assert.equal(b.photo, photo);
+  assert.equal(mine({ photo: '' }).photo, undefined);
+  assert.equal(mine({ photo: 'https://example.com/cover.jpg' }).photo, undefined);
+  assert.equal(mine({ photo: 'data:image/svg+xml;base64,PHN2Zz4=' }).photo, undefined);
+  assert.equal(mine({ photo: 'data:image/jpeg;base64,' + 'A'.repeat(400000) }).photo, undefined);
+  assert.equal(mine({ photo: 'data:image/jpeg;base64,AAAA"><script>' }).photo, undefined);
+  const file = JSON.parse(JSON.stringify(C.exportBackup({}, { goals: {} }, '2026-10-08T00:00:00Z', { 'mine:abc': b })));
+  assert.equal(C.parseBackup(file, []).customBooks['mine:abc'].photo, photo);
+});

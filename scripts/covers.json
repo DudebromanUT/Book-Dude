@@ -684,12 +684,9 @@
   "pick": "auto"
  },
  "claudette-colvin--phillip-hoose": {
-  "file": "ded092471833.webp",
-  "cover": 14672651,
-  "edition": "OL50734671M",
-  "work": "OL21736027W",
-  "pick": "auto",
-  "shape": "short"
+  "file": "191439449acc.webp",
+  "cover": 7459614,
+  "pick": "chosen"
  },
  "clearing-weather--cornelia-meigs": {
   "file": "aa90dd86169d.webp",
@@ -1654,12 +1651,9 @@
   "pick": "auto"
  },
  "lone-journey--jeanette-eaton": {
-  "file": "a4ce753c30bd.webp",
-  "cover": 5033771,
-  "edition": "OL10107008M",
-  "work": "OL2605256W",
-  "pick": "auto",
-  "check": "small picture"
+  "file": null,
+  "pick": "none",
+  "why": "generated cover chosen"
  },
  "long-way-down--jason-reynolds": {
   "file": "8674b951d2b6.webp",

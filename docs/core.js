@@ -17,6 +17,9 @@
   const CUSTOM_PREFIX = 'mine:';
   const CUSTOM_TEXT = { title: 200, author: 200, description: 2000 };
   const CUSTOM_NUMBERS = { ar_level: 20, ar_points: 999 };
+  // A cover photo she took, already shrunk on the device (about 40 KB). Anything else is dropped.
+  const PHOTO_MAX = 400000;
+  const PHOTO_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
 
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const isPlain = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -135,6 +138,7 @@
       const n = amount(o[field], CUSTOM_NUMBERS[field]);
       out[field] = typeof n === 'number' && !Number.isNaN(n) ? String(n) : '';
     }
+    if (typeof o.photo === 'string' && o.photo.length <= PHOTO_MAX && PHOTO_RE.test(o.photo)) out.photo = o.photo;
     out.createdAt = stamp(o.createdAt);
     out.updatedAt = stamp(o.updatedAt);
     return out;

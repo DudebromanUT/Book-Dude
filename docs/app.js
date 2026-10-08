@@ -64,6 +64,7 @@
     share: '<path d="M12 3.5v11M8 7.5l4-4 4 4M6 11H5v9.5h14V11h-1"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    camera: '<path d="M4 8.5h3.2l1.8-2.5h6l1.8 2.5H20v10.5H4z"/><circle cx="12" cy="13.5" r="3.4"/>',
     pencil: '<path d="M15.5 5.5l3 3L8 19H5v-3z"/><path d="M13.5 7.5l3 3"/>',
     trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/>'
   };
@@ -180,7 +181,7 @@
   function rebuildBooks() {
     const mine = Object.keys(state.custom).map(id => {
       const c = state.custom[id];
-      return prepare({ book_id: id, title: c.title, author: c.author, description: c.description, ar_level: c.ar_level, ar_points: c.ar_points, year: '', award: '', category: '', createdAt: c.createdAt }, true);
+      return prepare({ book_id: id, title: c.title, author: c.author, description: c.description, ar_level: c.ar_level, ar_points: c.ar_points, photo: c.photo || '', year: '', award: '', category: '', createdAt: c.createdAt }, true);
     });
     BOOKS = CATALOG_BOOKS.concat(mine);
     BY_ID = new Map(BOOKS.map(b => [b.book_id, b]));
@@ -657,8 +658,10 @@
   function cover(b, size) {
     const seal = b._seal && size !== 'thumb' ? '<span class="seal ' + b._seal[0] + '">' + b._seal[1] + '</span>' : '';
     const initial = esc(b._sortTitle.charAt(0).toUpperCase());
-    const shape = COVER_SHAPES[b.cover_shape] ? b.cover_shape : 'tall';
-    const art = b.cover ? '<img class="cover-art" src="covers/' + esc(b.cover) + '" alt="" width="280" height="' + COVER_SHAPES[shape] + '" loading="lazy" decoding="async">' : '';
+    // Catalog books use the covers that ship with the app; books she added can have her own photo.
+    const src = b._custom ? (b.photo || '') : (b.cover ? 'covers/' + b.cover : '');
+    const shape = !b._custom && COVER_SHAPES[b.cover_shape] ? b.cover_shape : 'tall';
+    const art = src ? '<img class="cover-art" src="' + esc(src) + '" alt="" width="280" height="' + COVER_SHAPES[shape] + '" loading="lazy" decoding="async">' : '';
     return '<span class="cover p' + b._pal + ' m' + b._motif + (size ? ' ' + size : '') + (art ? ' has-art' + (shape !== 'tall' ? ' shape-' + shape : '') : '') + '" aria-hidden="true">' +
       '<span class="cover-title">' + esc(b.title) + '</span><span class="cover-initial">' + initial + '</span>' +
       '<span class="cover-author">' + esc(b.author) + '</span>' + art + seal + '</span>';
@@ -1277,7 +1280,8 @@
           ['Added', c.createdAt ? esc(fmtDay(localDay(c.createdAt))) : notAdded]
         ]) +
         '<p class="small-print">You added this book, so these details came from you. Check AR numbers with your teacher or AR BookFinder.</p>' +
-        '<div class="row-actions"><button type="button" class="btn" data-act="edit-book">' + icon('pencil') + 'Edit book</button>' +
+        '<div class="row-actions"><button type="button" class="btn" data-act="quick-photo">' + icon('camera') + (b.photo ? 'New cover photo' : 'Take a cover photo') + '</button>' +
+        '<button type="button" class="btn" data-act="edit-book">' + icon('pencil') + 'Edit book</button>' +
         '<button type="button" class="btn ghost danger" data-act="delete-book">' + icon('trash') + 'Delete book</button></div></section>';
   }
 
@@ -1339,6 +1343,80 @@
     return id;
   }
 
+  // ---------- Cover photos for books she adds ----------
+  // The picture is cropped to a book shape and shrunk right here (about 40 KB), so it stays small in the journal and backups.
+
+  let formPhoto = '';
+
+  function pickPhoto(done) {
+    $$('input.photo-input').forEach(old => old.remove());
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.className = 'photo-input';
+    input.hidden = true;
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (file) shrinkPhoto(file).then(done, () => toast('That picture didn’t work. Try another one.'));
+    });
+    // Inside the open sheet, so the picker isn't blocked behind it.
+    (sheet.open ? sheet : document.body).appendChild(input);
+    input.click();
+  }
+
+  function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const W = 360, H = 540;
+          let sw = img.naturalWidth, sh = img.naturalHeight;
+          if (!sw || !sh) return reject(new Error('empty picture'));
+          if (sh / sw > H / W) sh = sw * H / W; else sw = sh * W / H;
+          const canvas = document.createElement('canvas');
+          canvas.width = W;
+          canvas.height = H;
+          canvas.getContext('2d').drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, 0, 0, W, H);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function photoPickHtml() {
+    return (formPhoto ? '<img class="photo-preview" src="' + esc(formPhoto) + '" alt="Your cover photo" width="72" height="108">' : '<span class="photo-empty" aria-hidden="true">' + icon('camera') + '</span>') +
+      '<div class="row-actions"><button type="button" class="btn small" data-act="form-photo">' + icon('camera') + (formPhoto ? 'Take a new one' : 'Take a photo of the cover') + '</button>' +
+      (formPhoto ? '<button type="button" class="btn small ghost" data-act="form-photo-remove">Remove</button>' : '') + '</div>';
+  }
+
+  function refreshPhotoPick() {
+    const box = $('#bk-photo', sheet);
+    if (box) box.innerHTML = photoPickHtml();
+  }
+
+  async function setPhoto(id, photo) {
+    const prev = state.custom[id];
+    if (!prev) return;
+    const book = C.customBook(Object.assign({}, prev, { photo, updatedAt: new Date().toISOString() }));
+    try {
+      await db.putBooks([book]);
+    } catch (e) {
+      toast('This device would not save the photo. Try again.');
+      return;
+    }
+    state.custom[id] = book;
+    rebuildBooks();
+    state.dirty = true;
+    if (state.openId === id && sheet.open) openBook(id);
+    toast(book.photo ? 'Cover photo saved.' : 'Cover photo removed.');
+  }
+
   function bookFormHtml(id, prefill) {
     const editing = !!id;
     const c = editing ? state.custom[id] : C.customBook({ title: prefill || '' });
@@ -1355,6 +1433,7 @@
         '<label class="field"><span>AR points</span><input id="bk-points" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 6" value="' + esc(c.ar_points) + '"></label></div>' +
         '<p class="hint">Not sure? Leave these blank and add them later. You can look them up on <a href="https://www.arbookfind.com/" target="_blank" rel="noopener noreferrer">AR BookFinder</a> or ask your teacher.</p>' +
         '<label class="field"><span>What’s it about? <span class="hint">(optional)</span></span><textarea id="bk-desc" class="input" maxlength="2000" placeholder="A sentence or two, in your own words">' + esc(c.description) + '</textarea></label>' +
+        '<div class="field"><span class="label">Cover photo <span class="hint">(optional)</span></span><div class="photo-pick" id="bk-photo">' + photoPickHtml() + '</div></div>' +
         shelfPick +
         '<div class="error" id="bk-error" role="alert" hidden></div>' +
         '<div class="row-actions"><button type="submit" class="btn primary">' + (editing ? 'Save changes' : icon('plus') + 'Add book') + '</button>' +
@@ -1364,6 +1443,7 @@
 
   function openBookForm(id, prefill) {
     state.openId = id || null;
+    formPhoto = id && state.custom[id] ? state.custom[id].photo || '' : '';
     sheet.innerHTML = bookFormHtml(id, prefill);
     if (!sheet.open) sheet.showModal();
     sheet.scrollTop = 0;
@@ -1393,7 +1473,7 @@
     const now = new Date().toISOString();
     const id = editingId || newCustomId();
     const prev = state.custom[id];
-    const book = C.customBook({ id, title, author, ar_level: level, ar_points: points, description, createdAt: prev ? prev.createdAt : now, updatedAt: now });
+    const book = C.customBook({ id, title, author, ar_level: level, ar_points: points, description, photo: formPhoto, createdAt: prev ? prev.createdAt : now, updatedAt: now });
     try {
       await db.putBooks([book]);
     } catch (e) {
@@ -1811,6 +1891,9 @@
     'paid-plus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: cfg.paid + 1 }); renderMore(); },
     'add-book': el => openBookForm(null, el.dataset.title || ''),
     'edit-book': () => { flushNote(); openBookForm(state.openId); },
+    'quick-photo': () => { flushNote(); const id = state.openId; pickPhoto(photo => setPhoto(id, photo)); },
+    'form-photo': () => pickPhoto(photo => { formPhoto = photo; refreshPhotoPick(); }),
+    'form-photo-remove': () => { formPhoto = ''; refreshPhotoPick(); },
     'cancel-edit': () => openBook(state.openId),
     'pick-status': el => {
       const form = el.closest('form');

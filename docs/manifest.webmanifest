@@ -1,18 +1,17 @@
 {
-  "name": "The Reading Room",
-  "short_name": "Reading Room",
-  "description": "Find award-winning books, keep a reading journal, and track AR quiz points.",
+  "name": "Book Dude",
+  "short_name": "Book Dude",
+  "description": "The Book Dude’s Reading Room: find award-winning books, keep a reading journal, and track AR quiz points.",
   "id": "./",
   "start_url": "./?source=homescreen",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#FBF6EC",
-  "theme_color": "#FBF6EC",
+  "background_color": "#F4EADB",
+  "theme_color": "#F4EADB",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "icons/icon-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "maskable" }
   ]
 }

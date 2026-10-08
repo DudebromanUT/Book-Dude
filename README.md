@@ -1,6 +1,6 @@
-# Book-Dude — The Reading Room
+# Book Dude — The Reading Room
 
-A static, iPhone/iPad-friendly reading app for `DudebromanUT/Book-Dude`.
+A static, iPhone/iPad-friendly reading app for `DudebromanUT/Book-Dude`, hosted by the Book Dude from the Reading Room, an attic library full of books, with Dewey the Welsh terrier and Footnote the tabby cat.
 
 The catalog includes 637 distinct books, all with descriptions, and 468 sourced AR records. The other 169 remain explicitly unresolved. Source and edition notes are available in each book's details. No account, server database, paid service, or JavaScript build dependencies are needed.
 
@@ -11,7 +11,7 @@ The catalog includes 637 distinct books, all with descriptions, and 468 sourced 
 3. Once GitHub finishes deploying (a minute or two; watch the **Actions** tab), the app is at `https://dudebromanut.github.io/Book-Dude/` unless a custom domain is configured.
 4. Use HTTPS. All asset paths, the installation manifest, the service worker, and local database naming support the `/Book-Dude/` subdirectory.
 
-The repository is public, so Pages publishes the catalog and application to anyone with the URL. Personal records are never part of the published files. Do not commit exported backups (`.gitignore` already ignores `reading-room-backup-*.json`).
+The repository is public, so Pages publishes the catalog and application to anyone with the URL. Personal records are never part of the published files. The Dude's portrait (`docs/img/`) is part of the published site, so anyone with the link can see it. Do not commit exported backups (`.gitignore` already ignores `book-dude-backup-*.json` and the older `reading-room-backup-*.json`).
 
 GitHub's instructions: https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
 
@@ -27,7 +27,7 @@ A file opened from the iOS Files preview is not a reliable installation method. 
 
 ## What is included
 
-- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, or community score. Switch between covers and a list. **Surprise me** opens a random unfinished book from the current results.
+- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, or community score. Switch between covers (standing on wooden shelves) and a list. **Ask Footnote** opens a random unfinished book from the current results.
 - Every book gets its own generated cover, with a seal for its award (Newbery Medal or Honor, Beehive, Classic, Pulitzer, Printz, Carnegie, National Book Award). No cover images are downloaded.
 - **My Shelves**: Reading, Want to read, Finished, Paused, Favorites, and My books.
 - **Add your own books** for anything that isn't in the catalog: title, author (optional), AR book level and points (optional; blank stays unknown), and a short description. Use **Add a book** on My Shelves, or search for a title and tap **Add it as my book** when nothing matches (the search text becomes the title). Added books get a "My book" seal and work like every other book: shelves, notes, ratings, quiz points, search, the Progress dashboard, and backups. They can be edited or deleted from the book's page. If the title is already in the catalog, the app offers to open that book instead.
@@ -37,7 +37,8 @@ A file opened from the iOS Files preview is not a reliable installation method. 
 - Earned points are counted by quiz date; books finished are counted by completion date. Currently reading is always a present-day count. Undated completions count only in All time.
 - Awaiting quiz entry means finished books without an entered quiz result. Their known available points are shown separately; unknown values are never counted as zero-value books.
 - A book has one current quiz-result entry. Edit it to correct that result. Multiple attempts and repeated readings are not separate ledger entries in this version.
-- **More**: the reader's name (used in greetings), an accent color, backup and restore, device status, and notes about the data.
+- **The Dude**: a speech bubble on Explore with a saying of the day, or a nudge about the book she is reading or the quiz she hasn't entered yet (tap the bubble for another saying), and a **Meet the Dude** story with the crew and the rules of the Reading Room. A brand-new reader sees the story the first time the app opens; after that it is under More and behind the Dude's picture on Explore.
+- **More**: the reader's name (used in greetings), a color (leather, rug red, brass, ivy, teal, navy, plum, or berry), backup and restore, device status, and notes about the data.
 - JSON backup and restore (including added books). On iPhone and iPad, **Save a backup** opens the share sheet (choose **Save to Files**). Restore shows what will change before it changes anything, merges newer book records, and preserves newer device records. Annual goals already on the device take precedence. Unknown book records are retained in backups and totals.
 - Compatibility with the earlier reading-list version 1/2 JSON backups. Old notes and checkmarks migrate on import; they never become earned quiz points automatically.
 - Offline app and catalog after installation; external source links require a connection.
@@ -52,6 +53,12 @@ Local data is not encrypted by this application. Anyone with access to the unloc
 The browser may decline a persistent-storage request. Clearing website data, deleting an installation, device loss, or storage eviction can lose records. Save backups periodically (the Progress tab reminds you after 30 days) and before changing devices or website address. Save backups in a private Files/iCloud Drive location. The backup file contains notes in plain text.
 
 Changing the site address/path or opening the app in another browser creates a separate journal. Save a backup from the old location and restore it in the new one. Backups are the transfer mechanism; there is no automatic sync.
+
+## Change the Dude's story, sayings, or the pets' names
+
+Everything the Dude says lives in `docs/dude.js`: the dog's and cat's names (`dog`, `cat`), the daily `sayings`, and the `story` shown in Meet the Dude. `{dog}` and `{cat}` in any text are replaced with the names. Edit the file, then run `python3 scripts/build.py` so installed apps offer the update.
+
+The portrait and its crops are in `docs/img/` (`dude.jpg`, `dude-face.jpg`, `dog.jpg`, `cat.jpg`), and the home-screen icons are in `docs/icons/`. Replacing any of them also needs `python3 scripts/build.py`.
 
 ## Update the book catalog
 

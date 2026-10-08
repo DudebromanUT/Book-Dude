@@ -66,6 +66,11 @@
     pencil: '<path d="M15.5 5.5l3 3L8 19H5v-3z"/><path d="M13.5 7.5l3 3"/>',
     trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/>'
   };
+  // The Dude's crew and words live in dude.js so they are easy to edit.
+  const DUDE = Object.assign({ dog: 'Dewey', cat: 'Footnote', sayings: [], story: [], signoff: 'The Dude' }, window.BOOK_DUDE || {});
+  const fill = s => String(s || '').replace(/\{dog\}/g, DUDE.dog).replace(/\{cat\}/g, DUDE.cat);
+  const ACCENTS = { leather: 'Leather', rug: 'Rug red', brass: 'Brass', ivy: 'Ivy', teal: 'Teal', navy: 'Navy', plum: 'Plum', berry: 'Berry' };
+
   const icon = (name, cls) => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"' + (cls ? ' class="' + cls + '"' : '') + '>' + ICONS[name] + '</svg>';
 
   // ---------- Catalog ----------
@@ -196,7 +201,8 @@
     limit: PAGE,
     records: {},
     custom: {},
-    settings: { goals: {}, readerName: '', accent: 'teal', lastExportAt: '' },
+    settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false },
+    sayingOffset: 0,
     offline: 'checking',
     persisted: null,
     storage: 'loading',
@@ -361,6 +367,70 @@
       confettiEl.appendChild(bit);
     }
     setTimeout(() => confettiEl.replaceChildren(), 2800);
+  }
+
+  // ---------- The Dude ----------
+
+  function dayOfYear() {
+    const d = new Date();
+    return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+  }
+
+  // A nudge about her own books first; otherwise the saying of the day. Tapping the bubble cycles sayings.
+  function dudeLine() {
+    const name = state.settings.readerName;
+    const hey = name ? 'Hey, ' + name + '. ' : '';
+    if (!state.sayingOffset) {
+      const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
+      const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
+      const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
+      if (quiz) return hey + 'You finished ' + quiz[0].title + '. Took the AR quiz yet? Add your points on its page.';
+      const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
+      if (reading) {
+        const p = reading[1].progress || 0;
+        if (!p) return hey + 'How’s ' + reading[0].title + ' going?';
+        return hey + 'You’re ' + p + '% through ' + reading[0].title + '. ' + (p < 30 ? 'Good start.' : p < 75 ? 'Keep going.' : 'Almost there!');
+      }
+    }
+    const list = DUDE.sayings.length ? DUDE.sayings : ['Shoes off. Socks on. What are we reading?'];
+    const line = fill(list[(dayOfYear() + state.sayingOffset) % list.length]);
+    return state.sayingOffset ? line : hey + line;
+  }
+
+  function dudeHtml() {
+    return '<section class="dude" aria-label="The Dude">' +
+      '<button type="button" class="dude-avatar" data-act="story" aria-label="Meet the Dude"><img src="img/dude-face.jpg" alt="" width="60" height="60"></button>' +
+      '<button type="button" class="bubble" data-act="next-saying" aria-live="polite"><span class="who">The Dude says</span><span class="line">' + esc(dudeLine()) + '</span></button>' +
+      '</section>';
+  }
+
+  function storyHtml() {
+    const sections = DUDE.story.map(sec => {
+      let html = sec.heading ? '<h2>' + esc(fill(sec.heading)) + '</h2>' : '';
+      if (sec.paragraphs) html += sec.paragraphs.map(p => '<p>' + esc(fill(p)) + '</p>').join('');
+      if (sec.crew) {
+        html += '<ul class="crew">' + sec.crew.map(c => '<li><span class="face"><img src="' + esc(c.img) + '" alt="" width="64" height="64" loading="lazy"></span>' +
+          '<div><b>' + esc(fill(c.name)) + '</b><span class="txt">' + esc(fill(c.text)) + '</span></div></li>').join('') + '</ul>';
+      }
+      if (sec.list) {
+        const tag = sec.ordered ? 'ol' : 'ul';
+        html += '<' + tag + ' class="rules">' + sec.list.map(li => '<li>' + esc(fill(li)) + '</li>').join('') + '</' + tag + '>';
+      }
+      return '<section>' + html + '</section>';
+    }).join('');
+    return sheetBar('Meet the Dude') + '<div class="sheet-body story">' +
+      '<figure class="story-figure"><img src="img/dude.jpg" width="960" height="955" alt="The Dude in a worn leather armchair, surrounded by bookshelves, with a Welsh terrier and a tabby cat asleep on the rug"></figure>' +
+      '<div class="story-title"><h1>Meet the Dude</h1><p>Keeper of the Reading Room</p></div>' +
+      '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p></div>' +
+      '<div class="row-actions"><button type="button" class="btn primary" data-act="close-sheet">Let’s read</button></div></div>';
+  }
+
+  function openStory() {
+    state.openId = null;
+    sheet.innerHTML = storyHtml();
+    if (!sheet.open) sheet.showModal();
+    sheet.scrollTop = 0;
+    if (!state.settings.storySeen) saveSetting('storySeen', true);
   }
 
   function greeting() {
@@ -529,15 +599,17 @@
   function installTip() {
     const iosBrowser = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (!iosBrowser || navigator.standalone !== false || state.installTipDismissed) return '';
-    return '<div class="notice accent" id="install-tip"><strong>Put the Reading Room on your Home Screen</strong>' +
+    return '<div class="notice accent" id="install-tip"><strong>Put Book Dude on your Home Screen</strong>' +
       'In Safari, tap ' + '<b>Share</b>, then <b>Add to Home Screen</b>. Open it from that icon so your notes stay in one place.' +
       '<div class="row-actions"><button type="button" class="btn small" data-act="dismiss-tip">Got it</button></div></div>';
   }
 
   function renderExplore() {
+    state.sayingOffset = 0;
     const f = state.filters;
     main.innerHTML =
-      '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>Find your next book</h1></div><span id="offline-pill">' + offlinePill() + '</span></header>' +
+      '<header class="view-head"><div><p class="kicker">The Reading Room</p><h1>Find your next book</h1></div><span id="offline-pill">' + offlinePill() + '</span></header>' +
+      dudeHtml() +
       installTip() +
       '<div class="search" role="search">' +
         '<label class="search-box"><span class="visually-hidden">Search books</span>' + icon('search') +
@@ -560,7 +632,7 @@
       '</section>' +
       '<div class="chips" id="active-filters" aria-label="Active filters"></div>' +
       '<div class="toolbar"><span class="count" id="result-count" aria-live="polite"></span><div class="actions">' +
-        '<button type="button" class="btn small ghost" data-act="surprise">' + icon('shuffle') + 'Surprise me</button>' +
+        '<button type="button" class="btn small ghost" data-act="surprise" aria-label="' + esc(fill('Ask {cat} to pick a book')) + '"><img class="face" src="img/cat.jpg" alt="" width="26" height="26">' + esc(fill('Ask {cat}')) + '</button>' +
         '<div class="seg" role="group" aria-label="Layout">' +
           '<button type="button" data-act="layout" data-layout="grid" aria-label="Covers" aria-pressed="' + (state.layout === 'grid') + '">' + icon('grid') + '</button>' +
           '<button type="button" data-act="layout" data-layout="list" aria-label="List" aria-pressed="' + (state.layout === 'list') + '">' + icon('list') + '</button>' +
@@ -623,7 +695,8 @@
     if (!total) {
       const q = state.query.trim();
       results.innerHTML = q
-        ? '<div class="empty compact"><h2>No books match “' + esc(q) + '”</h2><p>Is it a book that isn’t in the Reading Room? Add it yourself and track it like any other book.</p>' +
+        ? '<div class="empty compact"><span class="pet"><img class="face" src="img/dog.jpg" alt="" width="84" height="84"></span>' +
+            '<h2>' + esc(DUDE.dog) + ' looked everywhere for “' + esc(q) + '”</h2><p>No luck. Is it a book that isn’t in the Reading Room? Add it yourself and track it like any other book.</p>' +
             '<div class="row-actions"><button type="button" class="btn primary" data-act="add-book" data-title="' + esc(q) + '">' + icon('plus') + 'Add it as my book</button>' +
             '<button type="button" class="btn" data-act="reset-all">Show all books</button></div></div>'
         : emptyState('No books match', 'Try loosening a filter.', '<button type="button" class="btn" data-act="reset-all">Show all books</button>') + addBookCta();
@@ -852,16 +925,18 @@
       failed: ['warn', 'Could not save for offline', 'Open the app again while online.']
     }[state.offline];
     const item = (kind, title, text) => '<li><span class="ico ' + kind + '">' + icon(kind === 'ok' ? 'ok' : kind === 'warn' ? 'alert' : 'info') + '</span><span><b>' + title + '</b>' + (text ? '<br><span class="hint">' + text + '</span>' : '') + '</span></li>';
-    const accents = ['teal', 'coral', 'plum', 'sky', 'berry', 'forest'];
 
     main.innerHTML =
       '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>More</h1></div></header>' +
       '<div class="settings-grid">' +
       '<div>' +
+        '<section class="panel meet"><span class="face"><img src="img/dude-face.jpg" alt="" width="96" height="96"></span><div><h2>Meet the Dude</h2>' +
+          '<p class="lead">Keeper of the Reading Room, Head of Cardigans, and world champion at losing glasses.</p>' +
+          '<div class="row-actions"><button type="button" class="btn small primary" data-act="story">Read the Dude’s story</button></div></div></section>' +
         '<section class="panel"><h2>Make it yours</h2><div class="stack">' +
           '<label class="field"><span>Your name</span><input id="reader-name" class="input" type="text" maxlength="40" autocomplete="given-name" placeholder="What should the app call you?" value="' + esc(state.settings.readerName) + '"></label>' +
-          '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + accents.map(a =>
-            '<button type="button" data-act="accent" data-accent="' + a + '" aria-label="' + a + '" aria-pressed="' + (state.settings.accent === a) + '"></button>').join('') + '</div></div>' +
+          '<div class="field"><span class="label" id="accent-label">Color</span><div class="accents" role="group" aria-labelledby="accent-label">' + Object.keys(ACCENTS).map(a =>
+            '<button type="button" data-act="accent" data-accent="' + a + '" aria-label="' + ACCENTS[a] + '" aria-pressed="' + (state.settings.accent === a) + '"></button>').join('') + '</div></div>' +
         '</div></section>' +
         '<section class="panel"><h2>Backups</h2><p class="lead">Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong.</p>' +
           '<p class="hint">' + (state.settings.lastExportAt ? 'Last backup: ' + esc(fmtDay(localDay(state.settings.lastExportAt))) : 'No backup saved yet.') + ' · ' + plural(total, 'book record') + (added ? ' and ' + plural(added, 'added book') : '') + ' on this device.</p>' +
@@ -1123,7 +1198,8 @@
   sheet.addEventListener('close', () => {
     flushNote();
     state.openId = null;
-    if (state.dirty) { state.dirty = false; render(true); }
+    // Her books changed, so let the Dude talk about them again.
+    if (state.dirty) { state.dirty = false; state.sayingOffset = 0; render(true); }
   });
   sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
   confirmBox.addEventListener('click', e => { if (e.target === confirmBox) confirmBox.close(); });
@@ -1142,7 +1218,7 @@
     refreshShelf();
     if (next === 'finished') {
       celebrate();
-      toast(r.earnedPoints === null ? 'You finished it! After the AR quiz, add your points below.' : 'You finished it!');
+      toast(r.earnedPoints === null ? 'You finished it! (The Dude is doing a happy sock dance.) After the AR quiz, add your points below.' : 'You finished it! (Happy sock dance.)');
     }
   }
 
@@ -1174,7 +1250,7 @@
     refreshShelf();
     if (pts > 0 && wasBlank) celebrate();
     const over = b && b._points !== null && pts > b._points;
-    toast(over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.' : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' : 'Quiz result updated.');
+    toast(over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.' : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.');
   }
 
   // ---------- Backups ----------
@@ -1199,7 +1275,7 @@
     flushNote();
     const data = C.exportBackup(state.records, state.settings, undefined, state.custom);
     const text = JSON.stringify(data, null, 2);
-    const name = 'reading-room-backup-' + today() + '.json';
+    const name = 'book-dude-backup-' + today() + '.json';
     let file = null;
     try { file = new File([text], name, { type: 'application/json' }); } catch (e) { file = null; }
     if (file && coarse() && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1326,7 +1402,11 @@
     const y = window.scrollY;
     setTabs();
     if (state.tab === 'explore') {
-      if (keepScroll && $('#results')) updateResults(); else renderExplore();
+      if (keepScroll && $('#results')) {
+        updateResults();
+        const line = $('.bubble .line');
+        if (line) line.textContent = dudeLine();
+      } else renderExplore();
     } else if (state.tab === 'shelves') renderShelves();
     else if (state.tab === 'progress') renderProgress();
     else renderMore();
@@ -1351,7 +1431,7 @@
   }
 
   function applyAccent() {
-    document.documentElement.dataset.accent = state.settings.accent || 'teal';
+    document.documentElement.dataset.accent = state.settings.accent || 'leather';
   }
 
   // ---------- Events ----------
@@ -1391,11 +1471,21 @@
       updateResults();
     },
     more: showMore,
+    // The cat naps on a random unfinished book from the current results.
     surprise: () => {
       const pool = lastResults.filter(b => { const r = state.records[b.book_id]; return !r || r.status !== 'finished'; });
       const list = pool.length ? pool : lastResults;
-      if (!list.length) { toast('No books match these filters.'); return; }
+      if (!list.length) { toast(DUDE.cat + ' couldn’t find a book to nap on. Try fewer filters.'); return; }
       openBook(list[Math.floor(Math.random() * list.length)].book_id);
+      toast(DUDE.cat + ' fell asleep on this one. That means it’s good.');
+    },
+    story: () => openStory(),
+    'next-saying': el => {
+      state.sayingOffset += 1;
+      $('.line', el).textContent = dudeLine();
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
     },
     'dismiss-tip': () => { state.installTipDismissed = true; saveUi(); const tip = $('#install-tip'); if (tip) tip.remove(); },
     shelf: el => { state.shelf = el.dataset.shelf; saveUi(); renderShelves(); },
@@ -1554,7 +1644,7 @@
 
   async function start() {
     if (!C || !BOOKS.length) {
-      main.innerHTML = emptyState('The book list did not load', 'Close the app and open it again while online.');
+      main.innerHTML = emptyState('The book list did not load', 'Close Book Dude and open it again while online.');
       return;
     }
     loadUi();
@@ -1568,6 +1658,7 @@
     if (typeof s.readerName === 'string') state.settings.readerName = s.readerName;
     if (typeof s.accent === 'string') state.settings.accent = s.accent;
     if (typeof s.lastExportAt === 'string') state.settings.lastExportAt = s.lastExportAt;
+    state.settings.storySeen = s.storySeen === true;
     applyAccent();
     if (!loaded.ok) {
       const warn = $('#storage-warning');
@@ -1578,6 +1669,9 @@
     const initial = location.hash.slice(1);
     state.tab = TABS.includes(initial) ? initial : 'explore';
     render();
+    // A brand-new reader meets the Dude first.
+    const isNew = !Object.keys(state.records).length && !Object.keys(state.custom).length;
+    if (!state.settings.storySeen && isNew) openStory();
     registerWorker();
   }
 

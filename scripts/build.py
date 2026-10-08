@@ -33,14 +33,18 @@ ASSETS = [
     'index.html',
     'styles.css',
     'core.js',
+    'dude.js',
     'app.js',
     'catalog.js',
     'manifest.webmanifest',
-    'icons/icon.svg',
+    'img/dude.jpg',
+    'img/dude-face.jpg',
+    'img/dog.jpg',
+    'img/cat.jpg',
     'icons/icon-180.png',
     'icons/icon-192.png',
-    'icons/icon-512.png',
-    'icons/icon-maskable-512.png',
+    'icons/icon-512.jpg',
+    'icons/icon-maskable-512.jpg',
 ]
 
 REQUIRED = ['book_id', 'award', 'category', 'year', 'title', 'author', 'description', 'ar_points']

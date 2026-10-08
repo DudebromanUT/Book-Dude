@@ -1,35 +1,36 @@
 <!doctype html>
-<html lang="en" data-accent="teal">
+<html lang="en" data-accent="leather">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>The Reading Room</title>
-  <meta name="description" content="Find award-winning books, keep a private reading journal, and track AR quiz points.">
+  <title>Book Dude</title>
+  <meta name="description" content="The Book Dude’s Reading Room: find award-winning books, keep a private reading journal, and track AR quiz points.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#FBF6EC" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#12171D" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F4EADB" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16100C" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Reading Room">
+  <meta name="apple-mobile-web-app-title" content="Book Dude">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="styles.css">
   <script src="core.js" defer></script>
   <script src="catalog.js" defer></script>
+  <script src="dude.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <div class="app">
     <nav class="tabbar" aria-label="Sections">
-      <a class="brand" href="#explore" aria-label="The Reading Room home">
-        <img src="icons/icon.svg" alt="" width="36" height="36">
-        <span>The Reading Room</span>
+      <a class="brand" href="#explore" aria-label="Book Dude home">
+        <img src="img/dude-face.jpg" alt="" width="40" height="40">
+        <span>Book Dude<small>The Reading Room</small></span>
       </a>
       <button type="button" class="tab" data-act="tab" data-tab="explore">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
@@ -50,12 +51,12 @@
     </nav>
     <div class="content">
       <div class="banner" id="update" hidden>
-        <span>A new version of the app is ready.</span>
+        <span>A new version of Book Dude is ready.</span>
         <button type="button" class="btn small primary" data-act="update-app">Update app</button>
       </div>
       <div class="banner warn" id="storage-warning" hidden></div>
       <main id="main" tabindex="-1">
-        <p class="loading">Opening the Reading Room…</p>
+        <p class="loading">Finding the Dude’s glasses…</p>
       </main>
     </div>
   </div>
@@ -63,6 +64,6 @@
   <dialog id="confirm" class="sheet small" aria-labelledby="confirm-title"></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
-  <noscript><p class="loading">The Reading Room needs JavaScript turned on.</p></noscript>
+  <noscript><p class="loading">Book Dude needs JavaScript turned on.</p></noscript>
 </body>
 </html>

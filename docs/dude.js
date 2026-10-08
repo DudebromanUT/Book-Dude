@@ -34,7 +34,6 @@ window.BOOK_DUDE = {
     'The ladder squeaks on the fourth rung. I named the squeak Gary. We’re close.',
     'Doctor’s orders: two chapters before bed. I was a doctor. I checked.',
     'I once read so long my hot cocoa turned into iced cocoa. Then back into hot cocoa. It was a long book.',
-    'Rule #7: do not ask about the wings.',
     'Bedtime arrives 40% faster when you’re in the middle of a good chapter. That’s science. I was a physicist.',
     'I licked about four thousand rocks as a geologist. Granite tastes like a sidewalk. Do not recommend.',
     'I traded my only gold nugget for a copy of Treasure Island. The book had way more treasure in it.',
@@ -174,13 +173,11 @@ window.BOOK_DUDE = {
       heading: 'The rules of the Reading Room',
       ordered: true,
       list: [
-        'Shoes off. Socks on. Wool is best.',
+        'Safety is no accident.',
         'You don’t have to finish a book you don’t love. Put it on the Paused shelf. No hard feelings.',
         'If {cat} is asleep on a book, that’s your next book.',
         'Write things down: favorite lines, funny parts, words you didn’t know. That’s what My notes is for.',
-        'AR points are nice. Stories are better. (Points are still nice. Especially the book-money kind.)',
-        'Never let {dog} near the dictionary. It weighs more than {dog} does.',
-        'Do not ask about the wings.'
+        'AR points are nice. Stories are better. (Points are still nice. Especially the book-money kind.)'
       ]
     },
     {

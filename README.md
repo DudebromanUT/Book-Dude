@@ -27,7 +27,7 @@ A file opened from the iOS Files preview is not a reliable installation method. 
 
 ## What is included
 
-- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, or community score. Switch between covers (standing on wooden shelves) and a list. Cards and lists show each book's community score and AR points; the AR book level is on the book's page. **Ask Fig** opens a random unfinished book from the current results.
+- **Explore** all 637 books with search (title matches first), collection chips, and filters for AR book level, AR points, interest level, age guidance, and genre. Sort by award year, title, author, level, points, community score, or Open Library rating. Switch between covers (standing on wooden shelves) and a list. Cards and lists show each book's community score and AR points; the AR book level is on the book's page. **Ask Fig** opens a random unfinished book from the current results.
 - Real cover art for most books, from Open Library, with a small seal for the book's award (Newbery Medal or Honor, Beehive, Classic, Pulitzer, Printz, Carnegie, National Book Award). Books without a good cover, and books she adds without a photo, get a homemade cover in the same style. The covers ship with the site: the app saves them in the background after it is ready offline (More → This device shows how many are saved), and any cover not saved yet shows the homemade one. Each book's page credits Open Library.
 - **My Shelves**: Reading, Want to read, Finished, Paused, Favorites, and My books.
 - **Add your own books** for anything that isn't in the catalog: title, author (optional), AR book level and points (optional; blank stays unknown), a short description, and a cover photo (optional: **Take a photo of the cover** opens the camera or photo library, and the picture is cropped to a book shape and shrunk to about 40 KB on the device; it is also on the book's page as **Take a cover photo**). Use **Add a book** on My Shelves, or search for a title and tap **Add it as my book** when nothing matches (the search text becomes the title). Added books get a "My book" seal and work like every other book: shelves, notes, ratings, quiz points, search, the Progress dashboard, and backups. They can be edited or deleted from the book's page. If the title is already in the catalog, the app offers to open that book instead.
@@ -74,6 +74,10 @@ The portrait and its crops are in `docs/img/` (`dude.jpg`, `dude-face.jpg`, `dog
 - `python3 scripts/covers.py --redo BOOK_ID` looks a book up again.
 
 Then run `python3 scripts/build.py`. Cover file names are hashes of the pictures, so a changed cover reaches installed apps as a new file.
+
+## Open Library ratings
+
+`python3 scripts/ratings.py` fetches each book's reader rating from Open Library (the same work chosen for its cover) into four columns of `docs/books.csv`: `ol_work`, `ol_rating` (average out of 5), `ol_ratings` (how many readers rated it), and `ol_checked` (the day it was fetched). Run it now and then, since ratings change, then run `python3 scripts/build.py`. Each book's page shows the rating with a link to Open Library. **Highest Open Library rating** in Explore's sort ranks books with at least 5 ratings by their average first, then books with fewer ratings, then books nobody has rated; while that sort is on, the cards show the Open Library rating and how many ratings it has instead of the community score.
 
 ## Update the book catalog
 

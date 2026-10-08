@@ -110,6 +110,7 @@
     'points-down': 'Most AR points',
     'points-up': 'Fewest AR points',
     score: 'Highest community score',
+    'ol-rating': 'Highest Open Library rating',
     'my-rating': 'My ratings (best first)'
   };
 
@@ -157,6 +158,8 @@
       _level: number(raw.ar_level),
       _points: C.knownPoints(raw),
       _score: number(raw.score),
+      _ol: number(raw.ol_rating),
+      _olCount: parseInt(raw.ol_ratings, 10) || 0,
       // Added books sort by the year they were added.
       _year: custom ? (parseInt(String(raw.createdAt).slice(0, 4), 10) || 0) : (parseInt(raw.year, 10) || 0),
       _pal: h % 12,
@@ -686,7 +689,12 @@
   function scoreTag(b) {
     return b._score !== null ? '<span class="tag score" title="Community score, out of 5">Score ' + esc(b.score) + '</span>' : '';
   }
-  const browseTag = b => (b._custom ? levelTag(b) : scoreTag(b));
+  // Sorting by Open Library rating shows that rating on the cards instead.
+  const OL_MIN_RATINGS = 5;
+  function olTag(b) {
+    return b._ol !== null ? '<span class="tag score" title="Open Library rating, out of 5, from ' + plural(b._olCount, 'reader') + '">OL ' + b._ol.toFixed(1) + ' (' + fmtNum(b._olCount) + ')</span>' : '';
+  }
+  const browseTag = b => (b._custom ? levelTag(b) : state.sort === 'ol-rating' ? olTag(b) : scoreTag(b));
   function pointsTag(b) {
     if (b._points !== null) return '<span class="tag pts">' + fmtNum(b._points) + (b._points === 1 ? ' pt' : ' pts') + '</span>';
     return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
@@ -782,6 +790,11 @@
       case 'points-down': return nullsLast('_points', -1);
       case 'points-up': return nullsLast('_points', 1);
       case 'score': return nullsLast('_score', -1);
+      case 'ol-rating': {
+        // A book needs a few ratings to rank by its average; books with fewer come next, then books nobody rated.
+        const tier = b => (b._ol === null ? 2 : b._olCount < OL_MIN_RATINGS ? 1 : 0);
+        return (a, b) => tier(a) - tier(b) || (b._ol || 0) - (a._ol || 0) || b._olCount - a._olCount || byTitle(a, b);
+      }
       case 'my-rating': {
         const mine = b => { const r = state.records[b.book_id]; return r && r.rating ? r.rating : 0; };
         return (a, b) => mine(b) - mine(a) || byTitle(a, b);
@@ -1318,6 +1331,7 @@
     facts.push(['Ages', b.ages ? esc(b.ages) : '<span class="hint">Not listed</span>']);
     facts.push(['Genre', b.genre ? esc(b.genre) : '<span class="hint">Not listed</span>']);
     if (b.score) facts.push(['Community score', esc(b.score) + ' out of 5 <span class="hint">(supplied, believed Goodreads, not verified)</span>']);
+    if (b.ol_work) facts.push(['Open Library rating', (b._ol !== null ? '<b>' + esc(b._ol.toFixed(2)) + '</b> out of 5 <span class="hint">(' + plural(b._olCount, 'reader rating') + ')</span>' : '<span class="hint">No ratings yet</span>') + ' · ' + links('https://openlibrary.org/works/' + b.ol_work, 'See it')]);
     if (b.cover) facts.push(['Cover', /^OL\d+[MW]$/.test(b.cover_ol || '') ? links('https://openlibrary.org/' + (b.cover_ol.endsWith('W') ? 'works/' : 'books/') + b.cover_ol, 'Open Library') : 'Open Library']);
     const descSource = b.description_source ? ' · ' + links(b.description_source) : '';
 

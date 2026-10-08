@@ -132,6 +132,12 @@ def validate(rows):
         for k in ('ar_points', 'ar_level', 'score'):
             if r.get(k) and not NUMBER_RE.match(r[k]):
                 errors.append(f'{where}: {k} "{r[k]}" is not a number (leave it blank if unknown)')
+        if r.get('ol_rating') and (not NUMBER_RE.match(r['ol_rating']) or float(r['ol_rating']) > 5):
+            errors.append(f'{where}: ol_rating "{r["ol_rating"]}" must be a number from 0 to 5')
+        if r.get('ol_ratings') and not r['ol_ratings'].isdigit():
+            errors.append(f'{where}: ol_ratings "{r["ol_ratings"]}" must be a whole number')
+        if r.get('ol_work') and not re.match(r'^OL\d+W$', r['ol_work']):
+            errors.append(f'{where}: ol_work "{r["ol_work"]}" must look like OL12345W')
         if r['ar_points'] and not r.get('ar_source'):
             errors.append(f'{where}: ar_points needs an ar_source link')
         for k in URL_FIELDS:

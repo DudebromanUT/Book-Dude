@@ -45,6 +45,7 @@ ASSETS = [
     'img/dude-face.jpg',
     'img/dog.jpg',
     'img/cat.jpg',
+    'img/bb.webp',
     'icons/icon-180.png',
     'icons/icon-192.png',
     'icons/icon-512.jpg',

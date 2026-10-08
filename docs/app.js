@@ -346,8 +346,10 @@
     if (state.settings.pets && window.BookPets) window.BookPets.start({ dog: DUDE.dog, cat: DUDE.cat, lines: DUDE.pets });
   }
   function petsHint() {
-    const hawk = DUDE.pets.hawk && DUDE.pets.hawk.name ? fill(DUDE.pets.hawk.name) : 'the hawk';
-    return 'Bobby Joe, ' + DUDE.dog + ', ' + DUDE.cat + ', and ' + hawk + ' take turns visiting, one each time the app opens. Tap one to hear from it.';
+    const P = window.BookPets;
+    const names = (P ? P.pets : []).map(id => (DUDE.pets[id] && DUDE.pets[id].name ? fill(DUDE.pets[id].name) : 'the ' + (P.kinds[id] || 'pet')));
+    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1] : names.join('') || 'The pets';
+    return list.charAt(0).toUpperCase() + list.slice(1) + ' take turns visiting, one each time the app opens. Tap one to hear from it.';
   }
 
   async function saveSetting(key, value) {

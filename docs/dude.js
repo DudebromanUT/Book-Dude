@@ -222,6 +222,17 @@ window.BOOK_DUDE = {
   // The visiting pets: one comes by each time the app opens, in turn. Tap a pet to hear a line.
   // A blank name makes the pet go by what it is (for example "Red-tailed hawk").
   pets: {
+    bb: { name: 'BB', lines: [
+      'Hi, I’m BB. I’m a blanket. My job is keeping you cozy while you read. I am extremely good at my job.',
+      'Best reading spot: under me. Second-best reading spot: also under me.',
+      'I’ve been practicing math. 10 + 2 = 12. Next I’m learning long division. Then long books.',
+      'I brought a pencil in case you want to write something in My notes.',
+      'Blanket + flashlight + book = the best fort ever invented.',
+      'If a book gets scary, I’m right here. You can pull me up to your nose.',
+      'My bows are green. {cat} keeps trying to untie them.',
+      'Sometimes I’m a cape. Don’t tell the Dude.',
+      'I’m the official blanket of the Reading Room. There was an election. I was the only one running.'
+    ] },
     bobby: { name: 'Bobby Joe', lines: [
       'People say secretary birds got their name because our head feathers look like old quill pens. I have never once answered a phone.',
       'I walk about 20 miles a day. You could read a whole chapter in that time. Maybe two.',

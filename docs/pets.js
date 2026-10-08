@@ -105,12 +105,14 @@
   };
 
   const PETS = {
+    // BB is a hand drawing (docs/img/bb.webp), so BB waddles instead of stepping and never flips around.
+    bb: { img: 'img/bb.webp', w: 152, h: 210, size: 68, speed: 34, kind: 'blanket', sink: 0 },
     bobby: { art: 'bobby', size: 64, speed: 48, kind: 'secretary bird' },
     maple: { art: 'maple', size: 54, speed: 64, kind: 'Welsh terrier' },
     fig: { art: 'fig', size: 50, speed: 44, kind: 'gray tabby' },
     hawk: { art: 'hawk', size: 52, speed: 170, kind: 'red-tailed hawk', flies: true }
   };
-  const ORDER = ['bobby', 'maple', 'fig', 'hawk'];
+  const ORDER = ['bb', 'bobby', 'maple', 'fig', 'hawk'];
   const KEY = 'book-dude:pet';
 
   let layer = null, el = null, bubble = null, pet = null, id = '';
@@ -124,7 +126,7 @@
     let i;
     try {
       const saved = parseInt(localStorage.getItem(KEY), 10);
-      i = saved >= 0 ? saved % ORDER.length : 0;  // Bobby Joe makes the first visit.
+      i = saved >= 0 ? saved % ORDER.length : 0;  // BB makes the first visit.
       localStorage.setItem(KEY, String((i + 1) % ORDER.length));
     } catch (e) {
       i = Math.floor(Math.random() * ORDER.length);  // Private browsing: a random pet is fine.
@@ -141,7 +143,7 @@
   }
   function bounds() {
     const f = floor();
-    return { min: f.left, max: Math.max(f.left, window.innerWidth - pet.size - 6), ground: f.y - pet.size + 3 };
+    return { min: f.left, max: Math.max(f.left, window.innerWidth - pet.size - 6), ground: f.y - pet.size + (pet.sink === undefined ? 3 : pet.sink) };
   }
 
   function place() { el.style.transform = 'translate3d(' + Math.round(x) + 'px,' + Math.round(y) + 'px,0)'; placeBubble(); }
@@ -269,7 +271,8 @@
     el.style.width = el.style.height = pet.size + 'px';
     const name = fill((lines[id] && lines[id].name) || '');
     el.setAttribute('aria-label', (name ? name + ' the ' + pet.kind : 'A ' + pet.kind) + ' came to visit. Tap to hear what they have to say.');
-    el.innerHTML = '<span class="critter-body">' + ART[pet.art] + '</span>';
+    const art = pet.img ? '<img src="' + pet.img + '" alt="" width="' + pet.w + '" height="' + pet.h + '" draggable="false">' : ART[pet.art];
+    el.innerHTML = '<span class="critter-body">' + art + '</span>';
     el.addEventListener('click', tapped);
     el.addEventListener('animationend', e => { if (e.animationName === 'pet-hop') el.classList.remove('hop'); });
     bubble = document.createElement('div');
@@ -295,5 +298,7 @@
     layer = el = bubble = null;
   }
 
-  window.BookPets = { start, stop, pets: ORDER.slice(), art: ART };
+  const kinds = {};
+  ORDER.forEach(k => { kinds[k] = PETS[k].kind; });
+  window.BookPets = { start, stop, pets: ORDER.slice(), kinds, art: ART };
 })();

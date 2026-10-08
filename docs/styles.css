@@ -799,7 +799,15 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .critter-hawk .head { animation: pet-look 6s ease-in-out infinite; }
 .critter-hawk .wing { transform-box: view-box; transform-origin: 37px 31px; animation: pet-flap .32s ease-in-out infinite alternate; }
 .critter-hawk .wing-far { animation-name: pet-flap-far; }
-.critter.hop .critter-body > svg { animation: pet-hop .45s ease-out; }
+.critter.hop .critter-body > svg, .critter-bb.hop .critter-body { animation: pet-hop .45s ease-out; }
+/* BB, drawn by hand: waddles, sways, and keeps facing forward so the homework stays readable. */
+.critter-bb .critter-body { position: relative; }
+.critter-bb.left .critter-body { transform: none; }
+.critter-bb img { display: block; height: 100%; width: auto; margin: 0 auto; transform-origin: 50% 100%; animation: bb-sway 3.2s ease-in-out infinite; -webkit-user-select: none; user-select: none; }
+.critter-bb.walking img { animation: bb-waddle .42s ease-in-out infinite alternate; }
+.critter-bb .critter-body::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 4px; border-radius: 50%; background: rgb(40 25 10 / .2); z-index: -1; }
+@keyframes bb-sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes bb-waddle { from { transform: rotate(-7deg) translateY(0); } to { transform: rotate(7deg) translateY(-2px); } }
 @keyframes pet-step { 0%, 100% { transform: rotate(20deg); } 50% { transform: rotate(-20deg); } }
 @keyframes pet-bob { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
 @keyframes pet-nod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }

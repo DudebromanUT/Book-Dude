@@ -220,7 +220,7 @@ window.BOOK_DUDE = {
   ],
 
   // The visiting pets: one comes by each time the app opens, in turn. Tap a pet to hear a line.
-  // Leave a name blank and the pet goes by what it is ("Red-tailed hawk").
+  // A blank name makes the pet go by what it is (for example "Red-tailed hawk").
   pets: {
     bobby: { name: 'Bobby Joe', lines: [
       'People say secretary birds got their name because our head feathers look like old quill pens. I have never once answered a phone.',
@@ -252,7 +252,8 @@ window.BOOK_DUDE = {
       'Millions of Cats is a true story. Mostly about me.',
       'The stripes are for speed. The naps are for balance.'
     ] },
-    hawk: { name: '', lines: [
+    hawk: { name: 'Reddy', lines: [
+      'They call me Reddy. Partly because of my tail. Mostly because I’m always ready for the next chapter.',
       'Kee-eeee-arrr! When an eagle screams in a movie, that’s really a red-tailed hawk like me. Real eagles sound like squeaky toys.',
       'I can spot a mouse from 100 feet up. I can spot an unfinished chapter from 200.',
       'In My Side of the Mountain, Sam trains a falcon named Frightful. Falcons are fine. Hawks have red tails. Just pointing that out.',

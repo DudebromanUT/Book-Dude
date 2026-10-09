@@ -101,11 +101,51 @@ The Open Library work in `ol_work` is the source of truth for ratings and ISBNs.
 
 Do not manually edit generated catalog.js or sw.js. No automatic fetching of AR information is performed. The source CSV still contains unverified supplied ratings and incomplete age/genre data; the app labels them accordingly.
 
+## Where the code lives
+
+The app is plain HTML, CSS, and JavaScript with no frameworks or outside libraries; GitHub Pages serves `docs/` as it is.
+
+| File | What it is |
+|---|---|
+| `docs/index.html` | The page itself: the tab bar, the sheet and confirm boxes, and the scripts it loads |
+| `docs/styles.css` | The look |
+| `docs/core.js` | Points math, dates, records, and backup checking (no screen code, so the tests run it in Node) |
+| `docs/catalog.js` | The book list, generated from `docs/books.csv` by `scripts/build.py` |
+| `docs/dude.js` | Everything the Dude says |
+| `docs/pets.js` | The visiting pets |
+| `docs/app/` | The screens and everything behind them, one file per part (below) |
+| `docs/sw.js` | The offline service worker, generated from `scripts/sw.template.js` |
+
+In `docs/app/`:
+
+| To change | Open |
+|---|---|
+| What happens when the app opens | `main.js` |
+| The Explore tab: search, filters, sorting, and the wall of books | `explore.js` |
+| The My Shelves tab | `shelves.js` |
+| The Progress tab: points, goals, the chart, and collections | `progress.js` |
+| The More tab: name, color, the pets switch, and how the device is doing | `more.js` |
+| A book's page: shelf buttons, rating, notes, the quiz result, and the library link | `book.js` |
+| Books she adds: the form, cover photos, editing, and deleting | `my-books.js` |
+| The book money jar, its grown-up settings, and the Secret Files | `money.js` |
+| The Dude's speech bubble, the P.S. line, and the About the Dude story (the words are in `docs/dude.js`) | `dude-talk.js` |
+| Covers, tags, cards, and list rows that every screen uses | `cards.js` |
+| Saving a backup and restoring one | `backup.js` |
+| Working offline, saving covers, and the "new version" banner | `offline.js` |
+| Switching tabs | `tabs.js` |
+| The book list as the screens use it, and the filter and sort choices | `books.js` |
+| The app's state and saving to the device (IndexedDB) | `state.js` |
+| Toasts, confetti, and the sheet and confirm boxes | `page.js` |
+| Shared helpers and icons | `util.js`, `icons.js` |
+| How taps, typing, and forms reach the right file | `events.js` |
+
+Each file lists what it uses from the others at the top (`import`). A button's HTML names what it does (`data-act="fav"`), and the same file's `actions` list holds that name and its code; typing, changed fields, and form submits work the same way (`inputs`, `changes`, `submits`). `events.js` gathers those lists, so adding a button or a field touches only the file that draws it. `scripts/build.py` adds every file in `docs/app` to the offline list automatically; a new file needs an `import` from a file that is already used.
+
 ## Verification
 
-Run `node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs` and `python3 scripts/build.py --check`. The **Checks** GitHub Action runs both on every push.
+Run `node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs`, `npx eslint docs/app`, and `python3 scripts/build.py --check`. The **Checks** GitHub Action runs all three on every push.
 
-The tests cover points calculations, date handling, backup migration/validation, added books (validation, totals, backup round-trip, restore merging), book-money math and settings, cover files and background cover saving (including offline and after updates), stable catalog IDs, and service-worker cache boundaries. Live iOS installation, Safari layout, and the deployed GitHub Pages origin still need a device check after publication.
+The tests cover points calculations, date handling, backup migration/validation, added books (validation, totals, backup round-trip, restore merging), book-money math and settings, cover files and background cover saving (including offline and after updates), stable catalog IDs, service-worker cache boundaries, and that the files in `docs/app` fit together (every `import` names something another file really provides, `main.js` reaches every file, and every file is saved for offline). The lint step catches a name used in a file without being defined or imported there. Live iOS installation, Safari layout, and the deployed GitHub Pages origin still need a device check after publication.
 
 ## Quick device check after publishing
 

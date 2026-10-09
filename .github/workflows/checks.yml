@@ -19,6 +19,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Unit and offline tests
-        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs
+        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs
+      - name: Every name in docs/app is defined or imported
+        run: npx --yes eslint@10.1.0 docs/app
       - name: Generated files are up to date
         run: python3 scripts/build.py --check

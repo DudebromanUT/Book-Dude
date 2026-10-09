@@ -32,13 +32,14 @@ COVER_NAME = re.compile(r'^[0-9a-f]{12}\.webp$')
 COVER_SHAPES = {'tall', 'short', 'square', 'wide'}  # Must match the shape classes in docs/styles.css.
 
 # Everything the installed app needs offline. sw.js is the worker itself and is never cached.
+# Every file in docs/app is included, so a new one works offline without being listed here.
 ASSETS = [
     'index.html',
     'styles.css',
     'core.js',
     'dude.js',
     'pets.js',
-    'app.js',
+    *sorted('app/' + p.name for p in (DOCS / 'app').glob('*.js')),
     'catalog.js',
     'manifest.webmanifest',
     'img/dude.jpg',

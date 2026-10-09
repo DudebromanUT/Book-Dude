@@ -1,0 +1,138 @@
+story length: 11443
+story start: About the Dude About the Dude SCIENTIST, EXPLORER, WAR HERO, JAZZ FANATIC, FORMER FAIRY Meet the Dude Real name: unknown. Nobody knows the Dude’s real name. Not the mail carrier. Not the librarian. Not even Maple, whose olfactory talents are legendary. He is a scientist, an explorer, a war hero, a jazz fanatic and a former fairy. But above everything else, he is a reader. A bibliophile, if you wan
+story end: Most of the books the Dude mentions in this story are waiting on the Reading Room shelves. Type one into the search box and see if Maple can fetch it. Now pull up a chair. That one is the comfy one. Oh, wait. Fig is asleep on a book. You know what that means. What are we reading? The Dude Let’s read
+pet visiting: BB the blanket came to visit. Tap to hear what they have to say.
+pets off toast: The pets are taking a nap.
+pet layer after off: 0
+explore head: Good morning Find your next book Ready offline
+result count: 637 books
+collections: All 637 Newbery Medal 105 Newbery Honor 346 Beehive (Utah) 97 Classics 54 Pulitzer 20 Printz 15 Carnegie 4 National Book Award 3
+install tip: Put Book Dude on your Home Screen In Safari, tap Share, then Add to Home Screen. Open it from that icon so your notes stay in one place. Got it
+first cards: All the Blues in the Sky by Renée Watson. Newbery Medal 2026. Amazon rating 4.5 out of 5 from 180 ratings. book level 5. 3 AR points || Duck and Moose: Duck Moves In! by Kirk Reedstrom. Beehive Graphic Novel 2026. Amazon rating 4.9 out of 5 from 16 ratings. AR points not verified || Dungeons and Drama by Kristy Boyce. Beehive Young Adult 2026. Amazon rating 4.4 out of 5 from 2,457 ratings. book level 4.7. 11 AR points || Faker by Gordon Korman. Beehive Children's Fiction 2026. Amazon rating 4.7 out of 5 from 690 ratings. book level 5.1. 8 AR points || The Girl Who Sang by Estelle Nadel with Bethany Strout; illustrated by Sammy Savos. Beehive YA Graphic Novel 2026. Amazon rating 4.8 out of 5 from 57 ratings. book level 3.2. 1 AR point || The Nine Moons of Han Yu and Luli by Karina Yan Glaser. Newbery Honor 2026. Amazon rating 4.7 out of 5 from 124 ratings. book level 6. 13 AR points
+bubble: THE DUDE SAYS The ladder squeaks on the fourth rung. I named the squeak Gary. We’re close.
+next saying 0: Mary finds a key to a secret garden. I found a key once too. It opens nothing. I’ve tried every door. It might be a key to a different book.
+next saying 1: If you see a bouncing pudding in Nevada, it’s mine. Do not eat it.
+next saying 2: Despereaux is a tiny mouse with enormous ears who loves stories. Fig read it and is now very confused about how to feel about mice.
+tip after dismiss: (none)
+search dragon count: 7 books found
+search dragon cards: Dragonfly | Dragon Rider | Dragon's Gate | Dragonwings | Jeremy Thatcher, Dragon Hatcher | My Father's Dragon
+active chips: “dragon”
+after clear query: 637 books / q=
+filters open: null true
+level 4: 139 books found / Level: 4.0 – 4.9 / count=1
+level+points+interest: 10 books found / The Crossover | I Survived Hurricane Katrina, 2005 | Inside Out & Back Again | The Miraculous Journey of Edward Tulane
+hide finished: Level: 4.0 – 4.9 Points: Under 3 Middle grades (4–8) Hiding finished
+cleared points chip: Level: 4.0 – 4.9 Middle grades (4–8) Hiding finished / select=
+reset filters: 637 books / / hide=false
+ages+genre: 0 books found / Ages: 6 to 9 Animal fiction
+sort award-old: A Midsummer Night's Dream | Hamlet | Macbeth | Pride and Prejudice / tags: Amazon 4.6 (211) 3 pts | Amazon 4.5 (11k) 7 pts
+sort title: ...And Now Miguel | 26 Fairmount Avenue | ABC Bunny | Abel's Island / tags: Amazon 4.6 (57) 8 pts | Amazon 4.8 (275) 1 pt
+sort author: The Poet X | Things Fall Apart | Mountains Are Free | Vaino / tags: Amazon 4.7 (6.9k) 5 pts | Amazon 4.3 (15k) 8 pts
+sort level-up: Mr. Wolf's Class | Pea, Bee, & Jay: Stuck Together | The Cardboard Kingdom | A First Time for Everything / tags: Amazon 4.6 (681) 0.5 pts | Amazon 4.7 (324) 0.5 pts
+sort level-down: Frankenstein | Pride and Prejudice | Wuthering Heights | Macbeth / tags: Amazon 4.6 (4.1k) 17 pts | Amazon 4.6 (39k) 27 pts
+sort points-down: Great Expectations | The Caine Mutiny | Jane Eyre | Little Women / tags: Amazon 4.4 (595) 35 pts | Amazon 4.7 (3.7k) 34 pts
+sort points-up: Annie and the Old One | BOX: Henry Brown Mails Himself to Freedom | Crown: An Ode to the Fresh Cut | Dark Emperor / tags: Amazon 4.9 (62) 0.5 pts | Amazon 4.7 (52) 0.5 pts
+sort amz-rating: The Return of the King | March: Book Three | Crown: An Ode to the Fresh Cut | Doctor De Soto / tags: Amazon 4.9 (15k) 22 pts | Amazon 4.9 (2.1k) 3 pts
+sort ol-rating: Other Words for Home | The Egypt Game | Garlic and the Vampire | The Poet X / tags: OL 5.0 (5) 5 pts | OL 4.9 (10) 7 pts
+sort score: Bridge to Terabithia | Charlotte's Web | Frog and Toad Together | From the Mixed-Up Files of Mrs. Basil E. Frankweiler / tags: List 5.0 5 pts | List 5.0 5 pts
+sort my-rating: ...And Now Miguel | 26 Fairmount Avenue | ABC Bunny | Abel's Island / tags: Amazon 4.6 (57) 8 pts | Amazon 4.8 (275) 1 pt
+sort award-new: All the Blues in the Sky | Duck and Moose: Duck Moves In! | Dungeons and Drama | Faker / tags: Amazon 4.5 (180) 3 pts | Amazon 4.9 (16) pts unverified
+list layout: All the Blues in the Sky Renée Watson Amazon 4.5 (180) 3 pts Newbery Medal · 2026 || Duck and Moose: Duck Moves In! Kirk Reedstrom Amazon 4.9 (16) pts unverified Beehive Graphic Novel · 2026 || Dungeons and Drama Kristy Boyce Amazon 4.4 (2.5k) 11 pts Beehive Young Adult · 2026
+beehive: 97 books found / Duck and Moose: Duck Moves In! | Dungeons and Drama | Faker
+after show more: 120
+no results: Maple looked everywhere for “zzqx” No luck. Is it a book that isn’t in the Reading Room? Add it yourself and track it like any other book. Add it as my book Show all books
+after reset-all: 637 books / q=
+surprise: Don't Look Behind You / Fig fell asleep on this one. That means it’s good.
+book sheet: Hatchet NEWBERY HONOR Hatchet Gary Paulsen Lvl 5.7 7 pts MG Find it at the library Salt Lake County Library. Tap Place hold, then log in with your library card. MY SHELF Favorite Want to read Reading Finished Paused My rating Tap a star to rate it. Tap it again to clear. MY NOTES Private to this device. Saves as you type. ABOUT THIS BOOK After a plane crash, a boy alone in the Canadian wilderness learns survival through mistakes, observation and persistence. Original summary · Present in supplied CSV Year 1988 (award year) Ages Not listed Genre Not listed Amazon rating 4.7 out of 5 (28,559 ratings) · See it Open Library rating 4.18 out of 5 (156 reader ratings) · See it Original list score 4.5 out of 5 (came with the book list; source not confirmed) ISBN 9781481486293 (1481486292) Cover Open Library ACCELERATED READER Book level 5.7 (reads like grade 5, month 7) AR points 7 Interest level Middle grades (4–8) Quiz number 367 Source Renaissance · checked Sep 28, 2026 Status Source checked AWARDS 1988 · Newbery · Honor
+library link: https://catalog.slcolibrary.org/polaris/search/searchresults.aspx?ctx=1.1033.0.0.1&type=Keyword&by=KW&sort=RELEVANCE&limit=TOM=bks&query=&page=0&term=Hatchet%20Paulsen
+reading shelf box: MY SHELF Favorite Want to read Reading Finished Paused My rating Tap a star to rate it. Tap it again to clear. HOW FAR ALONG? 0% Started on
+progress: 40%
+finished toast: You finished it! (The Dude is doing a happy sock dance.) After the AR quiz, add your points below.
+finished shelf box: MY SHELF Favorite Want to read Reading Finished Paused My rating Tap a star to rate it. Tap it again to clear. Finished on AR QUIZ RESULT This book’s quiz is worth up to 7 points. Points earned Quiz date Save quiz result Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.
+confetti bits: true
+fav: Added to your favorites. / true
+rate 4: Loved it!
+rate 4 again: Rating cleared.
+rate 5: Dude-level amazing!
+note typing: Saving…
+note saved: Saved.
+quiz empty: Type the points from the quiz, like 4 or 3.5. To remove a result, use Clear result.
+quiz abc: Points must be a number, like 4 or 3.5.
+quiz 7: Secret File unlocked: Junior Rock Licker! Find it on the Progress tab.
+quiz box: MY SHELF Favorite Want to read Reading Finished Paused My rating Dude-level amazing! Finished on AR QUIZ RESULT This book’s quiz is worth up to 7 points. 7 points earned Quiz taken Oct 6, 2026 Points earned Quiz date Update result Clear result Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.
+clear quiz confirm: Clear this quiz result? The book stays Finished. It will show as awaiting a quiz entry again. Clear result Cancel
+cleared: Quiz result cleared. / MY SHELF Favorite Want to read Reading Finished Paused My rating Dude-level amazing! Finished on AR QUIZ RESULT This book’s quiz is worth up to 7 points. Points earned Quiz date Save quiz result Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.
+quiz 7 again: Secret File unlocked: Junior Rock Licker! Find it on the Progress tab.
+explore after sheet: 1 book found / Hatchet by Gary Paulsen. Newbery Honor 1988. Amazon rating 4.7 out of 5 from 28,559 ratings. book level 5.7. 7 AR points. Finished. favorite. you rated it 5 out of 5
+bubble ps: (none)
+shelves: Good morning My shelves Add a book Reading 0 Want to read 0 Finished 1 Paused 0 Favorites 1 My books 0 Nothing on the go Open any book and tap Reading to keep your place here. Explore books
+shelf finished: Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
+shelf favorites: Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
+shelf want: Your wish list is empty Tap Want to read on any book to save it for later. Explore books
+shelf paused: Nothing paused Books you set aside for now will wait for you here. Explore books
+shelf mine: Add your own books Reading something that isn’t in the Reading Room? Add it here and track it like any other book: shelves, notes, and quiz points. Add a book
+shelf reading: Nothing on the go Open any book and tap Reading to keep your place here. Explore books
+add form: Add a book Add your own book For a book that isn’t in the Reading Room. It is saved on this device and in your backups. Title Author (optional) AR book level AR points Not sure? Leave these blank and add them later. You can look them up on AR BookFinder or ask your teacher. What’s it about? (optional) Cover photo (optional) Take a photo of the cover Put it on a shelf Want to read Reading Finished Paused Add book Cancel
+add empty: Give your book a title.
+add dupe: Hatchet by Gary Paulsen is already in the Reading Room. Open it Add mine anyway
+add bad points: AR points must be a number, like 6.
+error hides on typing: true
+picked status: reading
+form photo: Take a new one Remove / img=1
+form photo removed: Take a photo of the cover
+added toast: Added “The Moose Who Read Everything: Book One” to your books!
+custom sheet: The Moose Who Read Everything: Book One MY BOOK The Moose Who Read Everything: Book One Pat Example Lvl 2.6 1 pt Added by you Find it at the library Salt Lake County Library. Tap Place hold, then log in with your library card. MY SHELF Favorite Want to read Reading Finished Paused My rating Tap a star to rate it. Tap it again to clear. HOW FAR ALONG? 0% Started on MY NOTES Private to this device. Saves as you type. ABOUT THIS BOOK A moose reads every book in the library. AR book level 2.6 (reads like grade 2, month 6) AR points 1 Added Oct 9, 2026 You added this book, so these details came from you. Check AR numbers with your teacher or AR BookFinder. New cover photo Edit book Delete book Added “The Moose Who Read Everything: Book One” to your books!
+custom cover photo: data:image/jpeg;base64,
+edit form: Edit your book / The Moose Who Read Everything: Book One / photo=1
+after cancel edit: The Moose Who Read Everything: Book One
+edited: Book updated. / The Moose Who Read Everything: Book Two
+quick photo: Cover photo saved.
+delete confirm: Delete this book? The Moose Who Read Everything: Book Two will be removed from this device, along with its shelf, notes, and quiz result. Backups you already saved still include it. Delete book Cancel
+confirm closed: false
+deleted: Book deleted. / sheet open=false
+shelves after delete: Reading 0 Want to read 0 Finished 1 Paused 0 Favorites 1 My books 0
+prefilled: the purple pancake detectives
+own book added: Added “the purple pancake detectives” to your books! / the purple pancake detectives SAM SAMPLE MY BOOK the purple pancake detectives Sam Sample 5 pts Added by you Find it at the library Salt Lake County Library. Tap Place hold, then log in with your library card.
+my books chip: All 638 Newbery Medal 105 Newbery Honor 346 Beehive (Utah) 97 Classics 54 Pulitzer 20 Printz 15 Carnegie 4 National Book Award 3 My books 1
+progress: Good morning My progress BOOK MONEY BOOK MONEY JAR $7 of $100 7 of 100 points. At 100, $100 goes into your Barnes & Noble account. A few points are rattling around in there. Fig opened one eye. YOUR TITLE Junior Rock Licker Next Secret File opens at 20 points. In gold-miner money, that’s 1 pea-sized nuggets. The Dude would trade every one of them for a good book. 7 points all time = $7 · payouts earned: 0 2026 All time POINTS EARNED IN 2026 7 From 1 quiz this year Set a points goal 1 Book finished in 2026 0 Reading now Right now 0 Awaiting quiz entry All caught up 1 Quiz recorded in 2026 Time for a backup Your journal lives only on this device. You have not saved a backup yet. Save a backup The Dude’s Secret Files 1 of 14 unlocked A story from each of the Dude’s old jobs. Earn AR points to open them. FILE 1 Junior Rock Licker Geologist FILE 2 Top secret Opens at 20 pts FILE 3 Top secret Opens at 40 pts FILE 4 Top secret Opens at 60 pts FILE 5 Top secret Opens at 80 pts FILE 6 Top secret Opens at 100 pts FILE 7 Top secret Opens at 125 pts FILE 8 Top secret Opens at 150 pts FILE 9 Top secret Opens at 175 pts FILE 10 Top secret Opens at 200 pts FILE 11 Top secret Opens at 225 pts FILE 12 Top secret Opens at 250 pts FILE 13 Top secret Opens at 275 pts FILE 14 Top secret Opens at 300 pts Month by month Jan Feb Mar Apr May Jun Jul Aug Sep 7 Oct 1 Nov Dec AR points earned (by quiz date) Gold number: books finished Collections books finished, all time Newbery Medal 0 / 105 Newbery Honor 1 / 346 Beehive (Utah) 0 / 97 Classics 0 / 54 Pulitzer 0 / 20 Printz 0 / 15 Carnegie 0 / 4 National Book Award 0 / 3 My books 0 / 1
+chart: Oct: 7 points, 1 book finished
+jar: $7 of $100 in the book money jar
+all time hero: POINTS EARNED, ALL TIME 7 From 1 quiz recorded
+goal abc: A goal must be a number, like 50.
+goal 50: 7 of 50 pts POINTS EARNED IN 2026 43 to go to reach your goal of 50. Change goal
+goal removed: POINTS EARNED IN 2026 7 From 1 quiz this year Set a points goal
+locked file: 13 more points to open this one. Maple is guarding it.
+file sheet: Secret file 1 TOP SECRET FILE 1 · GEOLOGIST Junior Rock Licker My first job was geologist. Here’s a real fact: geologists lick rocks. A wet rock shows its true colors. I licked about four thousand rocks. Maybe four thousand and one. My tongue still knows what granite tastes like. Gravelly. Do not recommend. The Dude Back to reading
+shelf-go: Reading 0 / hash=#shelves
+more: Good morning More About the Dude Scientist, explorer, war hero, jazz fanatic and former fairy. Mostly, a reader. Real name: unknown. Read about the Dude Make it yours Your name Color Visiting pets BB, Bobby Joe, Maple, Fig, and Reddy take turns visiting, one each time the app opens. Tap one to hear from it. Book money FOR GROWN-UPS Turn AR points into a real reward. The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report. Show the Book Money Jar Dollars per point Points per payout Where the money goes Payouts already deposited − 0 + $1 a point × 100 points = $100 each payout. 7 points so far · 0 payouts earned · $0 waiting to be deposited. Set dollars per point to 0 for a reward that isn’t money. Backups Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong. No backup saved yet. · 2 book records and 1 added book on this device. Save a backup Restore from backup Restoring adds books from the file and keeps whichever copy of each book was changed most recently. Nothing is deleted. Backup files contain your notes in plain text, so keep them somewhere private. This device Ready offline The app and book list are saved on this device. Saved on this device Clearing website data or deleting the app removes your journal. Save backups now and then. Running in the browser For the best experience, add the app to your Home Screen: tap Share, then Add to Home Screen. The Home Screen app keeps its own separate journal. About the books 637 books from Newbery, Beehive, Printz, Pulitzer, Carnegie, National Book Award, and classics lists. 468 have AR details from a checked source; the other 169 are not verified yet, and a blank never means zero. You added 1 more book yourself. Always confirm the quiz and edition with your school before counting points. Amazon and Open Library ratings were collected in October 2026; the original list’s scores came with the list and their source was never confirmed. Each book shows where its information came from. Privacy No accounts, no ads, no tracking. Nothing you write leaves this device unless you save a backup file. Links to book sources open other websites.
+name: Hi, Maddy!
+accent: teal / true
+pets on: A pet is on the way. / layer=1
+pets off again: The pets are taking a nap. / layer=0
+reward off: The Book Money Jar is hidden.
+reward on: The Book Money Jar is on the Progress tab.
+reward per abc: Dollars per point must be a number, like 1 or 0.50. / 1
+reward every 0: Points for each reward must be a whole number, like 100. / 100
+reward every 5: Book money FOR GROWN-UPS Turn AR points into a real reward. The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report. Show the Book Money Jar Dollars per point Points per payout Where the money goes Payouts already deposited − 0 + $1 a point × 5 points = $5 each payout. 7 points so far · 1 payout earned · $5 waiting to be deposited. Set dollars per point to 0 for a reward that isn’t money.
+reward where: the library fund
+paid plus: 1
+paid minus: 0
+reward per 0: Book money FOR GROWN-UPS Turn AR points into a real reward. The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report. Show the Book Money Jar Dollars per point Points per payout The reward Rewards already given − 0 + 7 points so far · 1 reward earned · 1 waiting to be given. Set dollars per point to 0 for a reward that isn’t money.
+reward prize: Ice cream
+jar full: BOOK MONEY BOOK MONEY JAR 2 of 5 points until Ice cream BOOK MONEY! You earned Ice cream. Go tell a grown-up. The Dude says: wear good socks to the bookstore. 1 reward is waiting for a grown-up Grown-up: mark one as given YOUR TITLE Junior Rock Licker Next Secret File opens at 20 points. In gold-miner money, that’s 1 pea-sized nuggets. The Dude would trade every one of them for a good book. 7 points all time · rewards earned: 1
+reward given confirm: Mark book money as given? Tap this after a grown-up hands over Ice cream. The jar keeps counting toward the next one. Mark as given Cancel
+reward given: Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.) / 7 points all time · rewards earned: 1, given: 1
+export toast: Backup saved. Keep the file somewhere private.
+backup: {"app":"reading-room","version":1,"records":[{"id":"hatchet--gary-paulsen","status":"finished","favorite":true,"note":"Brian and the hatchet.","progress":100,"rating":5,"startedDate":"2026-10-01","finishedDate":"2026-10-05","earnedPoints":7,"quizDate":"2026-10-09","updatedAt":"(time)"},{"id":"mine:*","status":"want","favorite":false,"note":"","progress":null,"rating":null,"startedDate":"","finishedDate":"","earnedPoints":null,"quizDate":"","updatedAt":"(time)"}],"books":[{"id":"mine:*","title":"the purple pancake detectives","author":"Sam Sample","description":"","ar_level":"","ar_points":"5","createdAt":"(time)","updatedAt":"(time)"}],"settings":{"goals":{},"readerName":"Maddy","reward":{"on":true,"every":5,"perPoint":0,"where":"the library fund","prize":"Ice cream","paid":1,"updatedAt":"(time)"}}}
+restore same: Already up to date Everything in this backup is already on this device (or this device has newer changes). OK
+restore more: Restore this backup? 3 book records in the file 1 new to this device 2 left as they are (this device has the same or newer) 1 yearly goal added Nothing on this device is deleted. Backup made Oct 9, 2026. Restore Cancel
+restored: Restored 1 book.
+restore junk: Could not restore This file is not a Reading Room backup. Nothing on this device was changed. OK
+more after restore: Backups Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong. Last backup: Oct 9, 2026 · 3 book records and 1 added book on this device. Save a backup Restore from backup Restoring adds books from the file and keeps whichever copy of each book was changed most recently. Nothing is deleted. Backup files contain your notes in plain text, so keep them somewhere private.
+hash progress: My progress
+brand: Find your next book / hash=#explore
+story again: 11443
+story from avatar: 11443
+after update reload: Find your next book / Good morning, Maddy / accent=teal
+reloaded shelves: Reading 0 Want to read 1 Finished 2 Paused 0 Favorites 1 My books 1
+errors: none

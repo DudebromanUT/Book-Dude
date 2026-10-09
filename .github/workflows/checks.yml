@@ -24,3 +24,15 @@ jobs:
         run: npx --yes eslint@10.1.0 docs/app
       - name: Generated files are up to date
         run: python3 scripts/build.py --check
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright and Chromium
+        run: npm install --no-save --no-audit --no-fund playwright@1.56.1 && npx playwright install --with-deps chromium
+      - name: Click through every feature and compare with the saved run
+        run: node tests/browser/clickthrough.cjs

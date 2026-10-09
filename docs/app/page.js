@@ -45,14 +45,20 @@ export function closeSheet() {
   if (sheet.open) sheet.close();
 }
 
-export function showConfirm(title, bodyHtml, okLabel, onOk) {
+// A small box over the page: a title, a close button, and whatever goes inside.
+export function showBox(title, bodyHtml) {
   confirmBox.innerHTML = '<div class="sheet-bar"><span class="grab" aria-hidden="true"></span><h2 id="confirm-title">' + esc(title) + '</h2>' +
     '<button type="button" class="icon-btn" data-act="close-confirm" aria-label="Close">' + icon('x') + '</button></div>' +
-    '<div class="confirm-body">' + bodyHtml + '<div class="row-actions">' +
+    '<div class="confirm-body">' + bodyHtml + '</div>';
+  confirmBox.onOk = null;
+  if (!confirmBox.open) confirmBox.showModal();
+}
+
+export function showConfirm(title, bodyHtml, okLabel, onOk) {
+  showBox(title, bodyHtml + '<div class="row-actions">' +
     (okLabel ? '<button type="button" class="btn primary" data-act="confirm-ok">' + esc(okLabel) + '</button><button type="button" class="btn" data-act="close-confirm">Cancel</button>' : '<button type="button" class="btn primary" data-act="close-confirm">OK</button>') +
-    '</div></div>';
+    '</div>');
   confirmBox.onOk = onOk || null;
-  confirmBox.showModal();
 }
 
 export const actions = {

@@ -12,7 +12,7 @@ const SHELVES = [
   ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites'], ['mine', 'My books']
 ];
 
-function shelfBooks(key) {
+export function shelfBooks(key) {
   const out = [];
   if (key === 'mine') {
     for (const id of Object.keys(state.custom)) if (BY_ID.has(id)) out.push([BY_ID.get(id), rec(id)]);
@@ -69,6 +69,7 @@ export function renderShelves() {
       '<button type="button" class="chip" data-act="shelf" data-shelf="' + k + '" aria-pressed="' + (k === key) + '">' + label + ' <span class="n">' + counts[k] + '</span></button>').join('') + '</div>' +
     '<div class="list">' + (list.length ? list.map(([b, r]) => row(b, shelfSub(b, r, key))).join('') :
       emptyState(empties[key][0], empties[key][1], key === 'mine' ? addBtn : '<button type="button" class="btn primary" data-act="tab" data-tab="explore">Explore books</button>')) + '</div>' +
+    (list.length ? '<div class="row-actions share-list"><button type="button" class="btn small" data-act="share-shelf">' + icon('share') + 'Share this list</button></div>' : '') +
     (missing ? '<p class="notice soft" role="note">' + plural(missing, 'saved record is', 'saved records are') + ' for books no longer in the catalog. They stay in your totals and backups.</p>' : '');
   applySizes(main);
   revealChip($('.chips', main));

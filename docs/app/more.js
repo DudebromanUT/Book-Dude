@@ -70,7 +70,7 @@ export function renderMore() {
         withPoints + ' have AR details from a checked source; the other ' + (CATALOG_BOOKS.length - withPoints) + ' are not verified yet, and a blank never means zero.' +
         (added ? ' You added ' + plural(added, 'more book') + ' yourself.' : '') + '</p>' +
         '<p class="hint">Always confirm the quiz and edition with your school before counting points. Amazon and Open Library ratings were collected in October 2026; the original list’s scores came with the list and their source was never confirmed. Each book shows where its information came from.</p></section>' +
-      '<section class="panel"><h2>Privacy</h2><p class="lead">No accounts, no ads, no tracking. Nothing you write leaves this device unless you save a backup file. Links to book sources open other websites.</p></section>' +
+      '<section class="panel"><h2>Privacy</h2><p class="lead">No accounts, no ads, no tracking. Nothing you write leaves this device unless you save a backup file or share something yourself. Sharing opens Messages, Mail, or another app with the message filled in, so you see it before it sends. Links to book sources open other websites.</p></section>' +
     '</div></div>';
 }
 

@@ -45,12 +45,15 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 const log = [];
 const note = (k, v) => log.push(k + ': ' + (typeof v === 'string' ? clean(v) : JSON.stringify(v)));
 
-async function clickThrough(BASE) {
-  const browser = await chromium.launch();
+const errors = [];
+
+// A phone-sized page. Its clock starts at the test date and runs normally (only Date moves; timers are untouched),
+// "random" numbers repeat, and it is Safari in a browser tab (not the Home Screen) so the install tip shows. With
+// shareSheet, navigator.share is a stand-in that records what would go to the share sheet; without it (Chromium on
+// Linux has no share sheet), the app offers Copy message and Email instead.
+async function openPage(browser, { shareSheet }) {
   const ctx = await browser.newContext({ ...devices['iPhone 13'], acceptDownloads: true, locale: 'en-US', timezoneId: 'America/Denver' });
-  // The page's clock starts at the test date and runs normally (only Date moves; timers are untouched),
-  // "random" numbers repeat, and it is Safari in a browser tab (not the Home Screen) so the install tip shows.
-  await ctx.addInitScript(start => {
+  await ctx.addInitScript(([start, shareSheet]) => {
     const RealDate = Date, offset = start - RealDate.now();
     window.Date = class extends RealDate {
       constructor(...args) { if (args.length) super(...args); else super(RealDate.now() + offset); }
@@ -59,13 +62,20 @@ async function clickThrough(BASE) {
     let s = 12345;
     Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
     Object.defineProperty(navigator, 'standalone', { get: () => false, configurable: true });
-  }, Date.parse('2026-10-09T09:30:00-06:00'));
+    if (shareSheet) {
+      window.__shared = [];
+      navigator.share = data => { window.__shared.push(data); return Promise.resolve(); };
+    }
+  }, [Date.parse('2026-10-09T09:30:00-06:00'), shareSheet]);
   const p = await ctx.newPage();
   if (Number(process.env.THROTTLE) > 1) await (await ctx.newCDPSession(p)).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) });
-  const errors = [];
   p.on('pageerror', e => errors.push('pageerror ' + e.message));
   p.on('console', m => { if (m.type() === 'error') errors.push('console ' + m.text()); });
+  return { ctx, p };
+}
 
+// Waiting, reading what a page shows, and tapping things on it.
+function tools(p) {
   // Waits by checking the page every 100 ms, and says what it was waiting for if it gives up.
   const until = async (fn, arg, timeout = 15000) => {
     const end = Date.now() + timeout;
@@ -107,6 +117,16 @@ async function clickThrough(BASE) {
     await chooser.setFiles(PHOTO);
     await sleep(1000);
   };
+  return { until, shown, petHere, text, attr, all, cards, arm, toast, sheet, confirmText, tap, click, setVal, search, openSheet, closeSheet, pickPhoto };
+}
+
+async function clickThrough(BASE) {
+  const browser = await chromium.launch();
+  const { p } = await openPage(browser, { shareSheet: true });
+  const { until, shown, petHere, text, attr, all, cards, arm, toast, sheet, confirmText, tap, click, setVal, search, openSheet, closeSheet, pickPhoto } = tools(p);
+  // Shared links show the published address, whatever port this run's server uses.
+  const site = s => String(s).split(BASE).join('https://dudebromanut.github.io/Book-Dude/');
+  const lastShared = () => p.evaluate(() => JSON.stringify(window.__shared.pop() || null)).then(site);
 
   // ---- First launch: the story, then the pets go home so nothing random runs on its own.
   await p.goto(BASE);
@@ -222,6 +242,13 @@ async function clickThrough(BASE) {
   note('cleared', await toast() + ' / ' + await text('#shelf-box'));
   await p.fill('#earned-input', '7'); await click('form[data-form="quiz"] button[type="submit"]', 300);
   note('quiz 7 again', await toast());
+  // Sharing it: the preview, her note switched on, then what goes to the share sheet.
+  await click('[data-act="share-book"]', 300);
+  note('share book preview', await confirmText());
+  await click('#share-note', 200);
+  note('share preview with note', await text('#share-preview'));
+  await click('[data-act="share-send"]', 300);
+  note('shared book', await lastShared() + ' / preview still open=' + await p.evaluate(() => document.querySelector('#confirm').open));
   await closeSheet();
   note('explore after sheet', await text('#result-count') + ' / ' + (await all('#items .card', 'label')).slice(0, 1).join(''));
   note('bubble ps', await text('.dude .ps'));
@@ -230,6 +257,12 @@ async function clickThrough(BASE) {
   await click('.tab[data-tab="shelves"]', 400);
   note('shelves', await text('#main'));
   for (const s of ['finished', 'favorites', 'want', 'paused', 'mine', 'reading']) { await click('[data-act="shelf"][data-shelf="' + s + '"]', 250); note('shelf ' + s, await text('#main .list')); }
+  await click('[data-act="shelf"][data-shelf="finished"]', 250);
+  await click('[data-act="share-shelf"]', 300);
+  note('share list preview', await confirmText());
+  await click('[data-act="share-send"]', 300);
+  note('shared list', await lastShared());
+  await click('[data-act="shelf"][data-shelf="reading"]', 250);
   await openSheet('.view-head [data-act="add-book"]');
   note('add form', await sheet());
   await click('form[data-form="book"] button[type="submit"]', 200);
@@ -279,6 +312,9 @@ async function clickThrough(BASE) {
   await p.fill('#bk-author', 'Sam Sample'); await p.fill('#bk-points', '5');
   await click('form[data-form="book"] button[type="submit"]', 500);
   note('own book added', await toast() + ' / ' + await text('#sheet .book-hero'));
+  await click('[data-act="share-book"]', 300);
+  await click('[data-act="share-send"]', 300);
+  note('shared own book', await lastShared());
   await closeSheet();
   note('my books chip', await text('#coll-chips'));
 
@@ -395,6 +431,23 @@ async function clickThrough(BASE) {
   note('after update reload', await text('#main h1') + ' / ' + await text('.view-head .kicker') + ' / accent=' + await p.evaluate(() => document.documentElement.dataset.accent));
   await click('.tab[data-tab="shelves"]', 400);
   note('reloaded shelves', await text('#main .chips'));
+
+  // ---- Someone opens a shared link, on a computer with no share sheet.
+  const { ctx: ctx2, p: p2 } = await openPage(browser, { shareSheet: false });
+  await ctx2.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const t2 = tools(p2);
+  await p2.goto(BASE + '?book=holes--louis-sachar');
+  await t2.shown('#sheet[open]');
+  await p2.evaluate(() => navigator.serviceWorker.ready); await sleep(500);
+  note('shared link opens', await t2.text('#sheet h1') + ' / story shown=' + await p2.evaluate(() => !!document.querySelector('#sheet .story')) + ' / address now=' + site(await p2.evaluate(() => location.href)));
+  await t2.click('[data-act="share-book"]', 300);
+  note('share preview without share sheet', await t2.confirmText());
+  note('email link', site(decodeURIComponent(await t2.attr('#share-email', 'href'))));
+  await t2.click('[data-act="share-copy"]', 300);
+  note('copied', await t2.toast() + ' / ' + site(await p2.evaluate(() => navigator.clipboard.readText())));
+  await p2.goto(BASE + '?book=no-such-book');
+  note('unknown shared link', await t2.toast());
+  await ctx2.close();
   note('errors', errors.length ? errors.join(' || ') : 'none');
   await browser.close();
 }
@@ -410,12 +463,25 @@ function compare(actual) {
     console.log('All ' + log.length + ' steps match ' + path.relative(process.cwd(), EXPECTED) + '.');
     return true;
   }
-  const a = actual.split('\n'), e = expected.split('\n');
-  const changed = [];
-  for (let i = 0; i < Math.max(a.length, e.length); i++) if (a[i] !== e[i]) changed.push(i);
-  console.error(changed.length + ' line(s) differ from ' + path.relative(process.cwd(), EXPECTED) + ':');
-  for (const i of changed.slice(0, 15)) console.error('  line ' + (i + 1) + '\n  - ' + (e[i] === undefined ? '(missing)' : e[i]) + '\n  + ' + (a[i] === undefined ? '(missing)' : a[i]));
-  if (changed.length > 15) console.error('  ...and ' + (changed.length - 15) + ' more.');
+  // Steps by name (a repeated name gets a count), so a new step doesn't make every later line look changed.
+  const steps = s => {
+    const seen = {};
+    return new Map(s.split('\n').filter(Boolean).map(l => {
+      const i = l.indexOf(': '), k = l.slice(0, i);
+      seen[k] = (seen[k] || 0) + 1;
+      return [k + (seen[k] > 1 ? ' (' + seen[k] + ')' : ''), l.slice(i + 2)];
+    }));
+  };
+  const a = steps(actual), e = steps(expected), out = [];
+  for (const [k, v] of e) {
+    if (!a.has(k)) out.push('  missing step "' + k + '"\n  - ' + v);
+    else if (a.get(k) !== v) out.push('  "' + k + '" changed\n  - ' + v + '\n  + ' + a.get(k));
+  }
+  for (const [k, v] of a) if (!e.has(k)) out.push('  new step "' + k + '"\n  + ' + v);
+  if (!out.length) out.push('  the same steps, in a different order');
+  console.error(out.length + ' difference(s) from ' + path.relative(process.cwd(), EXPECTED) + ':');
+  for (const line of out.slice(0, 15)) console.error(line);
+  if (out.length > 15) console.error('  ...and ' + (out.length - 15) + ' more.');
   console.error('If the change is intended, run: UPDATE=1 node tests/browser/clickthrough.cjs');
   return false;
 }

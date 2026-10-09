@@ -24,8 +24,9 @@ import * as dudeTalk from './dude-talk.js';
 import * as money from './money.js';
 import * as backup from './backup.js';
 import * as offline from './offline.js';
+import * as share from './share.js';
 
-const FEATURES = [page, tabs, explore, shelves, progress, more, book, myBooks, dudeTalk, money, backup, offline];
+const FEATURES = [page, tabs, explore, shelves, progress, more, book, myBooks, dudeTalk, money, backup, offline, share];
 
 // One list per kind of event. A name used twice would quietly lose one handler, so that is reported.
 function gather(kind) {

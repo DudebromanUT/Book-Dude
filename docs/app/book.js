@@ -1,5 +1,5 @@
 /* A book's page (the sheet that slides up): details, shelf buttons, rating, notes, the AR quiz result,
- * and the library link. */
+ * and the library link. Its Share button is handled in share.js. */
 
 import { C, $, $$, esc, today, fmtNum, plural, fold, fmtDay, safeUrl, DUDE, fill } from './util.js';
 import { icon } from './icons.js';
@@ -29,7 +29,7 @@ function links(field, label) {
 // Salt Lake County Library catalog search for the book: the title (without a subtitle) and the
 // author's last name, books and e-books only. She places the hold and logs in on the library's site.
 const LIBRARY = 'https://catalog.slcolibrary.org/polaris/search/searchresults.aspx?ctx=1.1033.0.0.1&type=Keyword&by=KW&sort=RELEVANCE&limit=TOM=bks&query=&page=0&term=';
-function libraryUrl(b) {
+export function libraryUrl(b) {
   const names = String(b.author || '').split(/;| and | with |illustrated by|,/i)[0].trim().split(/\s+/).filter(w => !/^(jr|sr|ii|iii|iv)\.?$/i.test(w));
   return LIBRARY + encodeURIComponent((String(b.title).split(':')[0].trim() + ' ' + (names[names.length - 1] || '')).trim());
 }
@@ -78,7 +78,8 @@ function sheetHtml(b) {
   const r = rec(b.book_id);
   const hero = '<section class="book-hero">' + cover(b) + '<div><h1>' + esc(b.title) + '</h1>' + (b.author ? '<p class="by">' + esc(b.author) + '</p>' : '') +
     '<div class="tags">' + levelTag(b) + pointsTag(b) + mineTag(b) + (b.ar_interest ? '<span class="tag">' + esc(b.ar_interest) + '</span>' : '') + (b.ages ? '<span class="tag">Ages ' + esc(b.ages) + '</span>' : '') + '</div>' +
-    '<a class="btn small library-btn" href="' + esc(libraryUrl(b)) + '" target="_blank" rel="noopener noreferrer">' + icon('book') + 'Find it at the library</a>' +
+    '<div class="hero-actions"><button type="button" class="btn small" data-act="share-book">' + icon('share') + 'Share</button>' +
+      '<a class="btn small library-btn" href="' + esc(libraryUrl(b)) + '" target="_blank" rel="noopener noreferrer">' + icon('book') + 'Find it at the library</a></div>' +
     '<p class="hint library-hint">Salt Lake County Library. Tap Place hold, then log in with your library card.</p></div></section>';
   const personal = '<section id="shelf-box" class="box" aria-label="My shelf">' + shelfHtml(b) + '</section>' +
     '<section class="box"><h3><label for="note">My notes</label></h3><textarea id="note" class="input" placeholder="Favorite parts, characters, words to remember, what you thought…">' + esc(r.note) + '</textarea>' +

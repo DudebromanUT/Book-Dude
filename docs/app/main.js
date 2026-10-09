@@ -7,12 +7,13 @@
  * icons.js, and books.js, which never import the others. */
 
 import { C, $ } from './util.js';
-import { BOOKS, rebuildBooks } from './books.js';
+import { BOOKS, BY_ID, rebuildBooks } from './books.js';
 import { state, db, loadUi } from './state.js';
-import { main } from './page.js';
+import { main, toast } from './page.js';
 import { emptyState } from './cards.js';
 import { newDudeLine, openStory } from './dude-talk.js';
 import { applyAccent, startPets } from './more.js';
+import { openBook } from './book.js';
 import { registerWorker } from './offline.js';
 import { TABS, render } from './tabs.js';
 import { listen } from './events.js';
@@ -47,9 +48,16 @@ async function start() {
   state.tab = TABS.includes(initial) ? initial : 'explore';
   newDudeLine();
   render();
-  // A brand-new reader meets the Dude first.
-  const isNew = !Object.keys(state.records).length && !Object.keys(state.custom).length;
-  if (!state.settings.storySeen && isNew) openStory();
+  // A shared book (?book=...) opens right away, instead of the welcome story; the address then goes back to normal.
+  const shared = new URLSearchParams(location.search).get('book');
+  if (shared !== null) history.replaceState(null, '', location.pathname + location.hash);
+  if (shared && BY_ID.has(shared)) openBook(shared);
+  else {
+    if (shared) toast('That book isn’t in the Reading Room.');
+    // A brand-new reader meets the Dude first.
+    const isNew = !Object.keys(state.records).length && !Object.keys(state.custom).length;
+    if (!state.settings.storySeen && isNew) openStory();
+  }
   startPets();
   registerWorker();
 }

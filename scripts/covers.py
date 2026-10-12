@@ -50,7 +50,7 @@ SHAPES = {'tall': (280, 420), 'short': (280, 350), 'square': (280, 280), 'wide':
 STOP = {'the', 'a', 'an', 'of', 'and'}
 # Words that mark an edition as something other than the book itself, unless the catalog title says so.
 NOT_THE_BOOK = re.compile(r'\b(movie|film|tie in|motion picture|netflix|now a major|screenplay|adaptation|adapted|retold|abridged|'
-                          r'graphic novel|study guide|sparknotes|cliffsnotes|summary|teacher s guide|activity book|coloring|'
+                          r'graphic novel|manga|study guide|sparknotes|cliffsnotes|summary|teacher s guide|activity book|coloring|'
                           r'audio|audiobook|cassette|cd|braille|large print|sound recording)\b')
 
 lock = threading.Lock()

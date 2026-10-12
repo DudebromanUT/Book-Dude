@@ -39,7 +39,7 @@ import covers  # noqa: E402
 
 API = 'https://api.amazonscraperapi.com/api/v1/amazon/'
 COLUMNS = ['amz_asin', 'amz_rating', 'amz_ratings', 'amz_checked']
-NOT_THE_BOOK = re.compile(r'\b(study guide|sparknotes|cliffsnotes|summary|analysis|teacher|activity|workbook|box set|boxed set|collection|audiobook|audible)\b', re.I)
+NOT_THE_BOOK = re.compile(r'\b(study guide|sparknotes|cliffsnotes|summary|analysis|teacher|activity|workbook|box set|boxed set|collection|audiobook|audible|manga)\b', re.I)
 
 
 def call(path, key, **params):

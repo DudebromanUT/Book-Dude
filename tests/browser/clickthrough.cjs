@@ -479,6 +479,59 @@ async function clickThrough(BASE) {
   await click('.tab[data-tab="shelves"]', 400);
   note('reloaded shelves', await text('#main .chips'));
 
+  // ---- The grown-up passcode.
+  const typeCode = async code => { await p.fill('#passcode', code); await click('form[data-form="passcode"] button[type="submit"]', 400); };
+  const boxOpen = () => p.evaluate(() => document.querySelector('#confirm').open);
+  await click('.tab[data-tab="more"]', 400);
+  await click('[data-act="set-code"]', 300);
+  note('set code box', await confirmText());
+  await p.fill('#new-code', '24'); await p.fill('#new-code-again', '24'); await click('form[data-form="new-code"] button[type="submit"]', 300);
+  note('code too short', await text('#new-code-error'));
+  await p.fill('#new-code', '2468'); await p.fill('#new-code-again', '2469'); await click('form[data-form="new-code"] button[type="submit"]', 300);
+  note('codes differ', await text('#new-code-error'));
+  await p.fill('#new-code-again', '2468'); await click('form[data-form="new-code"] button[type="submit"]', 400);
+  note('code saved', await toast() + ' / ' + await text('.panel-sub + .hint'));
+  await click('[data-act="lock-now"]', 300);
+  note('locked panel', await text('.panel:has([data-act="unlock-panel"])'));
+  await click('[data-act="unlock-panel"]', 300);
+  note('unlock box', await confirmText());
+  await typeCode('1111');
+  note('wrong code', await text('#passcode-error') + ' / box open=' + await boxOpen());
+  await typeCode('2468');
+  note('unlocked', 'box open=' + await boxOpen() + ' / ' + await text('.panel-sub + .hint'));
+  // Locked again, the grown-up buttons on Progress, restoring a backup, and saving a quiz result all ask first.
+  await click('[data-act="lock-now"]', 300);
+  await click('.tab[data-tab="progress"]', 500);
+  await click('[data-act="minutes-given"]', 300);
+  note('minutes given asks', await confirmText());
+  await typeCode('2468');
+  note('then minutes box', await confirmText());
+  await click('#confirm [data-act="close-confirm"]', 300);
+  await click('.tab[data-tab="more"]', 400);
+  await click('[data-act="lock-now"]', 300);
+  await click('[data-act="restore"]', 300);
+  note('restore asks', await confirmText());
+  await click('#confirm [data-act="close-confirm"]', 300);
+  await click('.tab[data-tab="explore"]', 400);
+  await search('wonder');
+  await openSheet('#items .card[data-id="wonder--r-j-palacio"]');
+  await click('[data-act="status"][data-status="finished"]', 300);
+  note('finished with passcode', await toast());
+  note('quiz hint with passcode', await text('#shelf-box .quiz > p.hint'));
+  await p.fill('#earned-input', '11'); await click('form[data-form="quiz"] button[type="submit"]', 300);
+  note('quiz asks', await confirmText());
+  await typeCode('2468');
+  note('quiz saved by a grown-up', await toast() + ' / ' + await text('#shelf-box .earned'));
+  await closeSheet();
+  // Forgot the passcode: anyone can reset it, and the settings say when.
+  await click('.tab[data-tab="more"]', 400);
+  await click('[data-act="lock-now"]', 300);
+  await click('[data-act="unlock-panel"]', 300);
+  await click('[data-act="forgot-code"]', 300);
+  note('forgot code', await confirmText());
+  await click('[data-act="confirm-ok"]', 400);
+  note('code reset', await toast() + ' / ' + await text('.panel-sub + .hint') + ' / ' + await text('.panel-sub + .hint + .row-actions + .hint'));
+
   // ---- Someone opens a shared link, on a computer with no share sheet.
   const { ctx: ctx2, p: p2 } = await openPage(browser, { shareSheet: false });
   await ctx2.grantPermissions(['clipboard-read', 'clipboard-write']);

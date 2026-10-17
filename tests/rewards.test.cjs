@@ -104,3 +104,19 @@ test('backups carry school points and screen time', () => {
   const old = C.parseBackup({ app: 'reading-room', version: 1, records: {}, settings: { reward: { every: 100, paid: 1 } } }, books).reward;
   assert.equal(old.school, null); assert.equal(old.minutes, 60); assert.equal(old.given, 0); assert.equal(old.since, '');
 });
+
+test('the grown-up passcode is saved as a fingerprint, never as the four digits', () => {
+  const h = C.codeHash('2468');
+  assert.match(h, /^[0-9a-f]{8}$/);
+  assert.equal(C.codeHash('2468'), h); assert.notEqual(C.codeHash('2469'), h); assert.notEqual(h, '2468');
+  // Every 4-digit passcode gets its own fingerprint, so a wrong one never opens it.
+  const all = new Set(); for (let i = 0; i < 10000; i++) all.add(C.codeHash(String(i).padStart(4, '0')));
+  assert.equal(all.size, 10000);
+  assert.equal(C.reward({}).code, ''); assert.equal(C.reward({ code: h }).code, h);
+  assert.equal(C.reward({ code: '2468' }).code, ''); assert.equal(C.reward({ code: 12345678 }).code, '');
+  assert.equal(C.reward({ codeReset: '2026-10-20' }).codeReset, '2026-10-20'); assert.equal(C.reward({ codeReset: 'today' }).codeReset, '');
+  const mine = C.reward({ code: h, codeReset: '2026-10-20', updatedAt: '2026-10-20T00:00:00Z' });
+  const file = JSON.parse(JSON.stringify(C.exportBackup({}, { goals: {}, reward: mine }, '2026-10-21T00:00:00Z', {})));
+  assert.equal(C.parseBackup(file, books).reward.code, h);
+  assert.equal(JSON.stringify(file).includes('2468'), false);
+});

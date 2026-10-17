@@ -7,6 +7,7 @@ import { BOOKS, BY_ID } from './books.js';
 import { state, saveSetting } from './state.js';
 import { main, sheet, sheetBar } from './page.js';
 import { rewardLabel, rewardPoints, screenStatus } from './money.js';
+import { hasCode } from './grownup.js';
 
 // Every line the Dude can say: his one-liners plus jokes tied to books in the catalog.
 const DUDE_KEY = UI_KEY + ':dude';
@@ -83,7 +84,8 @@ export function psLine() {
   const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
   const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
   const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
-  if (quiz && has('quiz')) return fill(pick(ps.quiz), { title: quiz[0].title });
+  const quizKey = hasCode() && has('quizGrownup') ? 'quizGrownup' : 'quiz';
+  if (quiz && has(quizKey)) return fill(pick(ps[quizKey]), { title: quiz[0].title });
   if (cfg.on && total > 0 && money.toGo <= Math.max(5, cfg.every * 0.15) && has('close')) return fill(pick(ps.close), { toGo: fmtNum(money.toGo) });
   const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
   if (reading) {

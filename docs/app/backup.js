@@ -5,6 +5,7 @@ import { BOOKS, rebuildBooks } from './books.js';
 import { state, db, saveSetting } from './state.js';
 import { sheet, toast, showConfirm } from './page.js';
 import { flushNote } from './book.js';
+import { asGrownup } from './grownup.js';
 import { render } from './tabs.js';
 
 function download(name, text) {
@@ -89,7 +90,8 @@ async function restoreFile(file) {
 
 export const actions = {
   export: exportBackup,
-  restore: () => { const input = $('#restore-file'); input.value = ''; input.click(); }
+  // A backup can carry quiz results and reward settings, so restoring one asks for the grown-up passcode.
+  restore: () => asGrownup(() => { const input = $('#restore-file'); input.value = ''; input.click(); })
 };
 
 export const changes = {

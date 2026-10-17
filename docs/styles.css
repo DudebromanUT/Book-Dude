@@ -734,6 +734,7 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .tag.extra { background: var(--plum-soft); color: color-mix(in srgb, var(--plum) 75%, var(--ink)); }
 .extra-line { display: flex; align-items: center; gap: 8px; margin: 10px 0 2px; font-size: .9rem; font-weight: 650; color: color-mix(in srgb, var(--plum) 75%, var(--ink)); }
 .extra-line svg { flex: none; width: 18px; height: 18px; fill: color-mix(in srgb, var(--plum) 25%, transparent); stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.code-input { max-width: 10ch; font-size: 1.4rem; letter-spacing: .5em; font-variant-numeric: tabular-nums; }
 .panel-sub { margin-top: 10px; font-size: .74rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- The Dude's Secret Files ---------- */

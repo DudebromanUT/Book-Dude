@@ -8,6 +8,7 @@ import { state, saveSetting } from './state.js';
 import { sheet, confirmBox, toast, celebrate, sheetBar, showBox, showConfirm } from './page.js';
 import { renderProgress } from './progress.js';
 import { renderMore } from './more.js';
+import { asGrownup, isOpen, keepOpen, codePanelHtml } from './grownup.js';
 
 // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
 const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
@@ -164,22 +165,30 @@ function openFile(i) {
   sheet.scrollTop = 0;
 }
 
-async function saveReward(patch) {
+export async function saveReward(patch) {
   const next = C.reward(Object.assign({}, state.settings.reward, patch, { updatedAt: new Date().toISOString() }));
   await saveSetting('reward', next);
   return next;
 }
 
 export function rewardPanelHtml() {
+  const head = '<section class="panel"><h2>Book money and screen time <small class="for-grownups">for grown-ups</small></h2>';
+  if (!isOpen()) {
+    return head + '<p class="lead">Locked with the grown-up passcode.</p>' +
+      '<div class="row-actions"><button type="button" class="btn primary" data-act="unlock-panel">' + icon('lock') + 'Unlock</button></div></section>';
+  }
   const cfg = C.reward(state.settings.reward);
   const total = rewardPoints();
   const st = C.rewardStatus(total, cfg);
   const school = cfg.school !== null;
-  return '<section class="panel"><h2>Book money and screen time <small class="for-grownups">for grown-ups</small></h2>' +
+  return head +
     '<p class="lead">Turn AR points into real rewards. ' + (school
       ? 'The points come from her total on the school’s AR report, which you type in below.'
+      : cfg.code ? 'The points come from the quiz results a grown-up enters in this app; you can check them against the school’s AR report.'
       : 'The points come from the quiz results entered in this app, so it runs on the honor system; you can check them against the school’s AR report.') + '</p>' +
     '<div class="stack">' +
+      codePanelHtml() +
+      '<h3 class="panel-sub">Book money</h3>' +
       '<label class="switch"><input type="checkbox" id="reward-on"' + (cfg.on ? ' checked' : '') + '> Show the Book Money Jar</label>' +
       '<div class="two"><label class="field"><span>Dollars per point</span><input id="reward-per" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.perPoint + '"></label>' +
       '<label class="field"><span>Points per payout</span><input id="reward-every" class="input" type="text" inputmode="numeric" autocomplete="off" value="' + cfg.every + '"></label></div>' +
@@ -229,9 +238,18 @@ function screenFieldsHtml(cfg, total) {
       : '');
 }
 
+// A settings change only goes through while the grown-up passcode is open (or there is none).
+const guard = fn => (...args) => {
+  if (!isOpen()) { renderMore(); toast('Locked again. Tap Unlock to keep changing these.'); return undefined; }
+  keepOpen();
+  return fn(...args);
+};
+const guardAll = handlers => Object.fromEntries(Object.entries(handlers).map(([name, fn]) => [name, guard(fn)]));
+
 export const actions = {
   'open-file': el => openFile(Number(el.dataset.i)),
-  'reward-given': () => {
+  'unlock-panel': () => asGrownup(renderMore),
+  'reward-given': () => asGrownup(() => {
     const cfg = C.reward(state.settings.reward);
     const cash = cfg.perPoint > 0;
     const payout = money(cfg.every * cfg.perPoint);
@@ -243,11 +261,11 @@ export const actions = {
         renderProgress();
         toast(cash ? payout + ' deposited! Enjoy the bookstore. (Socks required.)' : 'Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
       });
-  },
-  'paid-minus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: Math.max(0, cfg.paid - 1) }); renderMore(); },
-  'paid-plus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: cfg.paid + 1 }); renderMore(); },
+  }),
+  'paid-minus': guard(async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: Math.max(0, cfg.paid - 1) }); renderMore(); }),
+  'paid-plus': guard(async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: cfg.paid + 1 }); renderMore(); }),
   // She may use some minutes now and save the rest, so the grown-up picks how many.
-  'minutes-given': () => {
+  'minutes-given': () => asGrownup(() => {
     const owed = screenStatus(rewardPoints()).owed;
     if (!owed) return;
     showBox('Mark screen time as given?',
@@ -255,7 +273,7 @@ export const actions = {
       '<div class="row-actions">' + [30, 60].filter(n => n < owed).map(n => '<button type="button" class="btn" data-act="minutes-give" data-min="' + n + '">' + n + ' minutes</button>').join('') +
         '<button type="button" class="btn primary" data-act="minutes-give" data-min="' + owed + '">All ' + fmtNum(owed) + '</button>' +
         '<button type="button" class="btn" data-act="close-confirm">Cancel</button></div>');
-  },
+  }),
   'minutes-give': async el => {
     const n = Number(el.dataset.min);
     confirmBox.close();
@@ -264,10 +282,10 @@ export const actions = {
     renderProgress();
     toast(plural(n, 'minute') + ' of screen time marked as given. The Dude recommends stretching first.');
   },
-  'given-minus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ given: Math.max(0, cfg.given - 30) }); renderMore(); },
-  'given-plus': async () => { const cfg = C.reward(state.settings.reward); await saveReward({ given: cfg.given + 30 }); renderMore(); },
+  'given-minus': guard(async () => { const cfg = C.reward(state.settings.reward); await saveReward({ given: Math.max(0, cfg.given - 30) }); renderMore(); }),
+  'given-plus': guard(async () => { const cfg = C.reward(state.settings.reward); await saveReward({ given: cfg.given + 30 }); renderMore(); }),
   // The weekly check-in: her new total from the school's AR report, typed in on the Progress tab.
-  'school-update': () => {
+  'school-update': () => asGrownup(() => {
     const cfg = C.reward(state.settings.reward);
     showBox('Update school points',
       '<form class="stack" data-form="school" novalidate>' +
@@ -276,7 +294,7 @@ export const actions = {
         '<p class="hint">Points above ' + fmtNum(cfg.schoolStart) + ', the starting line, count for book money and screen time.</p>' +
         '<div class="row-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" data-act="close-confirm">Cancel</button></div>' +
       '</form>');
-  }
+  })
 };
 
 export const submits = {
@@ -294,7 +312,8 @@ export const submits = {
   }
 };
 
-export const changes = {
+// Every field in the grown-up settings.
+export const changes = guardAll({
   'reward-on': async t => {
     await saveReward({ on: t.checked });
     toast(t.checked ? 'The Book Money Jar is on the Progress tab.' : 'The Book Money Jar is hidden.');
@@ -361,4 +380,4 @@ export const changes = {
     await saveReward({ since: t.value });
     renderMore();
   }
-};
+});

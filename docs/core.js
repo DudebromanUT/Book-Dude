@@ -90,6 +90,17 @@
   // and books with an extra of their own instead.
   const SCREEN_DEFAULT = { screen: true, minutes: 60, bonus: 30, special: { 'bridge-to-terabithia--katherine-paterson': 60 } };
 
+  /**
+   * The grown-up passcode as it is saved: a short fingerprint of the four digits, so the digits themselves never sit
+   * in the journal or a backup file. (It keeps a curious kid out, not a programmer.)
+   */
+  function codeHash(code) {
+    const s = 'book-dude-grown-up:' + String(code);
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return ('0000000' + (h >>> 0).toString(16)).slice(-8);
+  }
+
   /** Books with their own screen-time extra: { book_id: minutes }. Anything unreadable is dropped. */
   function specialBooks(v) {
     if (!isPlain(v)) return Object.assign({}, SCREEN_DEFAULT.special);
@@ -109,6 +120,8 @@
    * the points above `schoolStart` (her total when the deal started) are the ones that count.
    * Screen time: `minutes` for every 10 points, plus `bonus` minutes for each Reading Room book she finishes on or
    * after `since` (a book in `special` earns its own minutes instead). `given` counts minutes already handed over.
+   * Grown-up passcode: `code` is its fingerprint (blank when there is none); `codeReset` is the day it was last reset
+   * with "Forgot the passcode?".
    */
   function reward(o) {
     o = isPlain(o) ? o : {};
@@ -133,6 +146,8 @@
       special: specialBooks(o.special),
       given: whole(o.given, 0, 1000000, 0),
       since: day(o.since),
+      code: typeof o.code === 'string' && /^[0-9a-f]{8}$/.test(o.code) ? o.code : '',
+      codeReset: day(o.codeReset),
       updatedAt: stamp(o.updatedAt)
     };
   }
@@ -461,6 +476,6 @@
 
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    reward, rewardStatus, rewardPoints, screenTime, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+    reward, rewardStatus, rewardPoints, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
   };
 });

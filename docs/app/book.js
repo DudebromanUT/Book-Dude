@@ -9,6 +9,7 @@ import { sheet, toast, celebrate, sheetBar, showConfirm } from './page.js';
 import { cover, levelTag, pointsTag, mineTag, ratingSays, dl } from './cards.js';
 import { rewardLabel, rewardPoints, screenStatus, bookExtra } from './money.js';
 import { customDetailsHtml } from './my-books.js';
+import { asGrownup, hasCode } from './grownup.js';
 
 export function levelMeaning(level) {
   const n = Number(level);
@@ -52,7 +53,8 @@ function quizBox(b, r) {
       (r.earnedPoints !== null ? '<button type="button" class="btn ghost" data-act="clear-quiz">Clear result</button>' : '') + '</div></form>' +
     '<p class="hint">' + (C.reward(state.settings.reward).school !== null
       ? 'Book money and screen time come from your total on the school’s AR report, so this one is just for your journal.'
-      : 'Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.') + '</p></div>';
+      : 'Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.') +
+      (hasCode() ? ' Saving it asks for the grown-up passcode.' : '') + '</p></div>';
 }
 
 // The screen-time extra for finishing a book from the list, while screen time is on.
@@ -179,7 +181,8 @@ async function setStatus(status) {
     const got = screenStatus(rewardPoints()).books.find(x => x.id === id);
     const plus = got ? ' +' + got.minutes + ' minutes of screen time!' : '';
     const askQuiz = r.earnedPoints === null && C.reward(state.settings.reward).school === null;
-    toast(askQuiz ? 'You finished it!' + plus + ' (The Dude is doing a happy sock dance.) After the AR quiz, add your points below.' : 'You finished it!' + plus + ' (Happy sock dance.)');
+    toast(askQuiz ? 'You finished it!' + plus + ' (The Dude is doing a happy sock dance.) After the AR quiz, ' + (hasCode() ? 'a grown-up adds your points below.' : 'add your points below.')
+      : 'You finished it!' + plus + ' (Happy sock dance.)');
   }
 }
 
@@ -241,13 +244,13 @@ export const actions = {
     if (says) says.textContent = r.rating ? ratingSays(r.rating) : 'Rating cleared.';
     if (r.rating === 5) celebrate();
   },
-  'clear-quiz': () => {
+  'clear-quiz': () => asGrownup(() => {
     showConfirm('Clear this quiz result?', '<p>The book stays Finished. It will show as awaiting a quiz entry again.</p>', 'Clear result', async () => {
       await save(state.openId, { earnedPoints: null, quizDate: '' });
       refreshShelf();
       toast('Quiz result cleared.');
     });
-  }
+  })
 };
 
 export const inputs = {
@@ -267,4 +270,5 @@ export const changes = {
   'finished-date': t => save(state.openId, { finishedDate: C.day(t.value) })
 };
 
-export const submits = { quiz: saveQuiz };
+// With a grown-up passcode set, only a grown-up enters quiz results.
+export const submits = { quiz: form => asGrownup(() => saveQuiz(form)) };

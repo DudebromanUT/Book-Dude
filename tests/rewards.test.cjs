@@ -140,3 +140,19 @@ test('her choices: every 10 points goes into the jar or becomes screen time, mix
   assert.equal(C.screenTime(27.5, {}, [], { on: false }).fromPoints, 120);
   assert.equal(C.screenTime(27.5, {}, [], {}).fromPoints, 0);
 });
+
+test('she can move tens between the jar and screen time until they are deposited or given', () => {
+  // Out of the jar: anything not deposited yet, even a full jar waiting for a grown-up.
+  assert.equal(C.choices(35, { toJar: 2, toMinutes: 1 }).jarToMove, 2);
+  assert.equal(C.choices(100, { toJar: 10 }).jarToMove, 10);
+  assert.equal(C.choices(120, { toJar: 12, paid: 1 }).jarToMove, 2);
+  assert.equal(C.choices(120, { toJar: 10, paid: 1 }).jarToMove, 0);
+  // Back from screen time: only minutes she chose that haven't been given yet.
+  assert.equal(C.screenTime(35, {}, [], { toJar: 2, toMinutes: 1 }).minutesToMove, 1);
+  assert.equal(C.screenTime(35, {}, [], { toMinutes: 3, given: 60 }).minutesToMove, 2);
+  assert.equal(C.screenTime(35, {}, [], { toMinutes: 3, given: 150 }).minutesToMove, 0);
+  // With only one reward switched on, or no minutes per choice, there is nothing to move.
+  assert.equal(C.choices(35, { toJar: 2, screen: false }).jarToMove, 0);
+  assert.equal(C.screenTime(35, {}, [], { toMinutes: 3, on: false }).minutesToMove, 0);
+  assert.equal(C.choices(35, { toJar: 2, minutes: 0 }).jarToMove, 0);
+});

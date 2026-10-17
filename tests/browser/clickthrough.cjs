@@ -442,6 +442,13 @@ async function clickThrough(BASE) {
   await click('[data-act="to-minutes-minus"]', 300);
   note('fix choices', await text('#to-jar') + ' / ' + await text('#to-minutes') + ' / ' + await text('.panel-sub:last-of-type + .stepper + .stepper + .hint'));
   await click('[data-act="to-minutes-plus"]', 300);
+  // She changes her mind: 60 minutes back into the jar, then 10 points back out.
+  await click('.tab[data-tab="progress"]', 500);
+  note('move buttons', (await all('[data-act^="move-to"]')).join(' | '));
+  await click('[data-act="move-to-jar"]', 400);
+  note('moved to jar', await toast() + ' / ' + await text('.jar-card .jar-tally') + ' / ' + await text('.screen-card .jar-count'));
+  await click('[data-act="move-to-minutes"]', 400);
+  note('moved to minutes', await toast() + ' / ' + await text('.jar-card .jar-tally') + ' / ' + await text('.screen-card .jar-count'));
   await click('.tab[data-tab="explore"]', 400);
   await search('hatchet');
   await openSheet('#items .card');

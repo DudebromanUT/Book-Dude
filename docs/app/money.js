@@ -71,8 +71,12 @@ function factLine(total) {
 export function jarHtml(total) {
   const cfg = C.reward(state.settings.reward);
   if (!cfg.on) return '';
-  const jarPoints = C.choices(total, cfg).jarPoints;
+  const spent = C.choices(total, cfg);
+  const jarPoints = spent.jarPoints;
   const st = C.rewardStatus(jarPoints, cfg);
+  // She can move 10 points' worth out of the jar into screen time until it's deposited.
+  const move = spent.jarToMove ? '<div class="row-actions move-row"><button type="button" class="btn small" data-act="move-to-minutes">Move ' +
+    (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' to screen time</button></div>' : '';
   const vars = { points: fmtNum(total), toGo: fmtNum(st.toGo), prize: rewardLabel(cfg) };
   let line = '';
   for (const [at, text] of DUDE.jar) if (st.frac >= at) line = text;
@@ -90,7 +94,7 @@ export function jarHtml(total) {
           '<p class="jar-goal">' + fmtNum(st.into) + ' of ' + st.every + ' points in the jar. At ' + st.every + ', ' + money(st.payout) + ' goes into ' + esc(cfg.where) + '.</p>'
         : '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
           '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>') +
-      '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p></div>' +
+      '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p>' + move + '</div>' +
     (full ? '<div class="jar-owed"><b>' + (st.money ? money(st.owedMoney) + ' is waiting to go into ' + esc(cfg.where) : plural(st.owed, 'reward is', 'rewards are') + ' waiting for a grown-up') + '</b>' +
       '<button type="button" class="btn small" data-act="reward-given">' + (st.money ? 'Grown-up: mark as deposited' : 'Grown-up: mark one as given') + '</button></div>' : '') +
     '<div class="jar-foot">' +
@@ -116,7 +120,7 @@ export function choiceHtml(total) {
   return '<section class="choice-card" aria-label="Spend your points">' +
     '<p class="jar-kicker">Spend your points</p>' +
     '<p class="jar-count"><span class="big">' + fmtNum(ch.open * 10) + '</span> <span class="of">points to spend</span></p>' +
-    '<p class="jar-goal">Every 10 points: ' + esc(pick) + '. Mix them however you like.</p>' +
+    '<p class="jar-goal">Every 10 points: ' + esc(pick) + '. Mix them however you like, and move them later if you change your mind.</p>' +
     '<div class="row-actions"><button type="button" class="btn primary" data-act="choose" data-to="jar">' + esc(jarChoiceLabel(cfg)) + '</button>' +
       '<button type="button" class="btn primary" data-act="choose" data-to="minutes">' + cfg.minutes + ' minutes</button></div>' +
   '</section>';
@@ -139,6 +143,7 @@ export function screenHtml(total) {
     '<p class="screen-rules">' + esc(rules) + '</p>' +
     (st.books.length ? '<ul class="screen-books" aria-label="Books that earned extra minutes">' + st.books.slice(0, 3).map(x =>
       '<li><span>' + esc(title(x.id)) + '</span><b>+' + x.minutes + ' min</b></li>').join('') + '</ul>' : '') +
+    (st.minutesToMove ? '<div class="row-actions move-row"><button type="button" class="btn small" data-act="move-to-jar">Move ' + cfg.minutes + ' minutes to the jar</button></div>' : '') +
     (st.owed ? '<div class="jar-owed"><b>Cash it in on the weekend.</b>' +
       '<button type="button" class="btn small" data-act="minutes-given">Grown-up: mark minutes as given</button></div>' : '') +
     '<p class="jar-tally">' + fmtNum(st.earned) + ' minutes earned (' + fmtNum(st.fromPoints) + ' from points, ' + fmtNum(st.fromBooks) + ' from books)' +
@@ -311,6 +316,28 @@ export const actions = {
     toast(payout ? fill(DUDE.jarFull, { prize: rewardLabel(cfg) })
       : jar ? (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' went into the jar. ' + DUDE.dog + ' heard it clink.'
       : cfg.minutes + ' minutes of screen time saved. Cash them in on the weekend.');
+  },
+  // Moving 10 points' worth between the jar and screen time, any time until it's deposited or given. Her call.
+  'move-to-minutes': async () => {
+    const cfg = C.reward(state.settings.reward);
+    const ch = C.choices(rewardPoints(), cfg);
+    if (!ch.jarToMove) return;
+    await saveReward({ toJar: ch.toJar - 1, toMinutes: ch.toMinutes + 1 });
+    renderProgress();
+    toast((cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' moved out of the jar: ' + cfg.minutes + ' more minutes of screen time.');
+  },
+  'move-to-jar': async () => {
+    const cfg = C.reward(state.settings.reward);
+    const total = rewardPoints();
+    const ch = C.choices(total, cfg);
+    if (!screenStatus(total).minutesToMove) return;
+    const before = C.rewardStatus(ch.jarPoints, cfg).earned;
+    await saveReward({ toJar: ch.toJar + 1, toMinutes: ch.toMinutes - 1 });
+    const payout = C.rewardStatus(C.choices(total, state.settings.reward).jarPoints, cfg).earned > before;
+    renderProgress();
+    if (payout) celebrate();
+    toast(payout ? fill(DUDE.jarFull, { prize: rewardLabel(cfg) })
+      : cfg.minutes + ' minutes moved into the jar: ' + (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + '. ' + DUDE.dog + ' heard it clink.');
   },
   'to-jar-minus': guard(() => fixChoices(-1, 0)),
   'to-jar-plus': guard(() => fixChoices(1, 0)),

@@ -727,6 +727,7 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 }
 .choice-card .jar-kicker { color: var(--accent-text); }
 .choice-card .row-actions { margin-top: 8px; }
+.move-row { margin-top: 8px; }
 .choice-next { margin: 0 0 12px; font-size: .92rem; font-weight: 650; color: var(--ink-2); }
 
 /* ---------- Screen time ---------- */

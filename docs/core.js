@@ -168,6 +168,8 @@
   /**
    * How her points are spent. Every 10 points is one choice: the jar or screen time. `open` counts the choices
    * waiting for her, `into` the points toward the next one, and `jarPoints` the points that went into the jar.
+   * She can move a choice from the jar to screen time any time until that money is deposited: `jarToMove` counts
+   * the tens still in the jar. (Moving minutes back is in screenTime, which knows the minutes already given.)
    * With only one of the two rewards switched on, every 10 points goes straight to it. Choices beyond what her
    * points cover (after a quiz result is corrected down) don't count until she earns those points again.
    */
@@ -182,9 +184,12 @@
     } else if (cfg.on) toJar = batches;
     else if (cfg.screen) toMinutes = batches;
     const into = round(total - batches * 10);
+    const both = cfg.on && cfg.screen;
+    const unpaid = both ? Math.max(0, toJar * 10 - cfg.paid * cfg.every) : 0;
     return {
-      batches, toJar, toMinutes, open: cfg.on && cfg.screen ? batches - toJar - toMinutes : 0,
-      into, toGo: round(10 - into), jarPoints: cfg.on && !cfg.screen ? total : toJar * 10
+      batches, toJar, toMinutes, open: both ? batches - toJar - toMinutes : 0,
+      into, toGo: round(10 - into), jarPoints: cfg.on && !cfg.screen ? total : toJar * 10,
+      jarToMove: both && cfg.minutes > 0 ? Math.min(toJar, Math.floor(unpaid / 10 + 1e-9)) : 0
     };
   }
 
@@ -192,6 +197,7 @@
    * Screen time earned so far: `minutes` for each 10 points she chose to spend on it, plus the extra for each
    * Reading Room book finished on or after `since`. With no `since` yet, no book earns an extra, so books finished
    * before screen time started never count. Books she added herself earn no extra. `owed` never goes below zero.
+   * `minutesToMove` counts the tens she can move back into the jar: chosen minutes that haven't been given yet.
    */
   function screenTime(totalPoints, records, books, settings) {
     const cfg = reward(settings);
@@ -207,9 +213,11 @@
     extras.sort((x, y) => y.finishedDate.localeCompare(x.finishedDate) || (x.id < y.id ? -1 : 1));
     const fromPoints = spent.toMinutes * cfg.minutes;
     const fromBooks = extras.reduce((sum, x) => sum + x.minutes, 0);
+    const owed = Math.max(0, fromPoints + fromBooks - cfg.given);
     return {
-      fromPoints, fromBooks, books: extras, earned: fromPoints + fromBooks, given: cfg.given,
-      owed: Math.max(0, fromPoints + fromBooks - cfg.given), into: spent.into, toGo: spent.toGo, perTen: cfg.minutes
+      fromPoints, fromBooks, books: extras, earned: fromPoints + fromBooks, given: cfg.given, owed,
+      into: spent.into, toGo: spent.toGo, perTen: cfg.minutes,
+      minutesToMove: cfg.on && cfg.screen && cfg.minutes > 0 ? Math.min(spent.toMinutes, Math.floor(owed / cfg.minutes)) : 0
     };
   }
 

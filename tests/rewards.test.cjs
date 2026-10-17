@@ -19,12 +19,13 @@ test('book money counts whole payouts from all-time points and never goes negati
 
 test('book-money settings fall back to sensible defaults', () => {
   const d = C.reward({});
-  assert.equal(d.on, true); assert.equal(d.every, 100); assert.equal(d.perPoint, 1); assert.equal(d.paid, 0);
-  assert.match(d.where, /Barnes & Noble account/); assert.match(d.prize, /Barnes & Noble/);
+  // $10 into her Greenlight account for every 10 points in the jar.
+  assert.equal(d.on, true); assert.equal(d.every, 10); assert.equal(d.perPoint, 1); assert.equal(d.paid, 0);
+  assert.match(d.where, /Greenlight account/); assert.match(d.prize, /Barnes & Noble/);
   assert.equal(C.reward({ perPoint: 0 }).perPoint, 0); assert.equal(C.reward({ perPoint: 'lots' }).perPoint, 1);
   const bad = C.reward({ every: 0, paid: -2, prize: '   ', on: 'yes' });
-  assert.equal(bad.every, 100); assert.equal(bad.paid, 0); assert.match(bad.prize, /Barnes/); assert.equal(bad.on, false);
-  assert.equal(C.reward({ every: '50', paid: '3' }).every, 50); assert.equal(C.reward({ every: 2.5 }).every, 100);
+  assert.equal(bad.every, 10); assert.equal(bad.paid, 0); assert.match(bad.prize, /Barnes/); assert.equal(bad.on, false);
+  assert.equal(C.reward({ every: '50', paid: '3' }).every, 50); assert.equal(C.reward({ every: 2.5 }).every, 10);
 });
 
 test('backups carry book-money settings, and the newer copy wins on restore', () => {
@@ -128,7 +129,8 @@ test('her choices: every 10 points goes into the jar or becomes screen time, mix
   const mixed = C.choices(35, { toJar: 1, toMinutes: 1 });
   assert.deepEqual([mixed.open, mixed.jarPoints], [1, 10]);
   // The jar counts only the points she put in it.
-  assert.equal(C.rewardStatus(mixed.jarPoints, {}).jarMoney, 10);
+  assert.equal(C.rewardStatus(mixed.jarPoints, { every: 100 }).jarMoney, 10);
+  assert.equal(C.rewardStatus(mixed.jarPoints, {}).owedMoney, 10); // $10 payouts: it's waiting for a grown-up right away
   // Choices beyond her points (after a quiz result is corrected down) don't count until she earns them again.
   const over = C.choices(15, { toJar: 1, toMinutes: 2 });
   assert.deepEqual([over.toJar, over.toMinutes, over.open], [1, 0, 0]);
@@ -145,8 +147,9 @@ test('she can move tens between the jar and screen time until they are deposited
   // Out of the jar: anything not deposited yet, even a full jar waiting for a grown-up.
   assert.equal(C.choices(35, { toJar: 2, toMinutes: 1 }).jarToMove, 2);
   assert.equal(C.choices(100, { toJar: 10 }).jarToMove, 10);
-  assert.equal(C.choices(120, { toJar: 12, paid: 1 }).jarToMove, 2);
-  assert.equal(C.choices(120, { toJar: 10, paid: 1 }).jarToMove, 0);
+  assert.equal(C.choices(120, { toJar: 12, every: 100, paid: 1 }).jarToMove, 2);
+  assert.equal(C.choices(120, { toJar: 10, every: 100, paid: 1 }).jarToMove, 0);
+  assert.equal(C.choices(120, { toJar: 3, paid: 2 }).jarToMove, 1); // $10 payouts: two of three already deposited
   // Back from screen time: only minutes she chose that haven't been given yet.
   assert.equal(C.screenTime(35, {}, [], { toJar: 2, toMinutes: 1 }).minutesToMove, 1);
   assert.equal(C.screenTime(35, {}, [], { toMinutes: 3, given: 60 }).minutesToMove, 2);

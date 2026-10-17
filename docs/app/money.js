@@ -81,18 +81,22 @@ export function jarHtml(total) {
   let line = '';
   for (const [at, text] of DUDE.jar) if (st.frac >= at) line = text;
   const full = st.owed > 0;
+  // A payout waiting with nothing yet toward the next one (the usual sight with $10 payouts) shows what's waiting.
+  const waiting = full && !st.into;
   const title = lastFile(total);
   const next = nextFile(total);
   const school = cfg.school !== null;
   const counted = school ? ' points since the starting line' : ' points all time';
   return '<section class="jar-card' + (full ? ' full' : '') + '" aria-label="Book Money Jar">' +
-    '<div class="jar" role="img" aria-label="' + esc(st.money ? money(st.jarMoney) + ' of ' + money(st.payout) + ' in the book money jar' : fmtNum(st.into) + ' of ' + st.every + ' points in the book money jar') + '">' +
+    '<div class="jar" role="img" aria-label="' + esc(waiting ? (st.money ? money(st.owedMoney) : plural(st.owed, 'reward')) + ' waiting in the book money jar'
+      : st.money ? money(st.jarMoney) + ' of ' + money(st.payout) + ' in the book money jar' : fmtNum(st.into) + ' of ' + st.every + ' points in the book money jar') + '">' +
       JAR_SVG.replace('__FILL__', (full ? 1 : st.frac).toFixed(3)) + '</div>' +
     '<div class="jar-info"><p class="jar-kicker">Book Money Jar</p>' +
+      (waiting ? '<p class="jar-count"><span class="big">' + (st.money ? money(st.owedMoney) : fmtNum(st.owed)) + '</span> <span class="of">waiting</span></p>' : '') +
       (st.money
-        ? '<p class="jar-count"><span class="big">' + money(st.jarMoney) + '</span> <span class="of">of ' + money(st.payout) + '</span></p>' +
+        ? (waiting ? '' : '<p class="jar-count"><span class="big">' + money(st.jarMoney) + '</span> <span class="of">of ' + money(st.payout) + '</span></p>') +
           '<p class="jar-goal">' + fmtNum(st.into) + ' of ' + st.every + ' points in the jar. At ' + st.every + ', ' + money(st.payout) + ' goes into ' + esc(cfg.where) + '.</p>'
-        : '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
+        : (waiting ? '' : '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>') +
           '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>') +
       '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p>' + move + '</div>' +
     (full ? '<div class="jar-owed"><b>' + (st.money ? money(st.owedMoney) + ' is waiting to go into ' + esc(cfg.where) : plural(st.owed, 'reward is', 'rewards are') + ' waiting for a grown-up') + '</b>' +
@@ -343,17 +347,21 @@ export const actions = {
   'to-jar-plus': guard(() => fixChoices(1, 0)),
   'to-minutes-minus': guard(() => fixChoices(0, -1)),
   'to-minutes-plus': guard(() => fixChoices(0, 1)),
+  // Everything waiting at once: with small payouts, several can pile up between check-ins.
   'reward-given': () => asGrownup(() => {
     const cfg = C.reward(state.settings.reward);
+    const st = C.rewardStatus(C.choices(rewardPoints(), cfg).jarPoints, cfg);
+    if (!st.owed) return;
     const cash = cfg.perPoint > 0;
-    const payout = money(cfg.every * cfg.perPoint);
-    showConfirm(cash ? 'Mark ' + payout + ' as deposited?' : 'Mark book money as given?',
-      cash ? '<p>Tap this after ' + esc(payout) + ' goes into ' + esc(cfg.where) + '. The jar keeps counting toward the next ' + esc(payout) + '.</p>'
-        : '<p>Tap this after a grown-up hands over ' + esc(prizeText(cfg.prize)) + '. The jar keeps counting toward the next one.</p>',
+    const amount = money(st.owedMoney);
+    const prize = st.owed === 1 ? prizeText(cfg.prize) : st.owed + ' × ' + prizeText(cfg.prize);
+    showConfirm(cash ? 'Mark ' + amount + ' as deposited?' : st.owed === 1 ? 'Mark book money as given?' : 'Mark ' + st.owed + ' rewards as given?',
+      cash ? '<p>Tap this after ' + esc(amount) + ' goes into ' + esc(cfg.where) + '. The jar keeps counting toward the next ' + esc(money(st.payout)) + '.</p>'
+        : '<p>Tap this after a grown-up hands over ' + esc(prize) + '. The jar keeps counting toward the next one.</p>',
       cash ? 'Mark as deposited' : 'Mark as given', async () => {
-        await saveReward({ paid: cfg.paid + 1 });
+        await saveReward({ paid: cfg.paid + st.owed });
         renderProgress();
-        toast(cash ? payout + ' deposited! Enjoy the bookstore. (Socks required.)' : 'Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
+        toast(cash ? amount + ' deposited! Enjoy the bookstore. (Socks required.)' : 'Marked as given. Enjoy the bookstore! (Socks optional. Kidding. Socks required.)');
       });
   }),
   'paid-minus': guard(async () => { const cfg = C.reward(state.settings.reward); await saveReward({ paid: Math.max(0, cfg.paid - 1) }); renderMore(); }),
@@ -414,7 +422,7 @@ export const changes = guardAll({
   },
   'reward-every': async t => {
     const n = Number(t.value.trim());
-    if (!Number.isInteger(n) || n < 1 || n > 10000) { toast('Points for each reward must be a whole number, like 100.'); t.value = C.reward(state.settings.reward).every; return; }
+    if (!Number.isInteger(n) || n < 1 || n > 10000) { toast('Points for each reward must be a whole number, like 10.'); t.value = C.reward(state.settings.reward).every; return; }
     await saveReward({ every: n });
     renderMore();
   },

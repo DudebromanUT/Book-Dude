@@ -43,6 +43,13 @@ async function start() {
   const first = {};
   if (!state.settings.reward.since) first.since = today();
   if (!s.reward || s.reward.toJar === undefined) first.toJar = Math.floor(rewardPoints() / 10);
+  // Book money moved from $100 Barnes & Noble payouts to $10 Greenlight payouts in October 2026. A jar still on the
+  // old settings switches once, with payouts already made counted again in tens; a grown-up's own settings stay.
+  if (s.jarDefaults !== 'greenlight-10') {
+    const r = state.settings.reward;
+    if (r.every === 100 && r.where === 'your Barnes & Noble account') Object.assign(first, { every: 10, where: 'your Greenlight account', paid: r.paid * 10 });
+    saveSetting('jarDefaults', 'greenlight-10');
+  }
   if (Object.keys(first).length) saveSetting('reward', C.reward(Object.assign({}, state.settings.reward, first)));
   applyAccent();
   if (!loaded.ok) {

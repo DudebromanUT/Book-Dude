@@ -447,6 +447,9 @@ async function clickThrough(BASE) {
   note('move buttons', (await all('[data-act^="move-to"]')).join(' | '));
   await click('[data-act="move-to-jar"]', 400);
   note('moved to jar', await toast() + ' / ' + await text('.jar-card .jar-tally') + ' / ' + await text('.screen-card .jar-count'));
+  await click('[data-act="reward-given"]', 300);
+  note('several waiting', await confirmText());
+  await click('#confirm [data-act="close-confirm"]', 300);
   await click('[data-act="move-to-minutes"]', 400);
   note('moved to minutes', await toast() + ' / ' + await text('.jar-card .jar-tally') + ' / ' + await text('.screen-card .jar-count'));
   await click('.tab[data-tab="explore"]', 400);

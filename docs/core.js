@@ -85,7 +85,7 @@
     return typeof n === 'number' && !Number.isNaN(n) ? n : null;
   }
 
-  const REWARD_DEFAULT = { on: true, every: 100, perPoint: 1, where: 'your Barnes & Noble account', prize: 'a trip to Barnes & Noble', paid: 0 };
+  const REWARD_DEFAULT = { on: true, every: 10, perPoint: 1, where: 'your Greenlight account', prize: 'a trip to Barnes & Noble', paid: 0 };
   // Screen time: minutes for every 10 points, extra minutes for each Reading Room book she finishes,
   // and books with an extra of their own instead.
   const SCREEN_DEFAULT = { screen: true, minutes: 60, bonus: 30, special: { 'bridge-to-terabithia--katherine-paterson': 60 } };

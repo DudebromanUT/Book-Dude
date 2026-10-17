@@ -88,6 +88,27 @@ async function restoreFile(file) {
   });
 }
 
+/* Maddy's AR reading history since kindergarten ships with the site (docs/history.json) and lands on her shelves
+ * once per device, the first time it loads. Its records are dated before anything entered on a device, so a book she
+ * already has keeps her own copy; if the file can't load (offline), it tries again on the next start. */
+export const HISTORY = 'ar-history-2026-10';
+
+export async function addHistory() {
+  try {
+    const res = await fetch('history.json');
+    if (!res.ok) return;
+    const parsed = C.parseBackup(await res.text(), BOOKS);
+    const plan = C.mergeBackup(state.records, state.settings.goals, parsed, state.custom, state.settings.reward);
+    await db.putBooks(plan.changedBooks.map(id => plan.customBooks[id]));
+    await db.putRecords(plan.changed.map(id => plan.records[id]));
+    state.custom = plan.customBooks;
+    rebuildBooks(state.custom);
+    state.records = plan.records;
+    await saveSetting('history', HISTORY);
+    if (plan.changed.length || plan.changedBooks.length) render(true);
+  } catch (e) { /* tries again next time */ }
+}
+
 export const actions = {
   export: exportBackup,
   // A backup can carry quiz results and reward settings, so restoring one asks for the grown-up passcode.

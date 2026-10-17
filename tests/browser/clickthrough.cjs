@@ -53,6 +53,12 @@ const errors = [];
 // Linux has no share sheet), the app offers Copy message and Email instead.
 async function openPage(browser, { shareSheet }) {
   const ctx = await browser.newContext({ ...devices['iPhone 13'], acceptDownloads: true, locale: 'en-US', timezoneId: 'America/Denver' });
+  // These steps start from an empty device; Maddy's built-in reading history is checked on its own (history.cjs).
+  // (Stubbed in the page, because a service worker's cached copy would get past a Playwright route.)
+  await ctx.addInitScript(() => {
+    const realFetch = window.fetch;
+    window.fetch = (url, opts) => String(url).endsWith('history.json') ? Promise.resolve(new Response('', { status: 404 })) : realFetch(url, opts);
+  });
   await ctx.addInitScript(([start, shareSheet]) => {
     const RealDate = Date, offset = start - RealDate.now();
     window.Date = class extends RealDate {

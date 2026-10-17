@@ -18,6 +18,7 @@ import { registerWorker } from './offline.js';
 import { rewardPoints } from './money.js';
 import { TABS, render } from './tabs.js';
 import { listen } from './events.js';
+import { HISTORY, addHistory } from './backup.js';
 
 async function start() {
   if (!C || !BOOKS.length) {
@@ -74,6 +75,7 @@ async function start() {
   }
   startPets();
   registerWorker();
+  if (s.history !== HISTORY && state.storage === 'ok') addHistory();
 }
 
 listen();

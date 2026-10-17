@@ -41,6 +41,7 @@ ASSETS = [
     'pets.js',
     *sorted('app/' + p.name for p in (DOCS / 'app').glob('*.js')),
     'catalog.js',
+    'history.json',
     'manifest.webmanifest',
     'img/dude.jpg',
     'img/dude-face.jpg',

@@ -32,7 +32,8 @@ export function cover(b, size) {
   const seal = b._seal && size !== 'thumb' ? '<span class="seal ' + b._seal[0] + '">' + b._seal[1] + '</span>' : '';
   const initial = esc(b._sortTitle.charAt(0).toUpperCase());
   // Catalog books use the covers that ship with the app; books she added can have her own photo.
-  const src = b._custom ? (b.photo || '') : (b.cover ? 'covers/' + b.cover : '');
+  // Books from her reading history have an Open Library cover, which only shows while online.
+  const src = b._custom ? (b.photo || (b.olCover ? 'https://covers.openlibrary.org/b/id/' + b.olCover + '-M.jpg' : '')) : (b.cover ? 'covers/' + b.cover : '');
   const shape = !b._custom && COVER_SHAPES[b.cover_shape] ? b.cover_shape : 'tall';
   const art = src ? '<img class="cover-art" src="' + esc(src) + '" alt="" width="280" height="' + COVER_SHAPES[shape] + '" loading="lazy" decoding="async">' : '';
   return '<span class="cover p' + b._pal + ' m' + b._motif + (size ? ' ' + size : '') + (art ? ' has-art' + (shape !== 'tall' ? ' shape-' + shape : '') : '') + '" aria-hidden="true">' +

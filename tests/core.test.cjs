@@ -36,3 +36,17 @@ test('shipping catalog matches completed CSV coverage and unique persistent IDs'
  const context={window:{}};vm.runInNewContext(fs.readFileSync(require.resolve('../docs/catalog.js'),'utf8'),context);const rows=context.window.READING_CATALOG;
  assert.equal(rows.length,637);assert.equal(new Set(rows.map(r=>r.book_id)).size,637);assert.equal(rows.filter(r=>r.ar_points!=='').length,468);assert.ok(rows.every(r=>r.description));assert.ok(rows.filter(r=>r.ar_points!=='').every(r=>r.ar_source));
 });
+
+test('reading history: a quiz score counts as quizzed, and history books can carry an Open Library cover', () => {
+  const r = C.entry({ id: 'mine:ar-0001', status: 'finished', finishedDate: '2026-10-01', quizScore: 90, quizDate: '2026-10-01' });
+  assert.equal(r.quizScore, 90); assert.equal(C.entry({ quizScore: 120 }).quizScore, null); assert.equal(C.entry({ quizScore: '33.3' }).quizScore, 33.3);
+  assert.equal(C.isBlank(C.entry({ quizScore: 80 })), false);
+  const m = C.metrics([], { 'mine:ar-0001': r, 'mine:ar-0002': C.entry({ status: 'finished', finishedDate: '2026-10-02' }) }, '');
+  assert.equal(m.finished, 2); assert.equal(m.awaiting, 1); assert.equal(m.earned, 0);
+  assert.equal(C.customBook({ id: 'mine:ar-0001', title: 'Frindle', olCover: '9265167' }).olCover, '9265167');
+  assert.equal(C.customBook({ id: 'mine:x', title: 'X', olCover: 'javascript:1' }).olCover, undefined);
+  const file = C.exportBackup({ 'mine:ar-0001': r }, { goals: {} }, '2026-10-17T00:00:00Z', { 'mine:ar-0001': C.customBook({ id: 'mine:ar-0001', title: 'Frindle', olCover: '9265167' }) });
+  const back = C.parseBackup(JSON.parse(JSON.stringify(file)), []);
+  assert.equal(back.records['mine:ar-0001'].quizScore, 90); assert.equal(back.customBooks['mine:ar-0001'].olCover, '9265167');
+  assert.throws(() => C.parseBackup({ app: 'reading-room', version: 1, records: { a: { quizScore: 300 } } }, []));
+});

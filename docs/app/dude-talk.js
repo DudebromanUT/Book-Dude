@@ -20,7 +20,8 @@ const DUDE_LINES = (() => {
 function bookByTitle(title) {
   if (!title) return null;
   const t = C.fold(title);
-  return BOOKS.find(b => !b._custom && C.fold(b.title) === t) || null;
+  // A catalog book first; otherwise one from her own shelves (her reading history), so jokes about those link too.
+  return BOOKS.find(b => !b._custom && C.fold(b.title) === t) || BOOKS.find(b => b._custom && C.fold(b.title) === t) || null;
 }
 
 // A shuffled deck, saved between launches, so she hears every line before any repeats.
@@ -85,7 +86,7 @@ export function psLine() {
   if (minutes && has('minutes')) return fill(pick(ps.minutes), { minutes: plural(minutes, 'minute') });
   const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
   const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
-  const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
+  const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.quizScore === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
   const quizKey = hasCode() && has('quizGrownup') ? 'quizGrownup' : 'quiz';
   if (quiz && has(quizKey)) return fill(pick(ps[quizKey]), { title: quiz[0].title });
   // Close to the next choice, or (with only the jar on) to the next payout.

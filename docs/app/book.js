@@ -43,7 +43,9 @@ function quizBox(b, r) {
   const worth = b._points !== null
     ? 'This book’s quiz is worth up to <b>' + fmtNum(b._points) + '</b> points' + (b._custom ? ' (the number you entered).' : '.')
     : b._custom ? 'You haven’t added this book’s AR points. Use <b>Edit book</b> below if you find them.' : 'This book’s AR points are not verified yet. Check with your school.';
-  return '<div class="box quiz"><h3>AR quiz result</h3><p class="worth">' + worth + '</p>' +
+  // Books from her reading history came with her quiz score instead of points.
+  const score = r.quizScore !== null ? '<p class="worth">Your AR quiz score: <b>' + fmtNum(r.quizScore) + '%</b></p>' : '';
+  return '<div class="box quiz"><h3>AR quiz result</h3>' + (score || '<p class="worth">' + worth + '</p>') +
     (r.earnedPoints !== null ? '<div class="earned"><span class="big">' + fmtNum(r.earnedPoints) + '</span><span><b>points earned</b><br><span class="hint">' + (r.quizDate ? 'Quiz taken ' + esc(fmtDay(r.quizDate)) : 'No quiz date, so this counts only in All time') + '</span></span></div>' : '') +
     '<form class="stack" data-form="quiz" novalidate><div class="two">' +
       '<label class="field"><span>Points earned</span><input id="earned-input" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 4.5" value="' + (r.earnedPoints !== null ? esc(r.earnedPoints) : '') + '"></label>' +

@@ -31,7 +31,15 @@ export function shelfBooks(key) {
   return out;
 }
 
+// Her reading history only knows the month, saved as the 1st, so it shows as "Finished Oct 2026".
+const MONTH = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' });
+export function finishedWhen(r) {
+  if (!r.finishedDate) return 'Finished (no date)';
+  return 'Finished ' + esc(r.quizScore !== null && r.earnedPoints === null && r.finishedDate.endsWith('-01') ? MONTH.format(new Date(r.finishedDate + 'T00:00:00Z')) : fmtDay(r.finishedDate));
+}
+
 export function quizLine(b, r) {
+  if (r.earnedPoints === null && r.quizScore !== null) return '<span class="tag pts">Quiz ' + fmtNum(r.quizScore) + '%</span>';
   if (r.earnedPoints !== null) return '<span class="tag pts">' + plural(r.earnedPoints, 'pt') + ' earned</span>';
   return '<span class="tag unknown">Quiz not entered' + (b._points !== null ? ' · worth up to ' + fmtNum(b._points) : '') + '</span>';
 }
@@ -41,7 +49,7 @@ function shelfSub(b, r, key) {
     const p = r.progress || 0;
     return '<span class="bar"><i data-w="' + p + '"></i></span><span>' + p + '%</span>';
   }
-  if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + ratingTag(r) + quizLine(b, r);
+  if (r.status === 'finished') return '<span>' + finishedWhen(r) + '</span>' + ratingTag(r) + quizLine(b, r);
   if (r.status === 'paused') return '<span>Paused' + (r.progress ? ' at ' + r.progress + '%' : '') + '</span>';
   if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + browseTag(b) + pointsTag(b);
   return browseTag(b) + pointsTag(b) + extraTag(b);

@@ -114,7 +114,7 @@ export let COLLECTIONS = [];
 export function rebuildBooks(custom) {
   const mine = Object.keys(custom).map(id => {
     const c = custom[id];
-    return prepare({ book_id: id, title: c.title, author: c.author, description: c.description, ar_level: c.ar_level, ar_points: c.ar_points, photo: c.photo || '', year: '', award: '', category: '', createdAt: c.createdAt }, true);
+    return prepare({ book_id: id, title: c.title, author: c.author, description: c.description, ar_level: c.ar_level, ar_points: c.ar_points, photo: c.photo || '', olCover: c.olCover || '', year: '', award: '', category: '', createdAt: c.createdAt }, true);
   });
   BOOKS = CATALOG_BOOKS.concat(mine);
   BY_ID = new Map(BOOKS.map(b => [b.book_id, b]));

@@ -67,7 +67,7 @@ export function renderProgress() {
   const when = year ? 'in ' + year : 'all time';
 
   const awaitingList = Object.keys(state.records).map(id => [BY_ID.get(id), state.records[id]])
-    .filter(([b, r]) => b && r.status === 'finished' && r.earnedPoints === null && (!year || (r.finishedDate || '').slice(0, 4) === year))
+    .filter(([b, r]) => b && r.status === 'finished' && r.earnedPoints === null && r.quizScore === null && (!year || (r.finishedDate || '').slice(0, 4) === year))
     .sort((x, y) => (y[1].finishedDate || '').localeCompare(x[1].finishedDate || ''));
 
   const finishedAll = new Set(Object.keys(state.records).filter(id => state.records[id].status === 'finished'));

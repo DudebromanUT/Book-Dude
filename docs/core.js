@@ -11,7 +11,8 @@
   const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
   const DAY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
   const NUMBER_RE = /^\s*\d+(\.\d+)?\s*$/;
-  const LIMITS = { earnedPoints: 999, progress: 100, rating: 5 };
+  // quizScore is the percent from an AR quiz, for books from her reading history (which have no points earned here).
+  const LIMITS = { earnedPoints: 999, progress: 100, rating: 5, quizScore: 100 };
   const DATE_FIELDS = ['startedDate', 'finishedDate', 'quizDate'];
   // Books the reader adds herself get IDs with this prefix; the catalog never uses it.
   const CUSTOM_PREFIX = 'mine:';
@@ -65,6 +66,7 @@
       startedDate: day(o.startedDate),
       finishedDate: day(o.finishedDate),
       earnedPoints: num('earnedPoints'),
+      quizScore: num('quizScore'),
       quizDate: day(o.quizDate),
       updatedAt: stamp(o.updatedAt)
     };
@@ -73,7 +75,7 @@
   /** True when a record holds nothing worth keeping. */
   function isBlank(r) {
     return !r.status && !r.favorite && !r.note.trim() && r.progress === null && r.rating === null &&
-      !r.startedDate && !r.finishedDate && r.earnedPoints === null && !r.quizDate;
+      !r.startedDate && !r.finishedDate && r.earnedPoints === null && r.quizScore === null && !r.quizDate;
   }
 
   function safeId(id) {
@@ -252,6 +254,8 @@
       out[field] = typeof n === 'number' && !Number.isNaN(n) ? String(n) : '';
     }
     if (typeof o.photo === 'string' && o.photo.length <= PHOTO_MAX && PHOTO_RE.test(o.photo)) out.photo = o.photo;
+    // An Open Library cover number, shown only while online (books from her reading history).
+    if (/^\d{1,12}$/.test(String(o.olCover || ''))) out.olCover = String(o.olCover);
     out.createdAt = stamp(o.createdAt);
     out.updatedAt = stamp(o.updatedAt);
     return out;
@@ -291,7 +295,7 @@
         if (year && done.slice(0, 4) !== year) continue;
         m.finished++;
         if (year) m.monthsFinished[+done.slice(5, 7) - 1]++;
-        if (r.earnedPoints === null || r.earnedPoints === undefined) {
+        if ((r.earnedPoints === null || r.earnedPoints === undefined) && (r.quizScore === null || r.quizScore === undefined)) {
           m.awaiting++;
           const pts = knownPoints(byId.get(id));
           if (pts === null) m.unknown++;

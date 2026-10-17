@@ -118,7 +118,9 @@
    * or, with perPoint 0, the non-money `prize`. `paid` counts payouts already made.
    * School points: once a grown-up types in her total from the school's AR report (`school`, on `schoolDate`),
    * the points above `schoolStart` (her total when the deal started) are the ones that count.
-   * Screen time: `minutes` for every 10 points, plus `bonus` minutes for each Reading Room book she finishes on or
+   * Her choices: every 10 points is one choice, 10 points' worth of book money (`toJar`) or `minutes` of screen time
+   * (`toMinutes`); the counts are the choices she has made.
+   * Screen time: the minutes she chose, plus `bonus` minutes for each Reading Room book she finishes on or
    * after `since` (a book in `special` earns its own minutes instead). `given` counts minutes already handed over.
    * Grown-up passcode: `code` is its fingerprint (blank when there is none); `codeReset` is the day it was last reset
    * with "Forgot the passcode?".
@@ -144,6 +146,8 @@
       minutes: whole(o.minutes, 0, 1000, SCREEN_DEFAULT.minutes),
       bonus: whole(o.bonus, 0, 1000, SCREEN_DEFAULT.bonus),
       special: specialBooks(o.special),
+      toJar: whole(o.toJar, 0, 100000, 0),
+      toMinutes: whole(o.toMinutes, 0, 100000, 0),
       given: whole(o.given, 0, 1000000, 0),
       since: day(o.since),
       code: typeof o.code === 'string' && /^[0-9a-f]{8}$/.test(o.code) ? o.code : '',
@@ -162,14 +166,36 @@
   }
 
   /**
-   * Screen time earned so far: `minutes` for every 10 points, plus the extra for each Reading Room book finished
-   * on or after `since`. With no `since` yet, no book earns an extra, so books finished before screen time started
-   * never count. Books she added herself earn no extra. `owed` never goes below zero.
+   * How her points are spent. Every 10 points is one choice: the jar or screen time. `open` counts the choices
+   * waiting for her, `into` the points toward the next one, and `jarPoints` the points that went into the jar.
+   * With only one of the two rewards switched on, every 10 points goes straight to it. Choices beyond what her
+   * points cover (after a quiz result is corrected down) don't count until she earns those points again.
+   */
+  function choices(totalPoints, settings) {
+    const cfg = reward(settings);
+    const total = Math.max(0, Number(totalPoints) || 0);
+    const batches = Math.floor(total / 10 + 1e-9);
+    let toJar = 0, toMinutes = 0;
+    if (cfg.on && cfg.screen) {
+      toJar = Math.min(cfg.toJar, batches);
+      toMinutes = Math.min(cfg.toMinutes, batches - toJar);
+    } else if (cfg.on) toJar = batches;
+    else if (cfg.screen) toMinutes = batches;
+    const into = round(total - batches * 10);
+    return {
+      batches, toJar, toMinutes, open: cfg.on && cfg.screen ? batches - toJar - toMinutes : 0,
+      into, toGo: round(10 - into), jarPoints: cfg.on && !cfg.screen ? total : toJar * 10
+    };
+  }
+
+  /**
+   * Screen time earned so far: `minutes` for each 10 points she chose to spend on it, plus the extra for each
+   * Reading Room book finished on or after `since`. With no `since` yet, no book earns an extra, so books finished
+   * before screen time started never count. Books she added herself earn no extra. `owed` never goes below zero.
    */
   function screenTime(totalPoints, records, books, settings) {
     const cfg = reward(settings);
-    const total = Math.max(0, Number(totalPoints) || 0);
-    const tens = Math.floor(total / 10 + 1e-9);
+    const spent = choices(totalPoints, cfg);
     const catalog = new Set((books || []).filter(b => b && !isCustomId(b.book_id)).map(b => b.book_id));
     const extras = [];
     for (const id of Object.keys(records || {})) {
@@ -179,12 +205,11 @@
       if (minutes > 0) extras.push({ id, minutes, finishedDate: r.finishedDate });
     }
     extras.sort((x, y) => y.finishedDate.localeCompare(x.finishedDate) || (x.id < y.id ? -1 : 1));
-    const fromPoints = tens * cfg.minutes;
+    const fromPoints = spent.toMinutes * cfg.minutes;
     const fromBooks = extras.reduce((sum, x) => sum + x.minutes, 0);
-    const into = round(total - tens * 10);
     return {
       fromPoints, fromBooks, books: extras, earned: fromPoints + fromBooks, given: cfg.given,
-      owed: Math.max(0, fromPoints + fromBooks - cfg.given), into, toGo: round(10 - into), perTen: cfg.minutes
+      owed: Math.max(0, fromPoints + fromBooks - cfg.given), into: spent.into, toGo: spent.toGo, perTen: cfg.minutes
     };
   }
 
@@ -476,6 +501,6 @@
 
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    reward, rewardStatus, rewardPoints, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+    reward, rewardStatus, rewardPoints, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
   };
 });

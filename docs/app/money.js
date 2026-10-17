@@ -31,13 +31,17 @@ export function bookExtra(b) {
   return Object.prototype.hasOwnProperty.call(cfg.special, b.book_id) ? cfg.special[b.book_id] : cfg.bonus;
 }
 
-// What new points earned her, in one sentence for a toast (book money, screen time, a Secret File), or ''.
+// One choice for 10 points, the jar side: "$10 in the jar", or "10 points in the jar" for a reward that isn't money.
+const jarChoiceLabel = cfg => (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' in the jar';
+
+// What new points earned her, in one sentence for a toast (points to spend, book money, screen time, a Secret File), or ''.
 export function pointsNews(before, after) {
   const cfg = C.reward(state.settings.reward);
+  const was = C.choices(before, cfg), now = C.choices(after, cfg);
   const news = [];
-  if (cfg.on && C.rewardStatus(after, cfg).earned > C.rewardStatus(before, cfg).earned) news.push('Book money is waiting: ' + rewardLabel(cfg) + '!');
-  const minutes = cfg.screen ? screenStatus(after).fromPoints - screenStatus(before).fromPoints : 0;
-  if (minutes > 0) news.push('+' + minutes + ' minutes of screen time.');
+  if (now.open > was.open) news.push('You have ' + fmtNum(now.open * 10) + ' points to spend on the Progress tab: ' + jarChoiceLabel(cfg) + ' or ' + cfg.minutes + ' minutes for every 10.');
+  if (cfg.on && C.rewardStatus(now.jarPoints, cfg).earned > C.rewardStatus(was.jarPoints, cfg).earned) news.push('Book money is waiting: ' + rewardLabel(cfg) + '!');
+  if (now.toMinutes > was.toMinutes) news.push('+' + (now.toMinutes - was.toMinutes) * cfg.minutes + ' minutes of screen time.');
   const unlocked = DUDE.files.filter(f => before < f.at && after >= f.at);
   if (unlocked.length) news.push('Secret File unlocked: ' + fill(unlocked[unlocked.length - 1].title) + '!');
   return news.join(' ');
@@ -67,7 +71,8 @@ function factLine(total) {
 export function jarHtml(total) {
   const cfg = C.reward(state.settings.reward);
   if (!cfg.on) return '';
-  const st = C.rewardStatus(total, cfg);
+  const jarPoints = C.choices(total, cfg).jarPoints;
+  const st = C.rewardStatus(jarPoints, cfg);
   const vars = { points: fmtNum(total), toGo: fmtNum(st.toGo), prize: rewardLabel(cfg) };
   let line = '';
   for (const [at, text] of DUDE.jar) if (st.frac >= at) line = text;
@@ -82,7 +87,7 @@ export function jarHtml(total) {
     '<div class="jar-info"><p class="jar-kicker">Book Money Jar</p>' +
       (st.money
         ? '<p class="jar-count"><span class="big">' + money(st.jarMoney) + '</span> <span class="of">of ' + money(st.payout) + '</span></p>' +
-          '<p class="jar-goal">' + fmtNum(st.into) + ' of ' + st.every + ' points. At ' + st.every + ', ' + money(st.payout) + ' goes into ' + esc(cfg.where) + '.</p>'
+          '<p class="jar-goal">' + fmtNum(st.into) + ' of ' + st.every + ' points in the jar. At ' + st.every + ', ' + money(st.payout) + ' goes into ' + esc(cfg.where) + '.</p>'
         : '<p class="jar-count"><span class="big">' + fmtNum(st.into) + '</span> <span class="of">of ' + st.every + ' points</span></p>' +
           '<p class="jar-goal">until ' + esc(prizeText(cfg.prize)) + '</p>') +
       '<p class="jar-line">' + esc(fill(full ? DUDE.jarFull : line, vars)) + '</p></div>' +
@@ -92,12 +97,29 @@ export function jarHtml(total) {
       '<p class="jar-title"><span>Your title</span><b>' + esc(title ? fill(title.title) : 'Fresh Bookworm') + '</b></p>' +
       '<p class="jar-next">' + (next ? 'Next Secret File opens at ' + next.at + ' points.' : 'Every Secret File is open. Legend.') + '</p>' +
       '<p class="jar-fact">' + esc(factLine(total)) + '</p>' +
-      '<p class="jar-tally">' + (st.money
-        ? fmtNum(total) + counted + ' = ' + money(st.totalMoney) + ' · payouts earned: ' + st.earned + (cfg.paid ? ', deposited: ' + cfg.paid : '')
-        : fmtNum(total) + counted + ' · rewards earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '')) + '</p>' +
+      '<p class="jar-tally">' + fmtNum(total) + counted + (jarPoints !== total ? ' · ' + fmtNum(jarPoints) + ' in the jar' : '') + (st.money
+        ? ' = ' + money(st.totalMoney) + ' · payouts earned: ' + st.earned + (cfg.paid ? ', deposited: ' + cfg.paid : '')
+        : ' · rewards earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '')) + '</p>' +
       (school ? '<p class="jar-tally">Points from the school’s AR report' + (cfg.schoolDate ? ', updated ' + esc(fmtDay(cfg.schoolDate)) : '') + '.</p>' +
         '<div class="row-actions"><button type="button" class="btn small" data-act="school-update">Grown-up: update school points</button></div>' : '') +
     '</div></section>';
+}
+
+// Her choices on the Progress tab: each 10 points goes into the jar or becomes screen time, her pick, mixed however she
+// likes. With only one of the two switched on there's nothing to choose.
+export function choiceHtml(total) {
+  const cfg = C.reward(state.settings.reward);
+  if (!cfg.on || !cfg.screen) return '';
+  const ch = C.choices(total, cfg);
+  const pick = jarChoiceLabel(cfg) + ' or ' + cfg.minutes + ' minutes of screen time';
+  if (!ch.open) return '<p class="choice-next">' + fmtNum(ch.into) + ' of 10 points toward your next choice: ' + esc(pick) + '.</p>';
+  return '<section class="choice-card" aria-label="Spend your points">' +
+    '<p class="jar-kicker">Spend your points</p>' +
+    '<p class="jar-count"><span class="big">' + fmtNum(ch.open * 10) + '</span> <span class="of">points to spend</span></p>' +
+    '<p class="jar-goal">Every 10 points: ' + esc(pick) + '. Mix them however you like.</p>' +
+    '<div class="row-actions"><button type="button" class="btn primary" data-act="choose" data-to="jar">' + esc(jarChoiceLabel(cfg)) + '</button>' +
+      '<button type="button" class="btn primary" data-act="choose" data-to="minutes">' + cfg.minutes + ' minutes</button></div>' +
+  '</section>';
 }
 
 // The screen-time card on the Progress tab: minutes waiting, progress to the next batch, and the books that earned extra.
@@ -106,13 +128,14 @@ export function screenHtml(total) {
   if (!cfg.screen) return '';
   const st = screenStatus(total);
   const title = id => (BY_ID.get(id) || { title: id }).title;
-  const rules = [cfg.minutes ? cfg.minutes + ' minutes for every 10 points' : '', cfg.bonus ? cfg.bonus + ' extra for each book from the list you finish' : '']
+  const rules = [cfg.minutes ? cfg.minutes + (cfg.on ? ' minutes for each 10 points you spend on it' : ' minutes for every 10 points') : '',
+    cfg.bonus ? cfg.bonus + ' extra for each book from the list you finish' : '']
     .concat(Object.keys(cfg.special).filter(id => BY_ID.has(id)).map(id => title(id) + ': ' + cfg.special[id] + ' extra'))
     .filter(Boolean).join(' · ');
   return '<section class="screen-card" aria-label="Screen time">' +
     '<p class="jar-kicker">Screen time</p>' +
     '<p class="jar-count"><span class="big">' + fmtNum(st.owed) + '</span> <span class="of">' + (st.owed === 1 ? 'minute' : 'minutes') + ' waiting</span></p>' +
-    (cfg.minutes ? '<p class="jar-goal">' + fmtNum(st.into) + ' of 10 points toward the next ' + cfg.minutes + ' minutes.</p>' : '') +
+    (cfg.minutes && !cfg.on ? '<p class="jar-goal">' + fmtNum(st.into) + ' of 10 points toward the next ' + cfg.minutes + ' minutes.</p>' : '') +
     '<p class="screen-rules">' + esc(rules) + '</p>' +
     (st.books.length ? '<ul class="screen-books" aria-label="Books that earned extra minutes">' + st.books.slice(0, 3).map(x =>
       '<li><span>' + esc(title(x.id)) + '</span><b>+' + x.minutes + ' min</b></li>').join('') + '</ul>' : '') +
@@ -179,7 +202,8 @@ export function rewardPanelHtml() {
   }
   const cfg = C.reward(state.settings.reward);
   const total = rewardPoints();
-  const st = C.rewardStatus(total, cfg);
+  const jarPoints = C.choices(total, cfg).jarPoints;
+  const st = C.rewardStatus(jarPoints, cfg);
   const school = cfg.school !== null;
   return head +
     '<p class="lead">Turn AR points into real rewards. ' + (school
@@ -199,12 +223,35 @@ export function rewardPanelHtml() {
         '<button type="button" data-act="paid-minus" aria-label="One fewer">−</button><output id="reward-paid">' + cfg.paid + '</output>' +
         '<button type="button" data-act="paid-plus" aria-label="One more">+</button></div></div>' +
       '<p class="hint">' + (st.money
-        ? money(cfg.perPoint) + ' a point × ' + cfg.every + ' points = ' + money(st.payout) + ' each payout. ' + fmtNum(total) + ' points so far · ' + plural(st.earned, 'payout') + ' earned · ' + money(st.owedMoney) + ' waiting to be deposited.'
-        : fmtNum(total) + ' points so far · ' + plural(st.earned, 'reward') + ' earned · ' + st.owed + ' waiting to be given.') +
+        ? money(cfg.perPoint) + ' a point × ' + cfg.every + ' points = ' + money(st.payout) + ' each payout. ' + fmtNum(jarPoints) + ' points in the jar · ' + plural(st.earned, 'payout') + ' earned · ' + money(st.owedMoney) + ' waiting to be deposited.'
+        : fmtNum(jarPoints) + ' points in the jar · ' + plural(st.earned, 'reward') + ' earned · ' + st.owed + ' waiting to be given.') +
         ' Set dollars per point to 0 for a reward that isn’t money.</p>' +
       schoolFieldsHtml(cfg, total) +
       screenFieldsHtml(cfg, total) +
+      choiceFieldsHtml(cfg, total) +
     '</div></section>';
+}
+
+// The choices she has made, so a grown-up can fix a mistaken tap.
+function choiceFieldsHtml(cfg, total) {
+  if (!cfg.on || !cfg.screen) return '';
+  const ch = C.choices(total, cfg);
+  const stepper = (id, label, value) => '<div class="stepper"><span class="label" id="' + id + '-label">' + label + '</span>' +
+    '<div class="seg" role="group" aria-labelledby="' + id + '-label"><button type="button" data-act="' + id + '-minus" aria-label="One fewer">−</button>' +
+    '<output id="' + id + '">' + value + '</output><button type="button" data-act="' + id + '-plus" aria-label="One more">+</button></div></div>';
+  return '<h3 class="panel-sub">Her choices</h3>' +
+    stepper('to-jar', '10 points into the jar', ch.toJar) + stepper('to-minutes', '10 points into screen time', ch.toMinutes) +
+    '<p class="hint">Every 10 points she earns is one choice she makes on the Progress tab: ' + esc(jarChoiceLabel(cfg)) + ' or ' + cfg.minutes + ' minutes. ' +
+      plural(ch.batches, 'choice') + ' earned · ' + ch.open + ' waiting. Fix a mistaken tap here.</p>';
+}
+
+// A grown-up's fix to her choices; they can't add up to more than the points she has earned.
+async function fixChoices(jar, minutes) {
+  const ch = C.choices(rewardPoints(), state.settings.reward);
+  const toJar = Math.max(0, ch.toJar + jar), toMinutes = Math.max(0, ch.toMinutes + minutes);
+  if (toJar + toMinutes > ch.batches) { toast('Every 10 points she has earned already has a choice.'); return; }
+  await saveReward({ toJar, toMinutes });
+  renderMore();
 }
 
 // Her total from the school's AR report, so a quiz she forgets to enter in the app still counts.
@@ -249,6 +296,26 @@ const guardAll = handlers => Object.fromEntries(Object.entries(handlers).map(([n
 export const actions = {
   'open-file': el => openFile(Number(el.dataset.i)),
   'unlock-panel': () => asGrownup(renderMore),
+  // Her pick for the next 10 points: the jar or screen time. No passcode: it's her choice.
+  choose: async el => {
+    const cfg = C.reward(state.settings.reward);
+    const total = rewardPoints();
+    const ch = C.choices(total, cfg);
+    if (!ch.open) return;
+    const jar = el.dataset.to === 'jar';
+    const before = C.rewardStatus(ch.jarPoints, cfg).earned;
+    await saveReward({ toJar: ch.toJar + (jar ? 1 : 0), toMinutes: ch.toMinutes + (jar ? 0 : 1) });
+    const payout = jar && C.rewardStatus(C.choices(total, state.settings.reward).jarPoints, cfg).earned > before;
+    renderProgress();
+    celebrate();
+    toast(payout ? fill(DUDE.jarFull, { prize: rewardLabel(cfg) })
+      : jar ? (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' went into the jar. ' + DUDE.dog + ' heard it clink.'
+      : cfg.minutes + ' minutes of screen time saved. Cash them in on the weekend.');
+  },
+  'to-jar-minus': guard(() => fixChoices(-1, 0)),
+  'to-jar-plus': guard(() => fixChoices(1, 0)),
+  'to-minutes-minus': guard(() => fixChoices(0, -1)),
+  'to-minutes-plus': guard(() => fixChoices(0, 1)),
   'reward-given': () => asGrownup(() => {
     const cfg = C.reward(state.settings.reward);
     const cash = cfg.perPoint > 0;

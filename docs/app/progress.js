@@ -1,4 +1,5 @@
-/* The Progress tab: points and goals, the book money jar, screen time, Secret Files, the chart, and collections finished. */
+/* The Progress tab: points and goals, her choices of money or minutes, the book money jar, screen time, Secret Files,
+ * the chart, and collections finished. */
 
 import { C, $, esc, today, thisYear, fmtNum, plural, fmtDay, localDay } from './util.js';
 import { icon } from './icons.js';
@@ -6,7 +7,7 @@ import { collLabel, BOOKS, BY_ID, COLLECTIONS } from './books.js';
 import { state, saveUi, saveSetting } from './state.js';
 import { main, toast } from './page.js';
 import { greeting, revealChip, applySizes, row } from './cards.js';
-import { rewardPoints, jarHtml, screenHtml, filesHtml } from './money.js';
+import { rewardPoints, choiceHtml, jarHtml, screenHtml, filesHtml } from './money.js';
 import { quizLine } from './shelves.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -87,6 +88,7 @@ export function renderProgress() {
   const total = rewardPoints();
   main.innerHTML =
     '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>My progress</h1></div></header>' +
+    choiceHtml(total) +
     jarHtml(total) +
     screenHtml(total) +
     '<div class="chips" role="group" aria-label="Time period">' + years.map(y =>

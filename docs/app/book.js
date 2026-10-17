@@ -1,13 +1,13 @@
 /* A book's page (the sheet that slides up): details, shelf buttons, rating, notes, the AR quiz result,
  * and the library link. Its Share button is handled in share.js. */
 
-import { C, $, $$, esc, today, fmtNum, plural, fold, fmtDay, safeUrl, DUDE, fill } from './util.js';
+import { C, $, $$, esc, today, fmtNum, plural, fold, fmtDay, safeUrl, DUDE } from './util.js';
 import { icon } from './icons.js';
 import { STATUS, INTEREST, BY_ID } from './books.js';
 import { state, rec, save } from './state.js';
 import { sheet, toast, celebrate, sheetBar, showConfirm } from './page.js';
 import { cover, levelTag, pointsTag, mineTag, ratingSays, dl } from './cards.js';
-import { rewardLabel, rewardPoints, screenStatus, bookExtra } from './money.js';
+import { rewardPoints, screenStatus, bookExtra, pointsNews } from './money.js';
 import { customDetailsHtml } from './my-books.js';
 import { asGrownup, hasCode } from './grownup.js';
 
@@ -213,19 +213,12 @@ async function saveQuiz(form) {
   const before = rewardPoints();
   await save(id, { earnedPoints: pts, quizDate: date || r.quizDate || today() });
   refreshShelf();
-  const after = rewardPoints();
-  const cfg = C.reward(state.settings.reward);
-  const money = cfg.on && C.rewardStatus(after, cfg).earned > C.rewardStatus(before, cfg).earned;
-  const unlocked = DUDE.files.filter(f => before < f.at && after >= f.at);
-  const minutes = cfg.screen ? screenStatus(after).fromPoints - screenStatus(before).fromPoints : 0;
+  const news = pointsNews(before, rewardPoints());
   const over = b && b._points !== null && pts > b._points;
-  let message = over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.'
+  const message = over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.'
     : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.';
-  if (money) message = fill(DUDE.jarFull || 'Book money! You earned {prize}.', { prize: rewardLabel(cfg) }) + (unlocked.length ? ' Plus a new Secret File!' : '');
-  else if (unlocked.length) message = 'Secret File unlocked: ' + fill(unlocked[unlocked.length - 1].title) + '! Find it on the Progress tab.';
-  if (minutes > 0) message += ' +' + minutes + ' minutes of screen time.';
-  if ((pts > 0 && wasBlank) || money || unlocked.length || minutes > 0) celebrate();
-  toast(message);
+  if ((pts > 0 && wasBlank) || news) celebrate();
+  toast(message + (news ? ' ' + news : ''));
 }
 
 export const actions = {

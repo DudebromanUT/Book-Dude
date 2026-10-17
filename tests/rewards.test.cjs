@@ -52,7 +52,7 @@ test('school points: once a grown-up types her school total, the points above th
   assert.equal(C.reward({ schoolDate: '2026-02-30' }).schoolDate, '');
 });
 
-test('screen time: 60 minutes for every 10 points, plus extras for books from the list finished since it started', () => {
+test('screen time: 60 minutes for each 10 points she spends on it, plus extras for books from the list finished since it started', () => {
   const list = [
     { book_id: 'bridge-to-terabithia--katherine-paterson', title: 'Bridge to Terabithia' },
     { book_id: 'hatchet--gary-paulsen', title: 'Hatchet' },
@@ -71,7 +71,7 @@ test('screen time: 60 minutes for every 10 points, plus extras for books from th
   const d = C.reward({});
   assert.equal(d.screen, true); assert.equal(d.minutes, 60); assert.equal(d.bonus, 30); assert.equal(d.given, 0); assert.equal(d.since, '');
   assert.deepEqual(d.special, { 'bridge-to-terabithia--katherine-paterson': 60 });
-  const cfg = { since: '2026-10-17' };
+  const cfg = { since: '2026-10-17', toMinutes: 2 };
   const s = C.screenTime(27.5, records, list, cfg);
   assert.equal(s.fromPoints, 120); assert.equal(s.into, 7.5); assert.equal(s.toGo, 2.5);
   // Bridge to Terabithia earns its own 60 instead of the usual 30; newest first.
@@ -97,12 +97,12 @@ test('screen-time settings fall back to sensible defaults', () => {
 });
 
 test('backups carry school points and screen time', () => {
-  const mine = C.reward({ school: 47.5, schoolStart: 40, schoolDate: '2026-10-17', minutes: 45, bonus: 20, given: 90, since: '2026-10-17', updatedAt: '2026-10-17T00:00:00Z' });
+  const mine = C.reward({ school: 47.5, schoolStart: 40, schoolDate: '2026-10-17', minutes: 45, bonus: 20, toJar: 3, toMinutes: 2, given: 90, since: '2026-10-17', updatedAt: '2026-10-17T00:00:00Z' });
   const file = JSON.parse(JSON.stringify(C.exportBackup({}, { goals: {}, reward: mine }, '2026-10-18T00:00:00Z', {})));
   assert.deepEqual(C.parseBackup(file, books).reward, mine);
   // A backup from before screen time existed gets the defaults.
   const old = C.parseBackup({ app: 'reading-room', version: 1, records: {}, settings: { reward: { every: 100, paid: 1 } } }, books).reward;
-  assert.equal(old.school, null); assert.equal(old.minutes, 60); assert.equal(old.given, 0); assert.equal(old.since, '');
+  assert.equal(old.school, null); assert.equal(old.minutes, 60); assert.equal(old.given, 0); assert.equal(old.since, ''); assert.equal(old.toJar, 0);
 });
 
 test('the grown-up passcode is saved as a fingerprint, never as the four digits', () => {
@@ -119,4 +119,24 @@ test('the grown-up passcode is saved as a fingerprint, never as the four digits'
   const file = JSON.parse(JSON.stringify(C.exportBackup({}, { goals: {}, reward: mine }, '2026-10-21T00:00:00Z', {})));
   assert.equal(C.parseBackup(file, books).reward.code, h);
   assert.equal(JSON.stringify(file).includes('2468'), false);
+});
+
+test('her choices: every 10 points goes into the jar or becomes screen time, mixed however she likes', () => {
+  assert.equal(C.reward({}).toJar, 0); assert.equal(C.reward({}).toMinutes, 0); assert.equal(C.reward({ toJar: -1 }).toJar, 0);
+  const none = C.choices(27.5, {});
+  assert.deepEqual([none.batches, none.open, none.toJar, none.toMinutes, none.into, none.toGo, none.jarPoints], [2, 2, 0, 0, 7.5, 2.5, 0]);
+  const mixed = C.choices(35, { toJar: 1, toMinutes: 1 });
+  assert.deepEqual([mixed.open, mixed.jarPoints], [1, 10]);
+  // The jar counts only the points she put in it.
+  assert.equal(C.rewardStatus(mixed.jarPoints, {}).jarMoney, 10);
+  // Choices beyond her points (after a quiz result is corrected down) don't count until she earns them again.
+  const over = C.choices(15, { toJar: 1, toMinutes: 2 });
+  assert.deepEqual([over.toJar, over.toMinutes, over.open], [1, 0, 0]);
+  // With only one of the two switched on, every point goes straight to it, as before.
+  const jarOnly = C.choices(27.5, { screen: false });
+  assert.deepEqual([jarOnly.open, jarOnly.jarPoints], [0, 27.5]);
+  const minutesOnly = C.choices(27.5, { on: false });
+  assert.deepEqual([minutesOnly.open, minutesOnly.toMinutes, minutesOnly.jarPoints], [0, 2, 0]);
+  assert.equal(C.screenTime(27.5, {}, [], { on: false }).fromPoints, 120);
+  assert.equal(C.screenTime(27.5, {}, [], {}).fromPoints, 0);
 });

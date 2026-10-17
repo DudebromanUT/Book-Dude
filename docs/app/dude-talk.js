@@ -69,15 +69,17 @@ function shelfJoke() {
   return pool.length ? showLine(deck, pick(pool)) : null;
 }
 
-// The P.S. under his line: book money waiting, screen time waiting (on a weekend), a quiz to enter, nearly there,
-// or the book she's reading.
+// The P.S. under his line: book money waiting, points to spend, screen time waiting (on a weekend), a quiz to enter,
+// nearly there, or the book she's reading.
 export function psLine() {
   const ps = DUDE.ps || {};
   const has = key => Array.isArray(ps[key]) && ps[key].length;
   const cfg = C.reward(state.settings.reward);
   const total = rewardPoints();
-  const money = C.rewardStatus(total, cfg);
+  const spent = C.choices(total, cfg);
+  const money = C.rewardStatus(spent.jarPoints, cfg);
   if (cfg.on && money.owed && has('owed')) return fill(pick(ps.owed), { prize: rewardLabel(cfg) });
+  if (spent.open && has('choose')) return fill(pick(ps.choose), { points: fmtNum(spent.open * 10), minutes: cfg.minutes });
   const weekend = [0, 5, 6].includes(new Date().getDay());
   const minutes = cfg.screen && weekend ? screenStatus(total).owed : 0;
   if (minutes && has('minutes')) return fill(pick(ps.minutes), { minutes: plural(minutes, 'minute') });
@@ -86,7 +88,9 @@ export function psLine() {
   const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];
   const quizKey = hasCode() && has('quizGrownup') ? 'quizGrownup' : 'quiz';
   if (quiz && has(quizKey)) return fill(pick(ps[quizKey]), { title: quiz[0].title });
-  if (cfg.on && total > 0 && money.toGo <= Math.max(5, cfg.every * 0.15) && has('close')) return fill(pick(ps.close), { toGo: fmtNum(money.toGo) });
+  // Close to the next choice, or (with only the jar on) to the next payout.
+  const toGo = cfg.on && !cfg.screen ? money.toGo : spent.toGo;
+  if ((cfg.on || cfg.screen) && total > 0 && toGo <= (cfg.on && !cfg.screen ? Math.max(5, cfg.every * 0.15) : 3) && has('close')) return fill(pick(ps.close), { toGo: fmtNum(toGo) });
   const reading = mine.filter(([, r]) => r.status === 'reading').sort(newest)[0];
   if (reading) {
     const p = reading[1].progress || 0;

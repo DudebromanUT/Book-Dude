@@ -363,6 +363,11 @@ async function clickThrough(BASE) {
   note('reward per abc', await toast() + ' / ' + await p.inputValue('#reward-per'));
   await setVal('#reward-every', '0');
   note('reward every 0', await toast() + ' / ' + await p.inputValue('#reward-every'));
+  // With screen time off, every point goes straight into the jar, as before she could choose. (The name field still
+  // has the keyboard from earlier; letting go of it first keeps its "Hi" message from landing on this step.)
+  await p.evaluate(() => document.activeElement.blur()); await sleep(300);
+  await click('#screen-on', 300);
+  note('screen off', await toast());
   await setVal('#reward-every', '5'); await sleep(100);
   note('reward every 5', await text('.panel:has(#reward-on)'));
   await setVal('#reward-where', 'the library fund');
@@ -382,7 +387,10 @@ async function clickThrough(BASE) {
   await click('[data-act="confirm-ok"]', 400);
   note('reward given', await toast() + ' / ' + await text('.jar-card .jar-tally'));
 
-  // ---- Screen time: a book with its own extra, the weekend hand-off, and points from the school's report.
+  // ---- Screen time: a book with its own extra, the weekend hand-off, points from the school's report, and her choices.
+  await click('.tab[data-tab="more"]', 400);
+  await click('#screen-on', 300);
+  note('screen on', await toast());
   await click('.tab[data-tab="explore"]', 400);
   await search('bridge to terabithia');
   note('extra tag', (await all('#items .card .tags')).slice(0, 1).join(''));
@@ -423,6 +431,17 @@ async function clickThrough(BASE) {
   note('school update abc', await text('#school-error'));
   await p.fill('#school-quick', '61'); await click('form[data-form="school"] button[type="submit"]', 500);
   note('school update 61', await toast() + ' / ' + await text('.screen-card'));
+  note('choice card', await text('.choice-card'));
+  await click('[data-act="choose"][data-to="minutes"]', 400);
+  note('chose minutes', await toast() + ' / ' + await text('.choice-card') + ' / ' + await text('.screen-card .jar-count'));
+  await click('[data-act="choose"][data-to="jar"]', 400);
+  note('chose jar', await toast() + ' / ' + await text('.choice-next') + ' / ' + await text('.jar-card .jar-tally'));
+  await click('.tab[data-tab="more"]', 400);
+  await click('[data-act="to-jar-plus"]', 300);
+  note('fix choices full', await toast() + ' / ' + await text('#to-jar') + ' / ' + await text('#to-minutes'));
+  await click('[data-act="to-minutes-minus"]', 300);
+  note('fix choices', await text('#to-jar') + ' / ' + await text('#to-minutes') + ' / ' + await text('.panel-sub:last-of-type + .stepper + .stepper + .hint'));
+  await click('[data-act="to-minutes-plus"]', 300);
   await click('.tab[data-tab="explore"]', 400);
   await search('hatchet');
   await openSheet('#items .card');

@@ -15,6 +15,7 @@ import { newDudeLine, openStory } from './dude-talk.js';
 import { applyAccent, startPets } from './more.js';
 import { openBook } from './book.js';
 import { registerWorker } from './offline.js';
+import { rewardPoints } from './money.js';
 import { TABS, render } from './tabs.js';
 import { listen } from './events.js';
 
@@ -37,8 +38,12 @@ async function start() {
   state.settings.storySeen = s.storySeen === true;
   state.settings.pets = s.pets !== false;
   if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
-  // Extra screen-time minutes count from the first day this device had them, so books finished before then don't.
-  if (!state.settings.reward.since) saveSetting('reward', C.reward(Object.assign({}, state.settings.reward, { since: today() })));
+  // The first start with screen time on this device: extra minutes count for books finished from today on, and the
+  // points she already earned stay in the jar, where every point went before she could choose screen time.
+  const first = {};
+  if (!state.settings.reward.since) first.since = today();
+  if (!s.reward || s.reward.toJar === undefined) first.toJar = Math.floor(rewardPoints() / 10);
+  if (Object.keys(first).length) saveSetting('reward', C.reward(Object.assign({}, state.settings.reward, first)));
   applyAccent();
   if (!loaded.ok) {
     const warn = $('#storage-warning');

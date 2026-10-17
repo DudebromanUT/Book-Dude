@@ -719,6 +719,16 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .jar-fact { font-size: .92rem; color: var(--ink-2); }
 .jar-foot .row-actions { margin-top: 2px; }
 
+/* ---------- Her choices: money or minutes ---------- */
+.choice-card {
+  display: grid; gap: 4px; margin-bottom: 18px; padding: 18px 18px 16px; border-radius: 22px;
+  background: var(--grain), linear-gradient(160deg, var(--accent-soft), var(--surface) 65%);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); box-shadow: var(--shadow);
+}
+.choice-card .jar-kicker { color: var(--accent-text); }
+.choice-card .row-actions { margin-top: 8px; }
+.choice-next { margin: 0 0 12px; font-size: .92rem; font-weight: 650; color: var(--ink-2); }
+
 /* ---------- Screen time ---------- */
 .screen-card {
   display: grid; gap: 4px; margin-bottom: 18px; padding: 18px 18px 16px; border-radius: 22px;

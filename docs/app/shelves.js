@@ -5,7 +5,7 @@ import { icon } from './icons.js';
 import { STATUS, BY_ID } from './books.js';
 import { state, saveUi, rec } from './state.js';
 import { main } from './page.js';
-import { greeting, revealChip, applySizes, browseTag, pointsTag, ratingTag, row, emptyState } from './cards.js';
+import { greeting, revealChip, applySizes, browseTag, pointsTag, extraTag, ratingTag, row, emptyState } from './cards.js';
 import { goTab } from './tabs.js';
 
 const SHELVES = [
@@ -44,7 +44,7 @@ function shelfSub(b, r, key) {
   if (r.status === 'finished') return '<span>' + (r.finishedDate ? 'Finished ' + esc(fmtDay(r.finishedDate)) : 'Finished (no date)') + '</span>' + ratingTag(r) + quizLine(b, r);
   if (r.status === 'paused') return '<span>Paused' + (r.progress ? ' at ' + r.progress + '%' : '') + '</span>';
   if ((key === 'favorites' || key === 'mine') && r.status) return '<span class="tag">' + STATUS[r.status].label + '</span>' + browseTag(b) + pointsTag(b);
-  return browseTag(b) + pointsTag(b);
+  return browseTag(b) + pointsTag(b) + extraTag(b);
 }
 
 export function renderShelves() {

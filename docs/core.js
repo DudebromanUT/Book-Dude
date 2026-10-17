@@ -86,10 +86,29 @@
   }
 
   const REWARD_DEFAULT = { on: true, every: 100, perPoint: 1, where: 'your Barnes & Noble account', prize: 'a trip to Barnes & Noble', paid: 0 };
+  // Screen time: minutes for every 10 points, extra minutes for each Reading Room book she finishes,
+  // and books with an extra of their own instead.
+  const SCREEN_DEFAULT = { screen: true, minutes: 60, bonus: 30, special: { 'bridge-to-terabithia--katherine-paterson': 60 } };
+
+  /** Books with their own screen-time extra: { book_id: minutes }. Anything unreadable is dropped. */
+  function specialBooks(v) {
+    if (!isPlain(v)) return Object.assign({}, SCREEN_DEFAULT.special);
+    const out = {};
+    for (const id of Object.keys(v)) {
+      const n = amount(v[id], 1000);
+      if (safeId(id) && typeof n === 'number' && Number.isInteger(n)) out[id] = n;
+    }
+    return out;
+  }
 
   /**
-   * Book-money settings. Every `every` AR points pays out: `perPoint` dollars a point into `where`,
+   * Book-money and screen-time settings.
+   * Book money: every `every` AR points pays out: `perPoint` dollars a point into `where`,
    * or, with perPoint 0, the non-money `prize`. `paid` counts payouts already made.
+   * School points: once a grown-up types in her total from the school's AR report (`school`, on `schoolDate`),
+   * the points above `schoolStart` (her total when the deal started) are the ones that count.
+   * Screen time: `minutes` for every 10 points, plus `bonus` minutes for each Reading Room book she finishes on or
+   * after `since` (a book in `special` earns its own minutes instead). `given` counts minutes already handed over.
    */
   function reward(o) {
     o = isPlain(o) ? o : {};
@@ -97,6 +116,7 @@
       const n = amount(v, max);
       return typeof n === 'number' && !Number.isNaN(n) && Number.isInteger(n) && n >= min ? n : fallback;
     };
+    const points = (v, fallback) => { const n = amount(v, 100000); return typeof n === 'number' && !Number.isNaN(n) ? round(n) : fallback; };
     return {
       on: o.on === undefined ? REWARD_DEFAULT.on : o.on === true,
       every: whole(o.every, 1, 10000, REWARD_DEFAULT.every),
@@ -104,7 +124,52 @@
       where: typeof o.where === 'string' && o.where.trim() ? o.where.trim().slice(0, 60) : REWARD_DEFAULT.where,
       prize: typeof o.prize === 'string' && o.prize.trim() ? o.prize.trim().slice(0, 80) : REWARD_DEFAULT.prize,
       paid: whole(o.paid, 0, 10000, REWARD_DEFAULT.paid),
+      school: points(o.school, null),
+      schoolStart: points(o.schoolStart, 0),
+      schoolDate: day(o.schoolDate),
+      screen: o.screen === undefined ? SCREEN_DEFAULT.screen : o.screen === true,
+      minutes: whole(o.minutes, 0, 1000, SCREEN_DEFAULT.minutes),
+      bonus: whole(o.bonus, 0, 1000, SCREEN_DEFAULT.bonus),
+      special: specialBooks(o.special),
+      given: whole(o.given, 0, 1000000, 0),
+      since: day(o.since),
       updatedAt: stamp(o.updatedAt)
+    };
+  }
+
+  /**
+   * The points that count for book money, screen time and the Secret Files: her school AR total above the
+   * starting line once a grown-up has typed it in, otherwise the quiz results entered in this app.
+   */
+  function rewardPoints(appPoints, settings) {
+    const cfg = reward(settings);
+    return Math.max(0, round(cfg.school === null ? Number(appPoints) || 0 : cfg.school - cfg.schoolStart));
+  }
+
+  /**
+   * Screen time earned so far: `minutes` for every 10 points, plus the extra for each Reading Room book finished
+   * on or after `since`. With no `since` yet, no book earns an extra, so books finished before screen time started
+   * never count. Books she added herself earn no extra. `owed` never goes below zero.
+   */
+  function screenTime(totalPoints, records, books, settings) {
+    const cfg = reward(settings);
+    const total = Math.max(0, Number(totalPoints) || 0);
+    const tens = Math.floor(total / 10 + 1e-9);
+    const catalog = new Set((books || []).filter(b => b && !isCustomId(b.book_id)).map(b => b.book_id));
+    const extras = [];
+    for (const id of Object.keys(records || {})) {
+      const r = records[id];
+      if (!cfg.since || !r || r.status !== 'finished' || !r.finishedDate || r.finishedDate < cfg.since || !catalog.has(id)) continue;
+      const minutes = has(cfg.special, id) ? cfg.special[id] : cfg.bonus;
+      if (minutes > 0) extras.push({ id, minutes, finishedDate: r.finishedDate });
+    }
+    extras.sort((x, y) => y.finishedDate.localeCompare(x.finishedDate) || (x.id < y.id ? -1 : 1));
+    const fromPoints = tens * cfg.minutes;
+    const fromBooks = extras.reduce((sum, x) => sum + x.minutes, 0);
+    const into = round(total - tens * 10);
+    return {
+      fromPoints, fromBooks, books: extras, earned: fromPoints + fromBooks, given: cfg.given,
+      owed: Math.max(0, fromPoints + fromBooks - cfg.given), into, toGo: round(10 - into), perTen: cfg.minutes
     };
   }
 
@@ -396,6 +461,6 @@
 
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    reward, rewardStatus, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+    reward, rewardStatus, rewardPoints, screenTime, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
   };
 });

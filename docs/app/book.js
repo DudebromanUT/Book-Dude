@@ -7,7 +7,7 @@ import { STATUS, INTEREST, BY_ID } from './books.js';
 import { state, rec, save } from './state.js';
 import { sheet, toast, celebrate, sheetBar, showConfirm } from './page.js';
 import { cover, levelTag, pointsTag, mineTag, ratingSays, dl } from './cards.js';
-import { rewardLabel, allTimePoints } from './money.js';
+import { rewardLabel, rewardPoints, screenStatus, bookExtra } from './money.js';
 import { customDetailsHtml } from './my-books.js';
 
 export function levelMeaning(level) {
@@ -50,7 +50,19 @@ function quizBox(b, r) {
       '<p class="error" id="quiz-error" role="alert" hidden></p>' +
       '<div class="row-actions"><button type="submit" class="btn primary">' + (r.earnedPoints !== null ? 'Update result' : 'Save quiz result') + '</button>' +
       (r.earnedPoints !== null ? '<button type="button" class="btn ghost" data-act="clear-quiz">Clear result</button>' : '') + '</div></form>' +
-    '<p class="hint">Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.</p></div>';
+    '<p class="hint">' + (C.reward(state.settings.reward).school !== null
+      ? 'Book money and screen time come from your total on the school’s AR report, so this one is just for your journal.'
+      : 'Copy the points from the quiz results screen. Leave this blank until the quiz is taken. A 0 still counts as a quiz result.') + '</p></div>';
+}
+
+// The screen-time extra for finishing a book from the list, while screen time is on.
+function extraLine(b, r) {
+  const minutes = bookExtra(b);
+  if (!minutes) return '';
+  const got = r.status === 'finished' && screenStatus(rewardPoints()).books.some(x => x.id === b.book_id);
+  if (r.status === 'finished' && !got) return '';
+  return '<p class="extra-line">' + icon('star') + '<span>' + (got ? 'You earned ' + minutes + ' extra minutes of screen time for this one.'
+    : 'Finish it for ' + minutes + ' extra minutes of screen time.') + '</span></p>';
 }
 
 function shelfHtml(b) {
@@ -66,7 +78,7 @@ function shelfHtml(b) {
   }
   if (r.status === 'finished' || r.earnedPoints !== null) extra += quizBox(b, r);
   return '<div class="shelf-head"><h3 class="label">My shelf</h3><button type="button" class="fav-btn" data-act="fav" aria-pressed="' + r.favorite + '">' + icon('heart') + '<span>Favorite</span></button></div>' +
-    '<div class="status-grid" role="group" aria-label="Shelf">' + statusButtons(r) + '</div>' +
+    '<div class="status-grid" role="group" aria-label="Shelf">' + statusButtons(r) + '</div>' + extraLine(b, r) +
     '<div class="rating-row"><span class="label" id="rating-label">My rating</span>' +
       '<div class="stars" role="group" aria-labelledby="rating-label">' +
       [1, 2, 3, 4, 5].map(n => '<button type="button" data-act="rate" data-n="' + n + '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '" aria-pressed="' + (r.rating !== null && n <= r.rating) + '">' + icon('star') + '</button>').join('') + '</div>' +
@@ -164,7 +176,10 @@ async function setStatus(status) {
   refreshShelf();
   if (next === 'finished') {
     celebrate();
-    toast(r.earnedPoints === null ? 'You finished it! (The Dude is doing a happy sock dance.) After the AR quiz, add your points below.' : 'You finished it! (Happy sock dance.)');
+    const got = screenStatus(rewardPoints()).books.find(x => x.id === id);
+    const plus = got ? ' +' + got.minutes + ' minutes of screen time!' : '';
+    const askQuiz = r.earnedPoints === null && C.reward(state.settings.reward).school === null;
+    toast(askQuiz ? 'You finished it!' + plus + ' (The Dude is doing a happy sock dance.) After the AR quiz, add your points below.' : 'You finished it!' + plus + ' (Happy sock dance.)');
   }
 }
 
@@ -192,19 +207,21 @@ async function saveQuiz(form) {
   const pts = Number(rawPts);
   const r = rec(id);
   const wasBlank = r.earnedPoints === null;
-  const before = allTimePoints();
+  const before = rewardPoints();
   await save(id, { earnedPoints: pts, quizDate: date || r.quizDate || today() });
   refreshShelf();
-  const after = allTimePoints();
+  const after = rewardPoints();
   const cfg = C.reward(state.settings.reward);
   const money = cfg.on && C.rewardStatus(after, cfg).earned > C.rewardStatus(before, cfg).earned;
   const unlocked = DUDE.files.filter(f => before < f.at && after >= f.at);
+  const minutes = cfg.screen ? screenStatus(after).fromPoints - screenStatus(before).fromPoints : 0;
   const over = b && b._points !== null && pts > b._points;
   let message = over ? 'Saved. That is more than this book’s listed ' + fmtNum(b._points) + ' points, so double-check it.'
     : wasBlank ? 'Quiz result saved: ' + plural(pts, 'point') + '!' + (pts > 0 ? ' ' + DUDE.dog + ' wants a high five.' : '') : 'Quiz result updated.';
   if (money) message = fill(DUDE.jarFull || 'Book money! You earned {prize}.', { prize: rewardLabel(cfg) }) + (unlocked.length ? ' Plus a new Secret File!' : '');
   else if (unlocked.length) message = 'Secret File unlocked: ' + fill(unlocked[unlocked.length - 1].title) + '! Find it on the Progress tab.';
-  if ((pts > 0 && wasBlank) || money || unlocked.length) celebrate();
+  if (minutes > 0) message += ' +' + minutes + ' minutes of screen time.';
+  if ((pts > 0 && wasBlank) || money || unlocked.length || minutes > 0) celebrate();
   toast(message);
 }
 

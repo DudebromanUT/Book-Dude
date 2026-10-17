@@ -66,7 +66,7 @@ async function restoreFile(file) {
   if (plan.booksAdded) lines.push('<li>' + plural(plan.booksAdded, 'book you added', 'books you added') + ', new to this device</li>');
   if (plan.booksUpdated) lines.push('<li>' + plural(plan.booksUpdated, 'added book', 'added books') + ' with newer details</li>');
   if (newGoals.length) lines.push('<li>' + plural(newGoals.length, 'yearly goal') + ' added</li>');
-  if (plan.rewardChanged) lines.push('<li>Book-money settings from the backup (' + plan.reward.paid + ' already given)</li>');
+  if (plan.rewardChanged) lines.push('<li>Book money and screen time settings from the backup (' + plural(plan.reward.paid, 'payout') + ' and ' + plural(plan.reward.given, 'minute') + ' already given)</li>');
   showConfirm('Restore this backup?', '<ul>' + lines.join('') + '</ul><p class="hint">Nothing on this device is deleted.' + (parsed.exportedAt ? ' Backup made ' + esc(fmtDay(localDay(parsed.exportedAt))) + '.' : '') + '</p>', 'Restore', async () => {
     const changed = plan.changed.map(id => plan.records[id]);
     try {

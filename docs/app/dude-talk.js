@@ -1,12 +1,12 @@
 /* What the Dude says on screen: his speech bubble, the P.S. under it, and the About the Dude story.
  * The words themselves are in docs/dude.js. */
 
-import { C, UI_KEY, $, esc, fmtNum, DUDE, fill, pick } from './util.js';
+import { C, UI_KEY, $, esc, fmtNum, plural, DUDE, fill, pick } from './util.js';
 import { icon } from './icons.js';
 import { BOOKS, BY_ID } from './books.js';
 import { state, saveSetting } from './state.js';
 import { main, sheet, sheetBar } from './page.js';
-import { rewardLabel, allTimePoints } from './money.js';
+import { rewardLabel, rewardPoints, screenStatus } from './money.js';
 
 // Every line the Dude can say: his one-liners plus jokes tied to books in the catalog.
 const DUDE_KEY = UI_KEY + ':dude';
@@ -68,14 +68,18 @@ function shelfJoke() {
   return pool.length ? showLine(deck, pick(pool)) : null;
 }
 
-// The P.S. under his line: book money waiting, a quiz to enter, nearly there, or the book she's reading.
+// The P.S. under his line: book money waiting, screen time waiting (on a weekend), a quiz to enter, nearly there,
+// or the book she's reading.
 export function psLine() {
   const ps = DUDE.ps || {};
   const has = key => Array.isArray(ps[key]) && ps[key].length;
   const cfg = C.reward(state.settings.reward);
-  const total = allTimePoints();
+  const total = rewardPoints();
   const money = C.rewardStatus(total, cfg);
   if (cfg.on && money.owed && has('owed')) return fill(pick(ps.owed), { prize: rewardLabel(cfg) });
+  const weekend = [0, 5, 6].includes(new Date().getDay());
+  const minutes = cfg.screen && weekend ? screenStatus(total).owed : 0;
+  if (minutes && has('minutes')) return fill(pick(ps.minutes), { minutes: plural(minutes, 'minute') });
   const mine = Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
   const newest = (x, y) => (y[1].updatedAt || '').localeCompare(x[1].updatedAt || '');
   const quiz = mine.filter(([, r]) => r.status === 'finished' && r.earnedPoints === null && r.finishedDate && Date.now() - Date.parse(r.finishedDate) < 21 * 864e5).sort(newest)[0];

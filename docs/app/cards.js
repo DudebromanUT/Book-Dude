@@ -65,6 +65,12 @@ export function pointsTag(b) {
   return '<span class="tag unknown">' + (b._custom ? 'pts not added' : 'pts unverified') + '</span>';
 }
 export const mineTag = b => (b._custom ? '<span class="tag mine">Added by you</span>' : '');
+// Extra screen time of its own for finishing this book (Bridge to Terabithia), or 0.
+const ownExtra = b => {
+  const cfg = state.settings.reward;
+  return cfg && cfg.screen && !b._custom && cfg.special && Object.prototype.hasOwnProperty.call(cfg.special, b.book_id) ? cfg.special[b.book_id] : 0;
+};
+export const extraTag = b => (ownExtra(b) ? '<span class="tag extra" title="Extra screen time for finishing it">+' + ownExtra(b) + ' min</span>' : '');
 const RATING_SAYS = ['Fig wouldn’t even nap on it.', 'Meh. Maple would chew it.', 'Pretty good.', 'Loved it!', 'Dude-level amazing!'];
 export const ratingSays = n => fill((DUDE.ratings && DUDE.ratings[n - 1]) || RATING_SAYS[n - 1] || '');
 export const ratingTag = r => (r && r.rating ? '<span class="tag my-rating" title="My rating">★ ' + r.rating + '</span>' : '');
@@ -83,6 +89,7 @@ function bookLabel(b, r) {
   if (b._amz !== null) bits.push('Amazon rating ' + b._amz.toFixed(1) + ' out of 5 from ' + plural(b._amzCount, 'rating'));
   if (b._level !== null) bits.push('book level ' + b.ar_level);
   bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
+  if (ownExtra(b)) bits.push(ownExtra(b) + ' extra minutes of screen time for finishing it');
   if (r && r.status) bits.push(flagText(r));
   if (r && r.favorite) bits.push('favorite');
   if (r && r.rating) bits.push('you rated it ' + r.rating + ' out of 5');
@@ -96,7 +103,7 @@ export function card(b) {
   return '<button type="button" class="card" data-act="open" data-id="' + esc(b.book_id) + '" aria-label="' + esc(bookLabel(b, r)) + '">' +
     '<span class="cover-slot"><span class="cover-wrap">' + cover(b) + flag + heart + '</span></span>' +
     '<span class="card-meta" aria-hidden="true"><span class="t">' + esc(b.title) + '</span><span class="a">' + esc(b.author) + '</span>' +
-    '<span class="tags">' + ratingTag(r) + browseTag(b) + pointsTag(b) + '</span></span></button>';
+    '<span class="tags">' + ratingTag(r) + browseTag(b) + pointsTag(b) + extraTag(b) + '</span></span></button>';
 }
 
 export function row(b, sub) {

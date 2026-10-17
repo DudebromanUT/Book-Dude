@@ -717,6 +717,24 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .jar-title b { font-family: var(--serif); font-size: 1.15rem; }
 .jar-next, .jar-tally { font-size: .82rem; color: var(--muted); }
 .jar-fact { font-size: .92rem; color: var(--ink-2); }
+.jar-foot .row-actions { margin-top: 2px; }
+
+/* ---------- Screen time ---------- */
+.screen-card {
+  display: grid; gap: 4px; margin-bottom: 18px; padding: 18px 18px 16px; border-radius: 22px;
+  background: var(--grain), linear-gradient(160deg, var(--plum-soft), var(--surface) 65%);
+  border: 1px solid color-mix(in srgb, var(--plum) 35%, var(--line)); box-shadow: var(--shadow);
+}
+.screen-card .jar-kicker { color: color-mix(in srgb, var(--plum) 75%, var(--ink)); }
+.screen-rules { font-size: .88rem; color: var(--ink-2); margin-top: 4px; }
+.screen-books { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.screen-books li { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; }
+.screen-books b { color: color-mix(in srgb, var(--plum) 75%, var(--ink)); white-space: nowrap; }
+.screen-card .jar-tally { margin-top: 6px; }
+.tag.extra { background: var(--plum-soft); color: color-mix(in srgb, var(--plum) 75%, var(--ink)); }
+.extra-line { display: flex; align-items: center; gap: 8px; margin: 10px 0 2px; font-size: .9rem; font-weight: 650; color: color-mix(in srgb, var(--plum) 75%, var(--ink)); }
+.extra-line svg { flex: none; width: 18px; height: 18px; fill: color-mix(in srgb, var(--plum) 25%, transparent); stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.panel-sub { margin-top: 10px; font-size: .74rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- The Dude's Secret Files ---------- */
 .files-hint { margin: -6px 0 12px; }

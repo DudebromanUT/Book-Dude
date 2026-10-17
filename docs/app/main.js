@@ -6,9 +6,9 @@
  * starts below. A value computed while a file loads (outside any function) may only use util.js,
  * icons.js, and books.js, which never import the others. */
 
-import { C, $ } from './util.js';
+import { C, $, today } from './util.js';
 import { BOOKS, BY_ID, rebuildBooks } from './books.js';
-import { state, db, loadUi } from './state.js';
+import { state, db, loadUi, saveSetting } from './state.js';
 import { main, toast } from './page.js';
 import { emptyState } from './cards.js';
 import { newDudeLine, openStory } from './dude-talk.js';
@@ -37,6 +37,8 @@ async function start() {
   state.settings.storySeen = s.storySeen === true;
   state.settings.pets = s.pets !== false;
   if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
+  // Extra screen-time minutes count from the first day this device had them, so books finished before then don't.
+  if (!state.settings.reward.since) saveSetting('reward', C.reward(Object.assign({}, state.settings.reward, { since: today() })));
   applyAccent();
   if (!loaded.ok) {
     const warn = $('#storage-warning');

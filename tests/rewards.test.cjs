@@ -40,3 +40,67 @@ test('backups carry book-money settings, and the newer copy wins on restore', ()
   assert.equal(C.parseBackup({ app: 'reading-room', version: 1, records: {} }, books).reward, null);
   assert.throws(() => C.parseBackup({ app: 'reading-room', version: 1, records: {}, settings: { reward: 'lots' } }, books));
 });
+
+test('school points: once a grown-up types her school total, the points above the starting line count', () => {
+  assert.equal(C.reward({}).school, null); assert.equal(C.reward({}).schoolStart, 0); assert.equal(C.reward({}).schoolDate, '');
+  assert.equal(C.rewardPoints(12.5, {}), 12.5);
+  assert.equal(C.rewardPoints(12.5, { school: 47.3, schoolStart: 40 }), 7.3);
+  assert.equal(C.rewardPoints(12.5, { school: '47.3', schoolStart: '0' }), 47.3);
+  // A starting line above the total never makes points negative, and junk falls back to the app's own points.
+  assert.equal(C.rewardPoints(12.5, { school: 30, schoolStart: 40 }), 0);
+  assert.equal(C.rewardPoints(12.5, { school: 'lots' }), 12.5);
+  assert.equal(C.reward({ schoolDate: '2026-02-30' }).schoolDate, '');
+});
+
+test('screen time: 60 minutes for every 10 points, plus extras for books from the list finished since it started', () => {
+  const list = [
+    { book_id: 'bridge-to-terabithia--katherine-paterson', title: 'Bridge to Terabithia' },
+    { book_id: 'hatchet--gary-paulsen', title: 'Hatchet' },
+    { book_id: 'holes--louis-sachar', title: 'Holes' },
+    { book_id: 'mine:abc', title: 'Dog Man', _custom: true }
+  ];
+  const done = (finishedDate, extra) => Object.assign(C.entry({ status: 'finished', finishedDate }), extra);
+  const records = {
+    'bridge-to-terabithia--katherine-paterson': done('2026-10-20'),
+    'hatchet--gary-paulsen': done('2026-10-18'),
+    'holes--louis-sachar': done('2026-10-01'), // finished before screen time started
+    'mine:abc': done('2026-10-21'), // a book she added herself
+    'not-in-the-catalog': done('2026-10-21'),
+    'wonder--r-j-palacio': C.entry({ status: 'reading' })
+  };
+  const d = C.reward({});
+  assert.equal(d.screen, true); assert.equal(d.minutes, 60); assert.equal(d.bonus, 30); assert.equal(d.given, 0); assert.equal(d.since, '');
+  assert.deepEqual(d.special, { 'bridge-to-terabithia--katherine-paterson': 60 });
+  const cfg = { since: '2026-10-17' };
+  const s = C.screenTime(27.5, records, list, cfg);
+  assert.equal(s.fromPoints, 120); assert.equal(s.into, 7.5); assert.equal(s.toGo, 2.5);
+  // Bridge to Terabithia earns its own 60 instead of the usual 30; newest first.
+  assert.deepEqual(s.books.map(x => [x.id, x.minutes]), [['bridge-to-terabithia--katherine-paterson', 60], ['hatchet--gary-paulsen', 30]]);
+  assert.equal(s.fromBooks, 90); assert.equal(s.earned, 210); assert.equal(s.owed, 210);
+  assert.equal(C.screenTime(27.5, records, list, { ...cfg, given: 150 }).owed, 60);
+  assert.equal(C.screenTime(27.5, records, list, { ...cfg, given: 500 }).owed, 0);
+  // No start date yet: no book earns an extra, so books finished before screen time existed never count.
+  assert.equal(C.screenTime(27.5, records, list, {}).fromBooks, 0);
+  assert.equal(C.screenTime(9.99, {}, list, cfg).earned, 0);
+  assert.equal(C.screenTime(10, {}, list, cfg).earned, 60);
+  assert.equal(C.screenTime(10, {}, list, { ...cfg, minutes: 0 }).earned, 0);
+  assert.equal(C.screenTime(0, records, list, { ...cfg, bonus: 0, special: {} }).fromBooks, 0);
+});
+
+test('screen-time settings fall back to sensible defaults', () => {
+  const bad = C.reward({ minutes: -5, bonus: 2.5, given: 'some', since: 'yesterday', screen: 'yes', special: { 'ok-id': 45, 'bad id!': 10, 'also-ok': 'x' } });
+  assert.equal(bad.minutes, 60); assert.equal(bad.bonus, 30); assert.equal(bad.given, 0); assert.equal(bad.since, ''); assert.equal(bad.screen, false);
+  assert.deepEqual(bad.special, { 'ok-id': 45 });
+  assert.deepEqual(C.reward({ special: 'none' }).special, { 'bridge-to-terabithia--katherine-paterson': 60 });
+  assert.deepEqual(C.reward({ special: {} }).special, {});
+  assert.equal(C.reward({ minutes: '0' }).minutes, 0);
+});
+
+test('backups carry school points and screen time', () => {
+  const mine = C.reward({ school: 47.5, schoolStart: 40, schoolDate: '2026-10-17', minutes: 45, bonus: 20, given: 90, since: '2026-10-17', updatedAt: '2026-10-17T00:00:00Z' });
+  const file = JSON.parse(JSON.stringify(C.exportBackup({}, { goals: {}, reward: mine }, '2026-10-18T00:00:00Z', {})));
+  assert.deepEqual(C.parseBackup(file, books).reward, mine);
+  // A backup from before screen time existed gets the defaults.
+  const old = C.parseBackup({ app: 'reading-room', version: 1, records: {}, settings: { reward: { every: 100, paid: 1 } } }, books).reward;
+  assert.equal(old.school, null); assert.equal(old.minutes, 60); assert.equal(old.given, 0); assert.equal(old.since, '');
+});

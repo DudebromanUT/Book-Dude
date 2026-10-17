@@ -126,6 +126,7 @@ window.BOOK_DUDE = {
     quiz: ['P.S. You finished {title}! Take the AR quiz and add your points on its page. {cat} will supervise.', 'P.S. {title}: finished. Quiz: not yet. The Dude is tapping his sock impatiently.'],
     close: ['P.S. Only {toGo} points until book money. {dog} can smell the bookstore from here.', 'P.S. {toGo} more points and the book-money jar is full. {cat} has never been this awake.'],
     reading: ['P.S. You’re {p}% through {title}. {cat} is saving your spot. By sitting on it.', 'P.S. {title}, {p}% done. {dog} wants to know how it ends. {dog} can’t read, so you’ll have to explain.', 'P.S. {p}% through {title}. The Dude would like a full report. Spoilers allowed.'],
+    minutes: ['P.S. You have {minutes} of screen time saved up, and it is the weekend. Go find a grown-up before {dog} spends it all on squirrel videos.', 'P.S. Weekend report: {minutes} of screen time in the bank. The Dude suggests stretching first. He pulled a hamstring once watching a documentary about moss.'],
     readingStart: ['P.S. How’s {title} going? Give it ten pages. That’s the rule.', 'P.S. {title} is on your Reading shelf. It misses you. Books get lonely.']
   },
 
@@ -286,7 +287,7 @@ window.BOOK_DUDE = {
       "ordered": true,
       "list": [
         "Safety is no accident.",
-        "You do not have to finish a book you do not love. Put it on the Paused shelf. No hard feelings.",
+        "Books on this list are there for a reason. Figure out why. Do not give up on them.",
         "If {cat} is asleep on a book, that is your next book.",
         "Write things down. Favorite lines, funny parts, words you did not know. That is what My notes is for.",
         "Try something new. A new author, a new kind of story, a book that looks too big. You do not know yet whether you love it.",

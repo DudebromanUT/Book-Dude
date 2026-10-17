@@ -5,7 +5,7 @@ import { icon } from './icons.js';
 import { INTEREST, LEVELS, POINTS, SORTS, collLabel, AGES, GENRES, BOOKS, COLLECTIONS } from './books.js';
 import { PAGE, DEFAULT_FILTERS, state, saveUi } from './state.js';
 import { main, toast } from './page.js';
-import { greeting, revealChip, OL_MIN_RATINGS, AMZ_MIN_RATINGS, browseTag, pointsTag, mineTag, ratingTag, flagText, card, row, emptyState } from './cards.js';
+import { greeting, revealChip, OL_MIN_RATINGS, AMZ_MIN_RATINGS, browseTag, pointsTag, extraTag, mineTag, ratingTag, flagText, card, row, emptyState } from './cards.js';
 import { dudeHtml } from './dude-talk.js';
 import { openBook } from './book.js';
 import { offlinePill } from './offline.js';
@@ -147,7 +147,7 @@ export function renderExplore() {
 function listSub(b) {
   const r = state.records[b.book_id];
   const a = b._awards[0];
-  return ratingTag(r) + browseTag(b) + pointsTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
+  return ratingTag(r) + browseTag(b) + pointsTag(b) + extraTag(b) + (a ? '<span>' + esc([a.award, a.category].filter(Boolean).join(' ') + ' · ' + b.year) + '</span>' : mineTag(b)) +
     (r && r.status ? '<span class="tag">' + esc(flagText(r)) + '</span>' : '');
 }
 

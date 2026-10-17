@@ -382,6 +382,53 @@ async function clickThrough(BASE) {
   await click('[data-act="confirm-ok"]', 400);
   note('reward given', await toast() + ' / ' + await text('.jar-card .jar-tally'));
 
+  // ---- Screen time: a book with its own extra, the weekend hand-off, and points from the school's report.
+  await click('.tab[data-tab="explore"]', 400);
+  await search('bridge to terabithia');
+  note('extra tag', (await all('#items .card .tags')).slice(0, 1).join(''));
+  await openSheet('#items .card');
+  note('extra line', await text('#shelf-box .extra-line'));
+  await click('[data-act="status"][data-status="finished"]', 300);
+  note('extra finished', await toast() + ' / ' + await text('#shelf-box .extra-line'));
+  await closeSheet();
+  note('weekend ps', await text('.dude .ps')); // October 9, 2026 is a Friday.
+  await click('.tab[data-tab="progress"]', 500);
+  note('screen card', await text('.screen-card'));
+  await click('[data-act="minutes-given"]', 300);
+  note('minutes given box', await confirmText());
+  await click('[data-act="minutes-give"][data-min="30"]', 400);
+  note('minutes given', await toast() + ' / ' + await text('.screen-card'));
+  await click('.tab[data-tab="more"]', 400);
+  await click('#school-on', 300);
+  note('school on', await toast() + ' / ' + await p.inputValue('#school-total') + ' / ' + await p.inputValue('#school-start'));
+  await setVal('#school-total', 'lots');
+  note('school total lots', await toast() + ' / ' + await p.inputValue('#school-total'));
+  await setVal('#school-total', '52.5');
+  await setVal('#school-start', '40');
+  note('school totals', await text('.panel:has(#school-on)'));
+  await setVal('#screen-minutes', '1.5');
+  note('screen minutes 1.5', await toast() + ' / ' + await p.inputValue('#screen-minutes'));
+  await setVal('#screen-since', '');
+  note('screen since blank', await toast() + ' / ' + await p.inputValue('#screen-since'));
+  await click('[data-act="given-plus"]', 300);
+  note('given plus', await text('#screen-given'));
+  await click('[data-act="given-minus"]', 300);
+  note('given minus', await text('#screen-given'));
+  // The weekly check-in, from the Progress tab.
+  await click('.tab[data-tab="progress"]', 500);
+  note('jar from school', await text('.jar-card'));
+  await click('[data-act="school-update"]', 300);
+  note('school update box', await confirmText());
+  await p.fill('#school-quick', 'abc'); await click('form[data-form="school"] button[type="submit"]', 300);
+  note('school update abc', await text('#school-error'));
+  await p.fill('#school-quick', '61'); await click('form[data-form="school"] button[type="submit"]', 500);
+  note('school update 61', await toast() + ' / ' + await text('.screen-card'));
+  await click('.tab[data-tab="explore"]', 400);
+  await search('hatchet');
+  await openSheet('#items .card');
+  note('quiz hint with school points', await text('#shelf-box .quiz > p.hint'));
+  await closeSheet();
+
   await click('.tab[data-tab="more"]', 400);
   await arm();
   const [download] = await Promise.all([p.waitForEvent('download'), tap('[data-act="export"]')]);

@@ -74,7 +74,7 @@ function surname(author) {
 const sortTitle = t => String(t).replace(/^(the|a|an)\s+/i, '');
 const number = v => (v !== '' && v !== undefined && Number.isFinite(Number(v)) ? Number(v) : null);
 
-const MY_BOOKS = 'My books';
+const MY_BOOKS = 'Read Books';
 
 function prepare(raw, custom) {
   const h = hash(raw.book_id);

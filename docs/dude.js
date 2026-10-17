@@ -481,7 +481,7 @@ window.BOOK_DUDE = {
   facts: [
     'The Dude did the math: {points} points is about {pages} pages. He was a physicist once. He checked it twice.',
     'If every point were a sock, {dog} would need {points} more hiding spots. {dog} already has 212.',
-    'In gold-miner money, that’s {nuggets} pea-sized nuggets. The Dude would trade every one of them for a good book.',
+    'In gold-miner money, that’s {nuggets}. The Dude would trade every one of them for a good book.',
     '{cat} slept through all {points} of your points. {cat} is still very proud of you.'
   ]
 };

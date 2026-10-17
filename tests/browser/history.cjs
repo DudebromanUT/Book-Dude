@@ -65,7 +65,7 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await p.reload(); await p.waitForSelector('.view-head'); await sleep(2500);
     const total = Object.keys(HISTORY.records).length;
     assert.match(await finished(), new RegExp('Finished ' + total + '(?!\\d)'), 'all history books on Finished');
-    assert.match(await finished(), new RegExp('My books ' + Object.keys(HISTORY.customBooks).length + '(?!\\d)'));
+    assert.match(await finished(), new RegExp('Read Books ' + Object.keys(HISTORY.customBooks).length + '(?!\\d)'));
     await p.$eval('[data-act="shelf"][data-shelf="finished"]', e => e.click()); await sleep(1500);
     const list = clean(await p.textContent('#main .list'));
     assert.match(list, /Gary PaulsenFinished [A-Z][a-z]{2} \d+, \d{4}7 pts earned/, 'her own Hatchet is kept');

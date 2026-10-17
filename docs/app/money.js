@@ -64,7 +64,7 @@ const nextFile = total => DUDE.files.find(f => total < f.at) || null;
 
 function factLine(total) {
   if (!total || !DUDE.facts.length) return 'Earn your first points and the Dude will do some very serious math about them.';
-  const vars = { points: fmtNum(total), pages: fmtNum(Math.round(total * 25)), nuggets: fmtNum(Math.max(1, Math.floor(total / 10))) };
+  const vars = { points: fmtNum(total), pages: fmtNum(Math.round(total * 25)), nuggets: (n => fmtNum(n) + (n === 1 ? ' pea-sized nugget' : ' pea-sized nuggets'))(Math.max(1, Math.floor(total / 10))) };
   return fill(DUDE.facts[dayOfYear() % DUDE.facts.length], vars);
 }
 

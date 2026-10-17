@@ -1,4 +1,4 @@
-/* The My Shelves tab: Reading, Want to read, Finished, Paused, Favorites, and My books. */
+/* The My Shelves tab: Reading, Want to read, Finished, Paused, Favorites, and Read Books. */
 
 import { C, $, esc, fmtNum, plural, collator, fmtDay } from './util.js';
 import { icon } from './icons.js';
@@ -9,7 +9,7 @@ import { greeting, revealChip, applySizes, browseTag, pointsTag, extraTag, ratin
 import { goTab } from './tabs.js';
 
 const SHELVES = [
-  ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites'], ['mine', 'My books']
+  ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites'], ['mine', 'Read Books']
 ];
 
 export function shelfBooks(key) {

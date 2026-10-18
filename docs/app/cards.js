@@ -28,7 +28,18 @@ export function applySizes(root) {
 // Real cover art sits on top of the homemade cover, which shows through if the picture can't load.
 // Picture books keep their real shape (height of the 280-wide picture for each).
 const COVER_SHAPES = { tall: 420, short: 350, square: 280, wide: 210 };
+// Her own result for a book (points she earned and/or her quiz %), shown as a badge on its cover.
+export function resultText(r) {
+  if (!r) return '';
+  const bits = [];
+  if (r.earnedPoints !== null && r.earnedPoints !== undefined) bits.push(fmtNum(r.earnedPoints) + (r.earnedPoints === 1 ? ' pt' : ' pts'));
+  if (r.quizScore !== null && r.quizScore !== undefined) bits.push(fmtNum(r.quizScore) + '%');
+  return bits.join(' · ');
+}
+
 export function cover(b, size) {
+  const result = resultText(state.records[b.book_id]);
+  const badge = result ? '<span class="result">' + esc(result) + '</span>' : '';
   const seal = b._seal && size !== 'thumb' ? '<span class="seal ' + b._seal[0] + '">' + b._seal[1] + '</span>' : '';
   const initial = esc(b._sortTitle.charAt(0).toUpperCase());
   // Catalog books use the covers that ship with the app; books she added can have her own photo.
@@ -38,7 +49,7 @@ export function cover(b, size) {
   const art = src ? '<img class="cover-art" src="' + esc(src) + '" alt="" width="280" height="' + COVER_SHAPES[shape] + '" loading="lazy" decoding="async">' : '';
   return '<span class="cover p' + b._pal + ' m' + b._motif + (size ? ' ' + size : '') + (art ? ' has-art' + (shape !== 'tall' ? ' shape-' + shape : '') : '') + '" aria-hidden="true">' +
     '<span class="cover-title">' + esc(b.title) + '</span><span class="cover-initial">' + initial + '</span>' +
-    '<span class="cover-author">' + esc(b.author) + '</span>' + art + seal + '</span>';
+    '<span class="cover-author">' + esc(b.author) + '</span>' + art + seal + badge + '</span>';
 }
 
 export function levelTag(b) {
@@ -92,6 +103,7 @@ function bookLabel(b, r) {
   bits.push(b._points !== null ? plural(b._points, 'AR point') : b._custom ? 'no AR points added' : 'AR points not verified');
   if (ownExtra(b)) bits.push(ownExtra(b) + ' extra minutes of screen time for finishing it');
   if (r && r.status) bits.push(flagText(r));
+  if (resultText(r)) bits.push('your quiz: ' + resultText(r));
   if (r && r.favorite) bits.push('favorite');
   if (r && r.rating) bits.push('you rated it ' + r.rating + ' out of 5');
   return bits.join('. ');

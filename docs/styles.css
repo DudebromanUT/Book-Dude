@@ -337,6 +337,13 @@ textarea.input { min-height: 120px; resize: vertical; line-height: 1.5; }
 .seal.bronze { background: radial-gradient(circle at 35% 30%, #F9D2B0, #C98654 60%, #8E5228); color: #3B1D08; }
 .seal.ruby { background: radial-gradient(circle at 35% 30%, #FFC9C2, #D2584A 60%, #922D22); color: #FFF5F0; }
 .seal.mine { background: radial-gradient(circle at 35% 30%, #FFFFFF, #FFE7F0 45%, #F3A9C6); color: #7A1E47; box-shadow: 0 0 0 2px rgb(255 255 255 / .6) inset, 0 0 0 2px #F3A9C6, 0 2px 4px rgb(0 0 0 / .3); }
+/* Her quiz result on the cover: points earned and/or her % score. */
+.cover .result {
+  position: absolute; z-index: 4; left: 6%; bottom: 4%; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  background: rgb(20 24 30 / .84); color: #FFE08A; font-family: var(--sans); font-weight: 800; font-size: .68rem; line-height: 1.3; letter-spacing: .02em;
+  box-shadow: 0 1px 4px rgb(0 0 0 / .3);
+}
+.cover.thumb .result { left: 0; right: 0; bottom: 0; padding: 1px 0; border-radius: 0 0 6px 2px; text-align: center; font-size: .56rem; letter-spacing: 0; }
 
 /* Twelve cover palettes and six patterns, chosen per book. */
 .p0 { --c1: #2E6F6B; --c2: #EAD7B0; --ct: #FFF8EC; }

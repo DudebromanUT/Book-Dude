@@ -66,11 +66,11 @@ quiz 7 again: Quiz result saved: 7 points! Maple wants a high five. Secret File 
 share book preview: Share this book Here’s your message. You’ll see it again before it sends. I just finished Hatchet by Gary Paulsen and gave it 5 stars! Newbery Honor (1988) · AR level 5.7 · 7 AR points Plus a link that opens this book in Book Dude. Include my stars Include my note Share Cancel
 share preview with note: I just finished Hatchet by Gary Paulsen and gave it 5 stars! “Brian and the hatchet.” Newbery Honor (1988) · AR level 5.7 · 7 AR points Plus a link that opens this book in Book Dude.
 shared book: {"title":"Hatchet by Gary Paulsen","text":"I just finished Hatchet by Gary Paulsen and gave it 5 stars!\n\n“Brian and the hatchet.”\n\nNewbery Honor (1988) · AR level 5.7 · 7 AR points","url":"https://dudebromanut.github.io/Book-Dude/?book=hatchet--gary-paulsen"} / preview still open=false
-explore after sheet: 1 book found / Hatchet by Gary Paulsen. Newbery Honor 1988. Amazon rating 4.7 out of 5 from 28,559 ratings. book level 5.7. 7 AR points. Finished. favorite. you rated it 5 out of 5
+explore after sheet: 1 book found / Hatchet by Gary Paulsen. Newbery Honor 1988. Amazon rating 4.7 out of 5 from 28,559 ratings. book level 5.7. 7 AR points. Finished. your quiz: 7 pts. favorite. you rated it 5 out of 5
 bubble ps: P.S. 3 more points and something good happens. Fig has never been this awake.
 shelves: Good morning My shelves Add a book Reading 0 Want to read 0 Finished 1 Paused 0 Favorites 1 Read Books 0 Nothing on the go Open any book and tap Reading to keep your place here. Explore books
-shelf finished: Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
-shelf favorites: Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
+shelf finished: 7 pts Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
+shelf favorites: 7 pts Hatchet Gary Paulsen Finished Oct 5, 2026 ★ 5 7 pts earned
 shelf want: Your wish list is empty Tap Want to read on any book to save it for later. Explore books
 shelf paused: Nothing paused Books you set aside for now will wait for you here. Explore books
 shelf mine: Add your own books Reading something that isn’t in the Reading Room? Add it here and track it like any other book: shelves, notes, and quiz points. Add a book

@@ -4,7 +4,8 @@ Each time Maddy passes an AR quiz, Renaissance emails acgumpher@gmail.com. `Code
 Gmail account. Once a day, at about 3 p.m. Utah time, it copies the new results out of those emails. Book Dude then
 picks them up at a private link the next time it opens.
 
-It only reads email from `autodelivery@renlearnrp.com` about Madeleine, sent after October 18, 2026. It never sends,
+It only reads "Accelerated Reader Reading Practice Quiz" result emails from `autodelivery@renlearnrp.com` about
+Madeleine, sent after October 18, 2026. Every other Renaissance email (vocabulary quizzes, Star tests, news) is skipped. It never sends,
 changes or deletes email.
 
 ## Setup (about 10 minutes, on a computer)

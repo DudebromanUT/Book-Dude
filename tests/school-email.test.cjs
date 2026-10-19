@@ -39,6 +39,16 @@ test('the script also reads it with bold labels and each value on the next line'
   assert.equal(q.level, 4.7);
 });
 
+test('the script takes only Reading Practice Quiz results, not other Renaissance emails', () => {
+  const vocab = EMAIL.replace(/Reading Practice Quiz/g, 'Vocabulary Practice Quiz');
+  assert.equal(script.parseQuiz(vocab, '2026-10-19'), null);
+  const star = EMAIL.replace('Accelerated Reader Reading Practice Quiz Result', 'Star Reading Test Result')
+    .replace('took an Accelerated Reader Reading Practice Quiz', 'took a Star Reading test');
+  assert.equal(script.parseQuiz(star, '2026-10-19'), null);
+  const noHeader = EMAIL.replace('Accelerated Reader Reading Practice Quiz Result', 'Renaissance update');
+  assert.ok(script.parseQuiz(noHeader, '2026-10-19'), 'the sentence about her quiz carries the header words too');
+});
+
 test('the script skips anyone else, and emails that are not quiz results', () => {
   assert.equal(script.parseQuiz(EMAIL.replace(/Madeleine took/, 'Henry took'), '2026-10-19'), null);
   assert.equal(script.parseQuiz('Madeleine took an Accelerated Reader Reading Practice Quiz today.', '2026-10-19'), null);

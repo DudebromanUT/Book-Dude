@@ -5,6 +5,7 @@
  * Nothing secret is in this file. The link's key is made in your Google account by setup() and stays there. */
 
 var SENDER = 'autodelivery@renlearnrp.com';
+var HEADER = 'Accelerated Reader Reading Practice Quiz';  // Only these; other Renaissance emails are skipped.
 var STUDENT = 'Madeleine';     // Only her quizzes; an email about anyone else is skipped.
 var START = '2026/10/18';      // Quizzes before this are already in her reading history.
 var ZONE = 'America/Denver';
@@ -35,7 +36,7 @@ function showLink() {
 function collect() {
   var props = PropertiesService.getScriptProperties();
   var saved = 0;
-  GmailApp.search('from:' + SENDER + ' after:' + START, 0, 100).forEach(function (thread) {
+  GmailApp.search('from:' + SENDER + ' "' + HEADER + '" after:' + START, 0, 100).forEach(function (thread) {
     thread.getMessages().forEach(function (m) {
       var name = 'q_' + m.getId();
       if (m.getFrom().toLowerCase().indexOf(SENDER) < 0 || props.getProperty(name)) return;
@@ -49,15 +50,17 @@ function collect() {
   Logger.log(saved + ' new quiz result(s) saved.');
 }
 
-// One email's quiz result, or null when it isn't one of hers. Book Dude checks every value again.
+// One email's quiz result, or null when it isn't a Reading Practice Quiz result of hers. Book Dude checks every value again.
 function parseQuiz(body, date) {
   var text = String(body || '').replace(/\*/g, '').replace(/ /g, ' ');
   var field = function (label) {
     var m = text.match(new RegExp(label + '\\s*:\\s*([^\\n]+)', 'i'));
     return m ? m[1].trim() : '';
   };
-  var who = text.match(/([A-Za-z'-]+) took an Accelerated Reader/i);
-  if (STUDENT && (!who || who[1].toLowerCase() !== STUDENT.toLowerCase())) return null;
+  // A Reading Practice Quiz result about her: the header, and "Madeleine took an Accelerated Reader Reading Practice Quiz".
+  if (text.toLowerCase().indexOf(HEADER.toLowerCase()) < 0) return null;
+  var who = text.match(/([A-Za-z'-]+)\s+took an Accelerated Reader Reading Practice Quiz/i);
+  if (!who || (STUDENT && who[1].toLowerCase() !== STUDENT.toLowerCase())) return null;
   var points = field('Points').match(/([\d.]+)\s*earned\s*of\s*([\d.]+)/i);
   var title = field('Title');
   if (!title || !points) return null;

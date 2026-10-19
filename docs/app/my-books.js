@@ -25,7 +25,7 @@ export function customDetailsHtml(b) {
       '<button type="button" class="btn ghost danger" data-act="delete-book">' + icon('trash') + 'Delete book</button></div></section>';
 }
 
-function newCustomId() {
+export function newCustomId() {
   let id;
   do { id = C.CUSTOM_PREFIX + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); } while (state.custom[id] || BY_ID.has(id));
   return id;

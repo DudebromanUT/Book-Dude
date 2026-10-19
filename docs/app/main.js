@@ -19,6 +19,7 @@ import { rewardPoints } from './money.js';
 import { TABS, render } from './tabs.js';
 import { listen } from './events.js';
 import { HISTORY, addHistory } from './backup.js';
+import { syncSchool } from './school.js';
 
 async function start() {
   if (!C || !BOOKS.length) {
@@ -38,6 +39,8 @@ async function start() {
   if (typeof s.lastExportAt === 'string') state.settings.lastExportAt = s.lastExportAt;
   state.settings.storySeen = s.storySeen === true;
   state.settings.pets = s.pets !== false;
+  if (typeof s.schoolLink === 'string') state.settings.schoolLink = s.schoolLink;
+  if (Array.isArray(s.schoolSeen)) state.settings.schoolSeen = s.schoolSeen.filter(id => typeof id === 'string');
   if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
   // The first start with screen time on this device: extra minutes count for books finished from today on, and the
   // points she already earned stay in the jar, where every point went before she could choose screen time.
@@ -75,7 +78,8 @@ async function start() {
   }
   startPets();
   registerWorker();
-  if (s.history !== HISTORY && state.storage === 'ok') addHistory();
+  // Her reading history lands first, so a new school quiz for one of those books finds it.
+  (s.history !== HISTORY && state.storage === 'ok' ? addHistory() : Promise.resolve()).then(() => syncSchool(true));
 }
 
 listen();

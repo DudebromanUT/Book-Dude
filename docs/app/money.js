@@ -9,6 +9,7 @@ import { sheet, confirmBox, toast, celebrate, sheetBar, showBox, showConfirm } f
 import { renderProgress } from './progress.js';
 import { renderMore } from './more.js';
 import { asGrownup, isOpen, keepOpen, codePanelHtml } from './grownup.js';
+import { linkOk, syncSchool } from './school.js';
 
 // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
 const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
@@ -266,7 +267,14 @@ async function fixChoices(jar, minutes) {
 // Her total from the school's AR report, so a quiz she forgets to enter in the app still counts.
 function schoolFieldsHtml(cfg, total) {
   const on = cfg.school !== null;
-  return '<h3 class="panel-sub">Points from school</h3>' +
+  const link = state.settings.schoolLink || '';
+  return '<h3 class="panel-sub">Quiz emails from school</h3>' +
+    '<label class="field"><span>School quiz link</span><input id="school-link" class="input" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec?key=…" value="' + esc(link) + '"></label>' +
+    '<p class="hint">' + (link
+      ? 'Each time Book Dude opens online, new quiz results from her Renaissance emails land on her shelf with their points and % score. ' + plural((state.settings.schoolSeen || []).length, 'quiz', 'quizzes') + ' added so far.'
+      : 'Paste the link from the Google script that reads her Renaissance quiz emails, and new quizzes add themselves. Setup steps are in the Book Dude repository, scripts/school-email.') + '</p>' +
+    (link ? '<div class="row-actions"><button type="button" class="btn small" data-act="school-sync">Check for new quizzes now</button></div>' : '') +
+    '<h3 class="panel-sub">Points from school</h3>' +
     '<label class="switch"><input type="checkbox" id="school-on"' + (on ? ' checked' : '') + '> Count her total from the school’s AR report</label>' +
     (on
       ? '<div class="two"><label class="field"><span>Her school total now</span><input id="school-total" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.school + '"></label>' +
@@ -303,6 +311,7 @@ const guard = fn => (...args) => {
 const guardAll = handlers => Object.fromEntries(Object.entries(handlers).map(([name, fn]) => [name, guard(fn)]));
 
 export const actions = {
+  'school-sync': () => syncSchool(false),
   'open-file': el => openFile(Number(el.dataset.i)),
   'unlock-panel': () => asGrownup(renderMore),
   // Her pick for the next 10 points: the jar or screen time. No passcode: it's her choice.
@@ -416,6 +425,13 @@ export const submits = {
 
 // Every field in the grown-up settings.
 export const changes = guardAll({
+  'school-link': async t => {
+    const url = t.value.trim();
+    if (url && !linkOk(url)) { toast('That isn’t the school quiz link. It starts with https://script.google.com/macros/s/ and ends with ?key= and a code.'); t.value = state.settings.schoolLink || ''; return; }
+    await saveSetting('schoolLink', url);
+    renderMore();
+    if (url) { toast('School quiz link saved. Checking for quizzes…'); syncSchool(false); } else toast('School quiz link removed.');
+  },
   'reward-on': async t => {
     await saveReward({ on: t.checked });
     toast(t.checked ? 'The Book Money Jar is on the Progress tab.' : 'The Book Money Jar is hidden.');

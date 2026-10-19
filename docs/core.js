@@ -511,8 +511,43 @@
     };
   }
 
+  /**
+   * Quiz results from the school's emails, as the Google script serves them (scripts/school-email): the ones that
+   * make sense, oldest first. Each has the email's id, the quiz date, the title and author, the points she earned
+   * and the most she could, her % score and the book level (null when the email had none).
+   */
+  function schoolQuizzes(feed) {
+    const list = isPlain(feed) && Array.isArray(feed.quizzes) ? feed.quizzes : [];
+    const out = [];
+    for (const q of list) {
+      if (!isPlain(q)) continue;
+      const id = typeof q.id === 'string' && /^[\w-]{1,64}$/.test(q.id) ? q.id : '';
+      const title = typeof q.title === 'string' ? q.title.trim().slice(0, CUSTOM_TEXT.title) : '';
+      const points = amount(q.points, 999);
+      if (!id || !day(q.date) || !title || points === null || Number.isNaN(points)) continue;
+      const num = (v, max) => { const n = amount(v, max); return n === null || Number.isNaN(n) ? null : n; };
+      out.push({
+        id, date: day(q.date), title, author: typeof q.author === 'string' ? q.author.trim().slice(0, CUSTOM_TEXT.author) : '',
+        points, possible: num(q.possible, 999), score: num(q.score, 100), level: num(q.level, 20)
+      });
+    }
+    return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+
+  // The book a school quiz is for: same title (or same title before a subtitle) and author, else the first with that
+  // title. books are the app's prepared books (book_id, title, author). Returns its id, or '' for a book not here yet.
+  function findBook(books, title, author) {
+    const main = t => fold(String(t).split(':')[0]);
+    const a = fold(author);
+    const byAuthor = list => list.find(b => a && fold(b.author).includes(a)) || list[0];
+    const exact = (books || []).filter(b => fold(b.title) === fold(title));
+    const found = exact.length ? byAuthor(exact) : byAuthor((books || []).filter(b => main(b.title) === main(title)));
+    return found ? found.book_id : '';
+  }
+
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    reward, rewardStatus, rewardPoints, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold
+    reward, rewardStatus, rewardPoints, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold,
+    schoolQuizzes, findBook
   };
 });

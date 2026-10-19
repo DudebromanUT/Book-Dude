@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Unit and offline tests
-        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs
+        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs tests/school-email.test.cjs
       - name: Every name in docs/app is defined or imported
         run: npx --yes eslint@10.1.0 docs/app
       - name: Generated files are up to date
@@ -38,3 +38,5 @@ jobs:
         run: node tests/browser/clickthrough.cjs
       - name: Her reading history lands once and works offline
         run: node tests/browser/history.cjs
+      - name: School quiz emails land once and add books not in the app
+        run: node tests/browser/school-email.cjs

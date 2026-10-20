@@ -249,6 +249,9 @@
     o = isPlain(o) ? o : {};
     const out = { id: typeof o.id === 'string' ? o.id : '' };
     for (const field of Object.keys(CUSTOM_TEXT)) out[field] = typeof o[field] === 'string' ? o[field].trim().slice(0, CUSTOM_TEXT[field]) : '';
+    // Titles and authors on one line with single spaces (a school email can bring "Max  Brallier").
+    out.title = out.title.replace(/\s+/g, ' ');
+    out.author = out.author.replace(/\s+/g, ' ');
     for (const field of Object.keys(CUSTOM_NUMBERS)) {
       const n = amount(o[field], CUSTOM_NUMBERS[field]);
       out[field] = typeof n === 'number' && !Number.isNaN(n) ? String(n) : '';

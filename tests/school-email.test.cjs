@@ -94,3 +94,9 @@ test('a quiz finds its book by title, then author, then the title before a subti
   assert.equal(C.findBook(books, "Kristy's Great Idea", 'Ann M. Martin'), 'd');
   assert.equal(C.findBook(books, 'A Book Not Here', 'Nobody'), '');
 });
+
+test('an added book keeps its title and author on one line with single spaces', () => {
+  const b = C.customBook({ id: 'mine:x', title: ' The Last Kids on Earth  and the\nMidnight Blade ', author: 'Max  Brallier' });
+  assert.equal(b.title, 'The Last Kids on Earth and the Midnight Blade');
+  assert.equal(b.author, 'Max Brallier');
+});

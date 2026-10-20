@@ -40,5 +40,6 @@ changes or deletes email.
 - **No double counting:** each email is used once. If you already typed a book's points in by hand, those stay. If
   "Count her total from the school's AR report" is on, her points come from that total instead, so the email quizzes
   still land on her shelf but don't add points again.
+- **If quizzes aren't coming in:** choose **checkEmails** in the function menu, click **Run**, and open the Execution log. It shows the newest Renaissance emails, whether each one reads as a quiz, and how many results are saved for Book Dude.
 - **If you change the script later:** go to Deploy → Manage deployments → edit (pencil) → Version: New version →
   Deploy. The link stays the same.

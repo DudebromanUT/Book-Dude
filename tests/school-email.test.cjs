@@ -39,6 +39,14 @@ test('the script also reads it with bold labels and each value on the next line'
   assert.equal(q.level, 4.7);
 });
 
+test('the script reads it when Gmail breaks a sentence across lines or uses no-break spaces', () => {
+  const wrapped = EMAIL.replace('Madeleine took an Accelerated Reader Reading Practice Quiz', 'Madeleine took an Accelerated Reader Reading\nPractice Quiz')
+    .replace('Accelerated Reader Reading Practice Quiz Result', 'Accelerated\u00a0Reader Reading Practice Quiz Result').replace(/\n/g, '\r\n');
+  const q = script.parseQuiz(wrapped, '2026-10-19');
+  assert.equal(q && q.title, 'Adventure in Grand Canyon National Park');
+  assert.equal(q.points, 7);
+});
+
 test('the script takes only Reading Practice Quiz results, not other Renaissance emails', () => {
   const vocab = EMAIL.replace(/Reading Practice Quiz/g, 'Vocabulary Practice Quiz');
   assert.equal(script.parseQuiz(vocab, '2026-10-19'), null);

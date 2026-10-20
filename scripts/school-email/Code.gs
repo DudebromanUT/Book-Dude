@@ -52,14 +52,15 @@ function collect() {
 
 // One email's quiz result, or null when it isn't a Reading Practice Quiz result of hers. Book Dude checks every value again.
 function parseQuiz(body, date) {
-  var text = String(body || '').replace(/\*/g, '').replace(/ /g, ' ');
+  var text = String(body || '').replace(/\*/g, '').replace(/[   ]/g, ' ').replace(/\r/g, '');
+  var flat = text.replace(/\s+/g, ' ');  // The same text on one line, for sentences Gmail broke across lines.
   var field = function (label) {
     var m = text.match(new RegExp(label + '\\s*:\\s*([^\\n]+)', 'i'));
     return m ? m[1].trim() : '';
   };
   // A Reading Practice Quiz result about her: the header, and "Madeleine took an Accelerated Reader Reading Practice Quiz".
-  if (text.toLowerCase().indexOf(HEADER.toLowerCase()) < 0) return null;
-  var who = text.match(/([A-Za-z'-]+)\s+took an Accelerated Reader Reading Practice Quiz/i);
+  if (flat.toLowerCase().indexOf(HEADER.toLowerCase()) < 0) return null;
+  var who = flat.match(/([A-Za-z'-]+) took an Accelerated Reader Reading Practice Quiz/i);
   if (!who || (STUDENT && who[1].toLowerCase() !== STUDENT.toLowerCase())) return null;
   var points = field('Points').match(/([\d.]+)\s*earned\s*of\s*([\d.]+)/i);
   var title = field('Title');
@@ -75,6 +76,24 @@ function parseQuiz(body, date) {
     score: score ? Number(score[1]) : null,
     level: level ? Number(level[0]) : null
   };
+}
+
+// For troubleshooting: run this from the editor, then open the Execution log. It shows the newest Renaissance emails,
+// whether each one reads as a quiz (and what it read), and how many results are saved for Book Dude.
+function checkEmails() {
+  var threads = GmailApp.search('from:' + SENDER, 0, 5);
+  Logger.log(threads.length + ' Renaissance email thread(s) found (up to 5 newest shown).');
+  Logger.log(GmailApp.search('from:' + SENDER + ' "' + HEADER + '" after:' + START, 0, 100).length + ' thread(s) match the daily search.');
+  threads.forEach(function (thread) {
+    thread.getMessages().slice(-3).forEach(function (m) {
+      var body = m.getPlainBody();
+      var quiz = parseQuiz(body, Utilities.formatDate(m.getDate(), ZONE, 'yyyy-MM-dd'));
+      Logger.log('--- ' + m.getDate() + ' | ' + m.getSubject() + ' | from ' + m.getFrom());
+      Logger.log(quiz ? 'Reads as: ' + JSON.stringify(quiz) : 'Does not read as a quiz. The start of it:\n' + body.slice(0, 1200));
+    });
+  });
+  var all = PropertiesService.getScriptProperties().getProperties();
+  Logger.log(Object.keys(all).filter(function (k) { return k.indexOf('q_') === 0; }).length + ' quiz result(s) saved for Book Dude.');
 }
 
 // Book Dude asks here when it opens. Without the right key, it gets nothing.

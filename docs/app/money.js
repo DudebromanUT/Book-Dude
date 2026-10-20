@@ -9,7 +9,7 @@ import { sheet, confirmBox, toast, celebrate, sheetBar, showBox, showConfirm } f
 import { renderProgress } from './progress.js';
 import { renderMore } from './more.js';
 import { asGrownup, isOpen, keepOpen, codePanelHtml } from './grownup.js';
-import { linkOk, syncSchool } from './school.js';
+import { findLink, syncSchool } from './school.js';
 
 // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
 const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
@@ -270,6 +270,7 @@ function schoolFieldsHtml(cfg, total) {
   const link = state.settings.schoolLink || '';
   return '<h3 class="panel-sub">Quiz emails from school</h3>' +
     '<label class="field"><span>School quiz link</span><input id="school-link" class="input" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec?key=…" value="' + esc(link) + '"></label>' +
+    '<p class="error" id="school-link-error" role="alert" hidden></p>' +
     '<p class="hint">' + (link
       ? 'Each time Book Dude opens online, new quiz results from her Renaissance emails land on her shelf with their points and % score. ' + plural((state.settings.schoolSeen || []).length, 'quiz', 'quizzes') + ' added so far.'
       : 'Paste the link from the Google script that reads her Renaissance quiz emails, and new quizzes add themselves. Setup steps are in the Book Dude repository, scripts/school-email.') + '</p>' +
@@ -426,8 +427,14 @@ export const submits = {
 // Every field in the grown-up settings.
 export const changes = guardAll({
   'school-link': async t => {
-    const url = t.value.trim();
-    if (url && !linkOk(url)) { toast('That isn’t the school quiz link. It starts with https://script.google.com/macros/s/ and ends with ?key= and a code.'); t.value = state.settings.schoolLink || ''; return; }
+    const typed = t.value.trim();
+    const url = findLink(typed);
+    if (typed && !url) {
+      const err = $('#school-link-error');
+      err.textContent = 'That isn’t the whole school quiz link. It starts with https://script.google.com/macros/s/ and ends with /exec?key= and the code from the script’s log. Nothing was saved.';
+      err.hidden = false;
+      return;
+    }
     await saveSetting('schoolLink', url);
     renderMore();
     if (url) { toast('School quiz link saved. Checking for quizzes…'); syncSchool(false); } else toast('School quiz link removed.');

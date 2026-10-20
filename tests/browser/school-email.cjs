@@ -74,9 +74,11 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     // A wrong link is turned away; the real one brings the quizzes in.
     await p.$eval('.tab[data-tab="more"]', e => e.click()); await sleep(400);
     await p.fill('#school-link', 'https://example.com/quizzes'); await p.dispatchEvent('#school-link', 'change');
-    assert.match(await toast(), /isn’t the school quiz link/);
-    assert.equal(await p.inputValue('#school-link'), '');
-    await p.fill('#school-link', LINK); await p.dispatchEvent('#school-link', 'change');
+    await sleep(300);
+    assert.match(clean(await p.textContent('#school-link-error')), /isn’t the whole school quiz link/);
+    assert.equal(await p.inputValue('#school-link'), 'https://example.com/quizzes', 'what was typed stays, to fix');
+    // The link as it might come from the script's log and a key pasted on: extra words, a line break, a space.
+    await p.fill('#school-link', 'Book Dude link: ' + LINK.replace('?key=', '?key=\n').replace('abc', 'abc ')); await p.dispatchEvent('#school-link', 'change');
     await sleep(300);
     const news = clean(await p.textContent('#toast'));
     console.log('toast:', news);

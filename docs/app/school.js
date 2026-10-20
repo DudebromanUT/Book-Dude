@@ -13,6 +13,12 @@ import { render } from './tabs.js';
 
 const LINK = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\?key=[\w-]+$/;
 export const linkOk = url => LINK.test(String(url || '').trim());
+// The link out of whatever was pasted: spaces and line breaks taken out (a key pasted onto the end can bring them),
+// and anything around it dropped (like "Book Dude link: " from the script's log). '' when there's no link in it.
+export function findLink(text) {
+  const m = String(text || '').replace(/\s+/g, '').match(/https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\?key=[\w-]+/);
+  return m ? m[0] : '';
+}
 
 async function addBook(q) {
   const now = new Date().toISOString();

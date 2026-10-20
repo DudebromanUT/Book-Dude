@@ -40,3 +40,5 @@ jobs:
         run: node tests/browser/history.cjs
       - name: School quiz emails land once and add books not in the app
         run: node tests/browser/school-email.cjs
+      - name: The app version shows, and updates switch over
+        run: node tests/browser/update.cjs

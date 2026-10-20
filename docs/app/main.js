@@ -20,8 +20,10 @@ import { TABS, render } from './tabs.js';
 import { listen } from './events.js';
 import { HISTORY, addHistory } from './backup.js';
 import { syncSchool } from './school.js';
+import { APP_VERSION } from './version.js';
 
 async function start() {
+  $('#app-version').textContent = 'App version ' + APP_VERSION;
   if (!C || !BOOKS.length) {
     main.innerHTML = emptyState('The book list did not load', 'Close Book Dude and open it again while online.');
     return;

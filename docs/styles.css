@@ -185,6 +185,12 @@ main {
   padding: calc(var(--safe-t) + 8px) 16px 8px; background: var(--accent-soft); color: var(--ink); font-weight: 600; font-size: .92rem; text-align: center;
 }
 .banner.warn { background: var(--warn-bg); color: var(--warn-ink); }
+/* Which version this device is running, in small print at the top (for troubleshooting). */
+.app-version {
+  position: absolute; z-index: 26; top: calc(var(--safe-t) + 3px); right: 14px; margin: 0; pointer-events: none;
+  font-size: .66rem; letter-spacing: .03em; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.content { position: relative; }
 
 /* ---------- Headers ---------- */
 .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 8px 0 16px; }

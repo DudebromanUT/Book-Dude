@@ -231,8 +231,22 @@ def sw_text(catalog, covers):
     return text.replace('__COVERS__', json.dumps(cover_paths, separators=(',', ':'))), version
 
 
+APP_VERSION_JS = DOCS / 'app' / 'version.js'
+
+
+def app_version():
+    """The version shown in the app: MM.YY, or MM.YY.NN for later releases that month (docs/app/version.js)."""
+    m = re.search(r"APP_VERSION = '([^']*)'", APP_VERSION_JS.read_text(encoding='utf-8'))
+    value = m.group(1) if m else ''
+    ok = re.fullmatch(r'(0[1-9]|1[0-2])\.\d{2}(\.(0[1-9]|[1-9]\d))?', value)
+    if not ok:
+        fail([f'docs/app/version.js: APP_VERSION "{value}" must look like 10.26 (month.year) or 10.26.01 for a later release that month'])
+    return value
+
+
 def main():
     check = '--check' in sys.argv[1:]
+    shown = app_version()
     missing = [p for p in ASSETS if p != 'catalog.js' and not (DOCS / p).exists()]
     if missing:
         fail([f'Missing app file docs/{p}' for p in missing])
@@ -250,7 +264,7 @@ def main():
         if stale:
             print('Out of date: ' + ', '.join(str(p.relative_to(ROOT)) for p in stale) + '. Run python3 scripts/build.py', file=sys.stderr)
             sys.exit(1)
-        print(f'Up to date: {len(rows)} books, offline version {version}')
+        print(f'Up to date: {len(rows)} books, app version {shown}, offline version {version}')
         return
 
     for path, text in outputs.items():
@@ -262,7 +276,7 @@ def main():
         print(f'{len(unused)} file(s) in docs/covers are not used by any book; running python3 scripts/covers.py removes them')
     if added:
         print(f'Assigned {added} new book_id value(s) in docs/books.csv')
-    print(f'Offline version {version}')
+    print(f'App version {shown}, offline version {version}')
 
 
 if __name__ == '__main__':

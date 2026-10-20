@@ -31,6 +31,16 @@ function showUpdate(worker) {
   $('#update').hidden = false;
 }
 
+// A new version that's ready while the app is just opening (the first 30 seconds, with nothing open or being typed)
+// switches over right away, so the newest version runs without anyone needing the banner. Later, the banner asks.
+const typingNow = () => !!document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+function switchOrAsk(worker) {
+  if (performance.now() > 30000 || sheet.open || typingNow()) { showUpdate(worker); return; }
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+  worker.postMessage('ACTIVATE');
+}
+
 const COVER_TOTAL = new Set(CATALOG_BOOKS.filter(b => b.cover).map(b => b.cover)).size;
 export function coversItem(item) {
   const c = state.covers;
@@ -62,12 +72,12 @@ export function registerWorker() {
     const watch = w => {
       if (!w) return;
       w.addEventListener('statechange', () => {
-        if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(w);
+        if (w.state === 'installed' && navigator.serviceWorker.controller) switchOrAsk(w);
         if (w.state === 'activated') setOffline('ready');
         if (w.state === 'redundant' && !reg.active) setOffline('failed');
       });
     };
-    if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg.waiting);
+    if (reg.waiting && navigator.serviceWorker.controller) switchOrAsk(reg.waiting);
     if (reg.active) setOffline('ready');
     else { setOffline('saving'); watch(reg.installing || reg.waiting); }
     reg.addEventListener('updatefound', () => watch(reg.installing));

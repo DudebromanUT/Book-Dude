@@ -45,11 +45,15 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
   const browser = await chromium.launch();
   const errors = [];
   let asked = 0;
+  const badRequests = [];
   try {
     // No offline worker here, so the stand-in link answers every request the page makes.
     const ctx = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'America/Denver', serviceWorkers: 'block' });
     await ctx.route('https://script.google.com/**', route => {
       asked++;
+      // A plain GET with no cache headers: anything more makes Safari ask Google first, which Google never answers.
+      const req = route.request();
+      if (req.method() !== 'GET' || req.headers()['cache-control'] || req.headers().pragma) badRequests.push(req.method() + ' ' + JSON.stringify(req.headers()));
       const ok = new URL(route.request().url()).searchParams.get('key') === 'abc123';
       route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify(ok ? { app: 'book-dude-school', quizzes: QUIZZES } : { error: 'That link is not right.' }) });
@@ -113,6 +117,7 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await p.$eval('.tab[data-tab="more"]', e => e.click()); await sleep(400);
     await p.$eval('[data-act="school-sync"]', e => e.click());
     assert.equal(await toast(), 'No new quizzes from school yet.');
+    assert.deepStrictEqual(badRequests, [], 'only plain requests');
     assert.deepStrictEqual(errors, []);
     console.log('School quiz emails land once, keep hand-typed points, and add books not in the app.');
   } finally {

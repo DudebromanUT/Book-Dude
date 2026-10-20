@@ -44,12 +44,19 @@ export function syncSchool(quiet) {
 async function check(quiet) {
   const url = state.settings.schoolLink;
   if (!linkOk(url)) return;
-  let feed;
+  // A plain request with the time on the end (so no saved copy answers). Asking with a cache setting instead makes
+  // Safari on iPad check with Google first, which Google doesn't answer, and the request fails.
+  let res, feed;
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    res = await fetch(url + '&t=' + Date.now());
+  } catch (e) {
+    if (!quiet) toast('Could not reach the school quiz link. Check the internet connection and try again.');
+    return;
+  }
+  try {
     feed = await res.json();
   } catch (e) {
-    if (!quiet) toast('Could not reach the school quiz link. Check the connection and try again.');
+    if (!quiet) toast('The school quiz link answered, but not with quiz results (error ' + res.status + '). Open the link in Safari to see what it says.');
     return;
   }
   if (feed && feed.error) { if (!quiet) toast('The school quiz link says: ' + String(feed.error).slice(0, 80)); return; }

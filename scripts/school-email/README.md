@@ -25,7 +25,7 @@ changes or deletes email.
 6. Back in the editor, choose **setup** in the function menu next to Run, and click **Run**. It sets up the daily 3 p.m.
    run and collects any quiz emails already there. The log at the bottom prints the Book Dude link, or the code to add to
    the end of the Web app URL (`?key=…`).
-7. On Maddy's iPad, open Book Dude → **More** → **Book money and screen time**. Unlock it if you've set a passcode. Paste
+7. On Maddy's iPad, open Book Dude → **Farty Pants Central** → **Book money and screen time**. Unlock it if you've set a passcode. Paste
    the whole link into **School quiz link**. It checks right away.
 
 ## Good to know

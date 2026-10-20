@@ -37,7 +37,7 @@ export function renderMore() {
   const item = (kind, title, text) => '<li><span class="ico ' + kind + '">' + icon(kind === 'ok' ? 'ok' : kind === 'warn' ? 'alert' : 'info') + '</span><span><b>' + title + '</b>' + (text ? '<br><span class="hint">' + text + '</span>' : '') + '</span></li>';
 
   main.innerHTML =
-    '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>More</h1></div></header>' +
+    '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>Farty Pants Central</h1></div></header>' +
     '<div class="settings-grid">' +
     '<div>' +
       '<section class="panel meet"><span class="face"><img src="img/dude-face.jpg" alt="" width="96" height="96"></span><div><h2>About the Dude</h2>' +

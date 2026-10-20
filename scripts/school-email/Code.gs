@@ -21,7 +21,7 @@ function setup() {
   showLink();
 }
 
-// Prints the link to type into Book Dude (More, then the grown-up settings). Run it again any time you need it.
+// Prints the link to type into Book Dude (Farty Pants Central, then the grown-up settings). Run it again any time you need it.
 function showLink() {
   var key = PropertiesService.getScriptProperties().getProperty('key');
   var url = ScriptApp.getService().getUrl() || '';

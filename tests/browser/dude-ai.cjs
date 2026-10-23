@@ -1,6 +1,7 @@
 /* The Dude's Claude features in the app, with the Google script played by this test: a quiz arrives with a Dude joke,
- * the weekly numbers go to the script, "What should I read next?" shows only real books, the chat talks and shows its
- * limits, and the grown-up switch turns the chat off. With Claude off in the script, none of it shows.
+ * the weekly numbers go to the script, "What should I read next?" shows only real books, the Dude Terminal answers like a
+ * machine (no typing bubble), always shows the AI line and the Talk to a grown-up button, suggests breaks, and keeps to its
+ * limits, and the grown-up switch turns it off. With Claude off in the script, none of it shows.
  *
  *   Run:     node tests/browser/dude-ai.cjs
  *
@@ -41,7 +42,7 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
   const browser = await chromium.launch();
   const errors = [];
   // What the stand-in script says, and everything Book Dude sent it.
-  const script = { ai: true, chat: { on: true, open: true, hours: '7-21', left: 40 }, chatAnswer: null };
+  const script = { ai: true, chat: { on: true, open: true, hours: '7-21', left: 40 }, chatAnswer: null, slow: false, release: () => {} };
   const posts = [];
   try {
     const ctx = await browser.newContext({ ...devices['iPad (gen 7)'], timezoneId: 'America/Denver', serviceWorkers: 'block' });
@@ -60,7 +61,13 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
         const ids = body.candidates.map(c => c.id);
         return send({ picks: [{ id: 'not-a-book', why: 'Made up' }].concat(ids.slice(0, 3).map(id => ({ id, why: 'You will love ' + id + '.' }))) });
       }
-      if (body.action === 'chat') return send(script.chatAnswer || { reply: 'Hatchet is about Brian, a plane, and one very useful hatchet.', left: 39 });
+      if (body.action === 'grownup') return send({ ok: true });
+      if (body.action === 'chat') {
+        const answer = () => send(script.chatAnswer || { reply: 'Hatchet is about Brian, a plane, and one very useful hatchet.', left: 39 });
+        if (!script.slow) return answer();
+        script.slow = false;
+        return new Promise(resolve => { script.release = () => resolve(answer()); });
+      }
       return send({ error: 'bad' });
     });
     const p = await ctx.newPage();
@@ -75,11 +82,11 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await tab('more');
     await p.fill('#school-link', LINK); await p.dispatchEvent('#school-link', 'change');
     await p.waitForFunction(() => /from school/.test(document.querySelector('#toast').textContent), null, { timeout: 10000 });
-    assert.match(clean(await p.textContent('.panel:has(#school-link)')), /Let her talk with the Dude/);
+    assert.match(clean(await p.textContent('.panel:has(#school-link)')), /Let her use the Dude Terminal/);
     await tab('explore');
     assert.equal(clean(await p.textContent('.dude .line')), JOKE);
     assert.equal(clean(await p.textContent('.dude .bubble-link')), 'Hatchet');
-    assert.deepEqual(await p.$$eval('.dude-asks button', b => b.map(x => x.textContent)), ['Talk to the Dude', 'What should I read next?']);
+    assert.deepEqual(await p.$$eval('.dude-asks button', b => b.map(x => x.textContent)), ['Dude Terminal', 'What should I read next?']);
 
     // The weekly numbers went to the script once: titles and numbers only, as plain text.
     const reports = posts.filter(x => x.body.action === 'report');
@@ -103,28 +110,57 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     assert.ok(await p.$('#sheet .book-hero'), 'a pick opens its book');
     await p.$eval('#sheet .sheet-bar [data-act="close-sheet"]', e => e.click()); await sleep(300);
 
-    // The chat: the honest notice, her message, the Dude's answer.
+    // The Dude Terminal: the line that never scrolls away, the big grown-up button, her message, the answer.
+    const AI_LINE = 'This is an AI. Mom and Dad can read these chats.';
+    const lines = () => p.$$eval('#sheet .t-line', l => l.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
     await p.click('[data-act="dude-chat"]'); await sleep(400);
-    assert.match(clean(await p.textContent('#sheet .ai-sheet')), /The Dude is played by an AI, so he can get things wrong\. Mom and Dad can read these chats\./);
+    assert.equal(clean(await p.textContent('#sheet .t-status')), AI_LINE);
+    assert.equal(clean(await p.textContent('#sheet .grownup-btn')), 'Talk to a grown-up');
+    assert.deepEqual(await lines(), ['DUDE-OS 1.986 READY.', 'DUDE> Hi Maddy. Ask me about a book or a word, or ask for a joke.']);
+    script.slow = true;
     await p.fill('#chat-input', 'what is Hatchet about?');
     await p.$eval('form[data-form="dude-chat"] button[type="submit"]', e => e.click());
-    await p.waitForFunction(() => document.querySelectorAll('#sheet .msg.dude:not(.typing)').length >= 2, null, { timeout: 10000 });
-    assert.deepEqual(await p.$$eval('#sheet .msg', m => m.map(x => x.className.replace('msg ', '') + ': ' + x.textContent)).then(a => a.slice(1)),
-      ['me: what is Hatchet about?', 'dude: Hatchet is about Brian, a plane, and one very useful hatchet.']);
+    await sleep(300);
+    // While it waits: a machine "WORKING" line, never a human-style typing bubble.
+    assert.equal(await p.$('#sheet .typing'), null);
+    assert.match(clean(await p.textContent('#sheet .t-wait')), /^WORKING/);
+    script.release();
+    await p.waitForFunction(() => document.querySelectorAll('#sheet .t-line.t-dude').length >= 2, null, { timeout: 10000 });
+    assert.deepEqual((await lines()).slice(2), ['MADDY> what is Hatchet about?', 'DUDE> Hatchet is about Brian, a plane, and one very useful hatchet.']);
+    assert.equal(await p.$('#sheet .t-wait'), null);
     const chat = posts.filter(x => x.body.action === 'chat')[0].body;
     assert.deepEqual(chat.messages, [{ role: 'user', text: 'what is Hatchet about?' }]);
     assert.deepEqual(chat.recent, ['Hatchet']);
+    assert.doesNotMatch(clean(await p.textContent('#sheet .ai-sheet')), /left today|streak/i, 'nothing counting down or adding up');
 
-    // A limit reached: her message goes back in the box... and the box goes away, with a note why.
+    // The sound key flips and is remembered.
+    assert.equal(clean(await p.textContent('#sheet .t-sound')), 'SOUND ON');
+    await p.click('#sheet .t-sound');
+    assert.equal(clean(await p.textContent('#sheet .t-sound')), 'SOUND OFF');
+
+    // Talk to a grown-up: a calm, plain screen, and her parents get the last messages.
+    await p.click('#sheet .grownup-btn');
+    assert.match(clean(await p.textContent('#sheet .grownup-panel')), /Go find Mom, Dad, or another grown-up you trust, right now/);
+    assert.match(clean(await p.textContent('#sheet .grownup-panel')), /call 911/);
+    await p.waitForFunction(() => /We sent Mom and Dad a message too/.test(document.querySelector('#sheet .grownup-sent').textContent), null, { timeout: 10000 });
+    const help = posts.filter(x => x.body.action === 'grownup')[0].body;
+    assert.deepEqual(help.messages.map(m => m.role), ['user', 'assistant']);
+    await p.click('[data-act="grownup-back"]'); await sleep(200);
+    assert.equal(clean(await p.textContent('#sheet .t-status')), AI_LINE);
+
+    // The day's limit: her message goes back in the box... and the box goes away, with no "come back tomorrow".
     script.chatAnswer = { error: 'limit', left: 0 };
     await p.fill('#chat-input', 'one more');
     await p.$eval('form[data-form="dude-chat"] button[type="submit"]', e => e.click()); await sleep(800);
-    assert.match(clean(await p.textContent('#sheet .ai-sheet')), /That’s all the chatting the Dude can do today/);
+    assert.match(clean(await p.textContent('#sheet .ai-sheet')), /THAT’S ALL THE TERMINAL TIME FOR TODAY/);
+    assert.doesNotMatch(clean(await p.textContent('#sheet .ai-sheet')), /come back|tomorrow/i);
     assert.equal(await p.$('#chat-input'), null);
+    assert.equal(clean(await p.textContent('#sheet .t-status')), AI_LINE);
+    assert.ok(await p.$('#sheet .grownup-btn'), 'still there at the limit');
     assert.equal(posts.filter(x => x.body.action === 'chat')[1].body.messages.length, 3, 'the history goes with it');
     await p.$eval('#sheet .sheet-bar [data-act="close-sheet"]', e => e.click()); await sleep(300);
 
-    // The grown-up switch turns the chat off on this device; the picks stay.
+    // The grown-up switch turns the terminal off on this device; the picks stay.
     await tab('more');
     await p.$eval('#dude-chat-on', e => e.click()); await sleep(400);
     await tab('explore');
@@ -132,21 +168,43 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await tab('more');
     await p.$eval('#dude-chat-on', e => e.click()); await sleep(400);
 
-    // After hours, the chat says when it opens; reopening doesn't send the numbers again so soon.
+    // After hours: it says when it runs, and the grown-up button still works, even with no internet.
     script.chat = { on: true, open: false, hours: '7-21', left: 40 };
     await p.reload(); await p.waitForSelector('.view-head'); await tab('explore'); await p.waitForSelector('.dude-asks', { timeout: 10000 });
     await p.click('[data-act="dude-chat"]'); await sleep(400);
-    assert.match(clean(await p.textContent('#sheet .ai-sheet')), /The Dude is asleep\. You can chat from 7 a\.m\. to 9 p\.m\./);
+    assert.match(clean(await p.textContent('#sheet .ai-sheet')), /THE TERMINAL IS OFF RIGHT NOW\. IT RUNS FROM 7 A\.M\. TO 9 P\.M\./);
     assert.equal(await p.$('#chat-input'), null);
-    assert.equal(posts.filter(x => x.body.action === 'report').length, 1);
+    assert.equal(clean(await p.textContent('#sheet .t-status')), AI_LINE);
+    await ctx.setOffline(true);
+    await p.click('#sheet .grownup-btn');
+    assert.match(clean(await p.textContent('#sheet .grownup-panel')), /Go find Mom, Dad/);
+    await p.waitForFunction(() => /didn’t go through, so go find them yourself/.test(document.querySelector('#sheet .grownup-sent').textContent), null, { timeout: 10000 });
+    await ctx.setOffline(false);
+    assert.equal(posts.filter(x => x.body.action === 'report').length, 1, 'reopening doesn’t send the numbers again so soon');
     await p.$eval('#sheet .sheet-bar [data-act="close-sheet"]', e => e.click()); await sleep(300);
+
+    // The soft break timer: after 15 minutes at the terminal it suggests a break, without stopping anything.
+    script.chat = { on: true, open: true, hours: '7-21', left: 40 };
+    const p2 = await ctx.newPage();
+    p2.on('pageerror', e => errors.push(e.message));
+    await p2.clock.install();
+    await p2.goto(BASE + '#explore'); await p2.waitForSelector('.dude-asks', { timeout: 10000 });
+    await p2.click('[data-act="dude-chat"]'); await sleep(300);
+    assert.equal(await p2.$('#sheet .t-break'), null);
+    await p2.clock.fastForward('15:30');
+    await p2.waitForSelector('#sheet .t-break', { timeout: 5000 });
+    assert.match(clean(await p2.textContent('#sheet .t-break')), /BREAK TIME\? You’ve been at the terminal 15 minutes\./);
+    assert.ok(await p2.$('#chat-input'), 'she can still type');
+    await p2.click('#sheet .t-break .t-key'); await sleep(300);
+    assert.equal(await p2.$('#sheet[open]'), null, 'OK, BREAK closes the terminal');
+    await p2.close();
 
     // With Claude off in the script, none of it shows.
     script.ai = false;
     await p.reload(); await p.waitForSelector('.view-head'); await tab('explore'); await sleep(2500);
     assert.equal(await p.$('.dude-asks'), null);
     assert.deepEqual(errors, []);
-    console.log('The Dude jokes about new quizzes, picks real books, chats with limits, and hides when Claude is off.');
+    console.log('The Dude jokes about new quizzes, picks real books, runs a safe terminal, and hides when Claude is off.');
   } finally {
     await browser.close();
     server.close();

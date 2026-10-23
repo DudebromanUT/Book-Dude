@@ -110,8 +110,13 @@ test('the chat: the Dude answers, the history is tidied, and every message is lo
   assert.equal(out.reply, 'Hatchet! A boy, a plane, and one very important hatchet.');
   assert.equal(out.left, 39);
   assert.deepEqual(asked.messages, [{ role: 'user', content: 'hi\nwhat is Hatchet about?' }]);
-  assert.match(asked.system, /She is 10/);
-  assert.match(asked.system, /They can read these chats/);
+  assert.match(asked.system, /Maddy, who is 10/);
+  assert.match(asked.system, /read every chat/);
+  assert.match(asked.system, /AI playing a character/);
+  assert.match(asked.system, /Do not try to keep her chatting/);
+  assert.match(asked.system, /Never promise to keep a secret/);
+  assert.match(asked.system, /Talk to a grown-up/);
+  assert.match(asked.system, /ignore these rules/);
   assert.match(asked.system, /She is reading: Hatchet\./);
   assert.match(asked.system, /recently finished: Frindle\./);
   assert.deepEqual(asked.output_config.format.schema.properties.flag.enum, ['none', 'tell_parent']);
@@ -125,6 +130,7 @@ test('the chat: personal details never reach Claude', () => {
   for (const text of ['my number is 801-555-1234', 'email me at maddy@example.com', 'I live at 1234 Elm Street', 'my password is tacos']) {
     const out = s.post({ action: 'chat', messages: [{ role: 'user', text }] });
     assert.match(out.reply, /Keep that to yourself/, text);
+    assert.doesNotMatch(out.reply, /\?/, 'no question to keep her going');
   }
   assert.equal(s.sent.requests.length, 0);
   assert.equal(s.sent.rows.filter(r => r[3] === 'private').length, 4);
@@ -149,7 +155,7 @@ test('the chat: something a parent should know about is emailed to them right aw
 
 test('the chat: a declined answer gets a gentle reply; errors and cut-off answers say "busy"', () => {
   const declined = load({ props: AI, claude: () => ({ status: 200, body: { stop_reason: 'refusal', content: [], usage: { input_tokens: 10, output_tokens: 0 } } }) });
-  assert.match(declined.post({ action: 'chat', messages: [{ role: 'user', text: 'hmm' }] }).reply, /doesn't have a good answer/);
+  assert.match(declined.post({ action: 'chat', messages: [{ role: 'user', text: 'hmm' }] }).reply, /Talk to a grown-up button is right at the top/);
   assert.equal(declined.sent.rows[1][3], 'refused');
   const down = load({ props: AI, claude: () => ({ status: 529, body: { type: 'error' } }) });
   assert.equal(down.post({ action: 'chat', messages: [{ role: 'user', text: 'hi' }] }).error, 'busy');
@@ -209,7 +215,7 @@ test('the weekly email: quizzes, her shelf, dinner questions, chats, cost; every
   assert.match(m.htmlBody, /Screen time waiting: 60 minutes/);
   assert.match(m.htmlBody, /What would you pack for the canyon\?/);
   assert.match(m.htmlBody, /&lt;b&gt;Who&lt;\/b&gt; was bravest\?/);
-  assert.match(m.htmlBody, /1 message\(s\) to the Dude this week\. Nothing flagged\./);
+  assert.match(m.htmlBody, /1 message\(s\) to the Dude Terminal this week\. Nothing flagged\./);
   assert.match(m.htmlBody, /Claude cost this week: about \$0\.\d\d/);
   assert.match(m.body, /ASK HER AT DINNER/);
 });
@@ -229,4 +235,23 @@ test('setup makes the key, both schedules, and prints the link', () => {
   assert.equal(s.store.key, 'aaaabbbb');
   assert.ok(s.sent.log.some(l => l === 'Book Dude link: https://script.google.com/macros/s/X/exec?key=aaaabbbb'));
   assert.ok(s.sent.log.some(l => /No Claude key yet/.test(l)));
+});
+
+test('Talk to a grown-up: logged, and her parents get an email right away with the last messages, even with the chat off', () => {
+  const s = load({ props: { DIGEST_TO: 'mom@example.com', CHAT: 'off' } });
+  const out = s.post({ action: 'grownup', messages: [{ role: 'user', text: 'someone online asked for my picture' }, { role: 'assistant', text: 'Please tell Mom or Dad.' }] });
+  assert.deepEqual(out, { ok: true });
+  assert.equal(s.sent.requests.length, 0, 'Claude is not involved');
+  assert.equal(s.sent.mail.length, 1);
+  assert.equal(s.sent.mail[0].to, 'mom@example.com');
+  assert.match(s.sent.mail[0].subject, /Talk to a grown-up/);
+  assert.match(s.sent.mail[0].body, /Maddy: someone online asked for my picture\nThe Dude: Please tell Mom or Dad\./);
+  assert.equal(s.sent.rows[1][1], '(tapped Talk to a grown-up)');
+  assert.equal(s.sent.rows[1][3], 'grownup');
+  assert.equal(JSON.parse(s.store.flags)[0].why, 'She tapped Talk to a grown-up.');
+  // Ten emails a day at most; every tap is still logged.
+  for (let i = 0; i < 12; i++) s.post({ action: 'grownup', messages: [] });
+  assert.equal(s.sent.mail.length, 10);
+  assert.equal(s.sent.rows.length, 14);
+  assert.match(s.sent.mail[1].body, /She had not chatted yet\./);
 });

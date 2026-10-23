@@ -1,7 +1,7 @@
 // Checks the app's files (docs/app) for names that are used without being defined or imported, such as a
 // helper from another file used without its import line, and for things defined but never used.
 // Run: npx eslint docs/app (CI runs it on every push).
-const BROWSER = ['window', 'fetch', 'performance', 'document', 'navigator', 'location', 'localStorage', 'indexedDB', 'setTimeout', 'clearTimeout',
+const BROWSER = ['window', 'fetch', 'performance', 'document', 'navigator', 'location', 'localStorage', 'indexedDB', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
   'requestAnimationFrame', 'IntersectionObserver', 'FileReader', 'Image', 'URL', 'URLSearchParams', 'Blob', 'File', 'history', 'console'];
 
 export default [{

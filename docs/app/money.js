@@ -278,9 +278,9 @@ function schoolFieldsHtml(cfg, total) {
       : 'Paste the link from the Google script that reads her Renaissance quiz emails, and new quizzes add themselves. Setup steps are in the Book Dude repository, scripts/school-email.') + '</p>' +
     (link ? '<div class="row-actions"><button type="button" class="btn small" data-act="school-sync">Check for new quizzes now</button></div>' : '') +
     (link && state.ai && state.ai.on
-      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her talk with the Dude</label>' +
+      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her use the Dude Terminal</label>' +
         '<p class="hint">Claude is on in the Google script: new quizzes come with a Dude joke, you get a weekly email, and she can ask what to read next' +
-        (state.ai.chat && state.ai.chat.on ? ' and chat with the Dude (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read, and anything worrying is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
+        (state.ai.chat && state.ai.chat.on ? ' and use the Dude Terminal, a chat with the Dude (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read; anything worrying, and every tap of Talk to a grown-up, is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
       : '') +
     '<h3 class="panel-sub">Points from school</h3>' +
     '<label class="switch"><input type="checkbox" id="school-on"' + (on ? ' checked' : '') + '> Count her total from the school’s AR report</label>' +
@@ -436,7 +436,7 @@ export const changes = guardAll({
   'dude-chat-on': async t => {
     await saveSetting('dudeChat', t.checked);
     refreshBubble();
-    toast(t.checked ? 'She can talk with the Dude.' : 'The Dude chat is off on this device.');
+    toast(t.checked ? 'The Dude Terminal is on.' : 'The Dude Terminal is off on this device.');
   },
   'school-link': async t => {
     const typed = t.value.trim();

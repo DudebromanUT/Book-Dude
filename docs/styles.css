@@ -654,17 +654,42 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .pick { display: grid; gap: 8px; align-content: start; }
 .pick .why { margin: 0; font-size: .92rem; line-height: 1.4; color: var(--ink-2); }
 @media (max-width: 559px) { .picks { grid-template-columns: minmax(0, 1fr); } .pick { grid-template-columns: 116px minmax(0, 1fr); gap: 14px; } }
-.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: min(58vh, 520px); overflow-y: auto; padding: 4px 2px; overscroll-behavior: contain; }
-.msg { margin: 0; max-width: 82%; padding: 10px 14px; border-radius: 18px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-.msg.dude { align-self: flex-start; background: var(--accent-soft); color: var(--ink); border-bottom-left-radius: 6px; }
-.msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 6px; }
-.msg.note { align-self: center; max-width: 100%; background: none; color: var(--muted); font-size: .88rem; text-align: center; padding: 2px 8px; }
-.msg.typing span { animation: blink 1.2s infinite both; font-weight: 800; }
-.msg.typing span:nth-child(2) { animation-delay: .2s; }
-.msg.typing span:nth-child(3) { animation-delay: .4s; }
-.chat-form { display: flex; gap: 8px; }
-.chat-form .input { flex: 1; min-width: 0; }
-@media (prefers-reduced-motion: reduce) { .thinking span, .msg.typing span { animation: none; opacity: 1; } }
+.ai-sheet.chat { gap: 14px; }
+/* Talk to a grown-up: big, warm, and always at the top of the terminal. */
+.grownup-btn { width: 100%; min-height: 60px; border: 0; border-radius: 16px; background: #F2B53A; color: #3A2600; font: inherit; font-size: 1.15rem; font-weight: 800; box-shadow: 0 3px 0 #C98612; cursor: pointer; }
+.grownup-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #C98612; }
+.grownup-panel { display: grid; gap: 12px; justify-items: start; }
+.grownup-panel h2 { margin: 0; font-family: var(--book); font-size: 1.6rem; }
+.grownup-panel p { margin: 0; line-height: 1.45; }
+.grownup-panel .big { font-size: 1.25rem; font-weight: 700; }
+/* The Dude Terminal: a 1986 green-screen monitor in a beige case. Always dark inside, in light or dark mode. */
+.crt { min-width: 0; padding: 18px 18px 10px; border-radius: 22px; background: linear-gradient(#ECE3CC, #D6CBB0); box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), 0 10px 24px -10px rgb(40 25 5 / .5); }
+.crt-screen {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; overflow: hidden; border-radius: 18px / 24px;
+  background: radial-gradient(ellipse at center, #0F2A12 0%, #071407 75%, #030A03 100%); box-shadow: inset 0 0 30px rgb(0 0 0 / .85);
+  color: #3DFF6E; font-family: ui-monospace, "SF Mono", Menlo, Monaco, "Courier New", monospace; font-size: 16px; line-height: 1.45; text-shadow: 0 0 6px rgb(61 255 110 / .55);
+}
+.crt-screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: repeating-linear-gradient(rgb(0 0 0 / .22) 0 1px, transparent 1px 3px); }
+.t-status { margin: 0; padding-bottom: 8px; border-bottom: 1px dashed rgb(61 255 110 / .5); font-size: 14px; }
+.t-log { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; max-height: min(46vh, 440px); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #2A7A3A transparent; }
+.t-line { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.t-line.t-me { color: #B6FFC9; }
+.t-line.t-note { opacity: .8; }
+.t-who { font-weight: 700; }
+.t-cursor { display: inline-block; width: .6em; height: 1em; margin-left: 6px; vertical-align: -2px; background: currentColor; animation: t-blink 1s steps(1) infinite; }
+@keyframes t-blink { 50% { opacity: 0; } }
+.t-prompt { display: flex; align-items: center; gap: 8px; }
+.t-prompt input { flex: 1; min-width: 0; padding: 6px 2px; border: 0; border-bottom: 1px solid rgb(61 255 110 / .5); border-radius: 0; outline: none; background: transparent; color: inherit; font: inherit; text-shadow: inherit; caret-color: #3DFF6E; }
+.t-prompt input:focus { border-bottom-color: #3DFF6E; }
+.t-key { flex: none; padding: 6px 10px; border: 1px solid rgb(61 255 110 / .6); border-radius: 4px; background: transparent; color: inherit; font: inherit; text-shadow: inherit; cursor: pointer; }
+.t-key:disabled { opacity: .5; }
+.t-break { display: grid; gap: 8px; justify-items: start; padding: 10px; border: 1px solid rgb(61 255 110 / .7); }
+.t-break p { margin: 0; }
+.crt-plate { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 6px 0; color: #7A6F55; font: 700 .72rem/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; }
+.t-sound { padding: 4px 8px; border: 1px solid #B5A988; border-radius: 4px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.led { width: 9px; height: 9px; border-radius: 50%; background: #3DFF6E; box-shadow: 0 0 6px #3DFF6E; }
+@media (max-width: 559px) { .crt { padding: 12px 10px 8px; border-radius: 18px; } .crt-screen { padding: 12px; font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { .thinking span { animation: none; opacity: 1; } .t-cursor { animation: none; } }
 .btn img.face { width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--surface); }
 .pet { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--line-strong), var(--shadow); }
 

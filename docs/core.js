@@ -16,6 +16,9 @@
   const DATE_FIELDS = ['startedDate', 'finishedDate', 'quizDate'];
   // Books the reader adds herself get IDs with this prefix; the catalog never uses it.
   const CUSTOM_PREFIX = 'mine:';
+  // Book Dude's own tests (COBOL's history test is "exam:cobol") are records with this prefix: earnedPoints, quizScore
+  // and quizDate, and nothing else. Their points count for rewards like AR points, but they aren't AR quizzes.
+  const EXAM_PREFIX = 'exam:';
   const CUSTOM_TEXT = { title: 200, author: 200, description: 2000 };
   const CUSTOM_NUMBERS = { ar_level: 20, ar_points: 999 };
   // A cover photo she took, already shrunk on the device (about 40 KB). Anything else is dropped.
@@ -158,13 +161,27 @@
     };
   }
 
+  const isExam = id => String(id).startsWith(EXAM_PREFIX);
+
+  /** Points from Book Dude's own tests (see EXAM_PREFIX). */
+  function examPoints(records) {
+    let sum = 0;
+    for (const id of Object.keys(records || {})) {
+      const r = records[id];
+      if (isExam(id) && r && typeof r.earnedPoints === 'number') sum += r.earnedPoints;
+    }
+    return round(sum);
+  }
+
   /**
    * The points that count for book money, screen time and the Secret Files: her school AR total above the
-   * starting line once a grown-up has typed it in, otherwise the quiz results entered in this app.
+   * starting line once a grown-up has typed it in, otherwise the quiz results entered in this app; plus the points
+   * from Book Dude's own tests either way (the school total doesn't know about them).
    */
-  function rewardPoints(appPoints, settings) {
+  function rewardPoints(appPoints, settings, testPoints) {
     const cfg = reward(settings);
-    return Math.max(0, round(cfg.school === null ? Number(appPoints) || 0 : cfg.school - cfg.schoolStart));
+    const ar = Math.max(0, cfg.school === null ? Number(appPoints) || 0 : cfg.school - cfg.schoolStart);
+    return round(ar + Math.max(0, Number(testPoints) || 0));
   }
 
   /**
@@ -283,7 +300,7 @@
     };
     for (const id of Object.keys(records || {})) {
       const r = records[id];
-      if (!r) continue;
+      if (!r || isExam(id)) continue;
       if (r.status === 'reading') m.reading++;
       const quizDay = String(r.quizDate || '');
       if (r.earnedPoints !== null && r.earnedPoints !== undefined) {
@@ -581,7 +598,7 @@
 
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
-    reward, rewardStatus, rewardPoints, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold,
+    reward, rewardStatus, rewardPoints, examPoints, isExam, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold,
     schoolQuizzes, findBook, readNextCandidates
   };
 });

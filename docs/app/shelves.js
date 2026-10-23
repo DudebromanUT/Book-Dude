@@ -60,7 +60,7 @@ export function renderShelves() {
   for (const [key] of SHELVES) counts[key] = shelfBooks(key).length;
   const key = state.shelf;
   const list = shelfBooks(key);
-  const missing = Object.keys(state.records).filter(id => !BY_ID.has(id) && !C.isBlank(state.records[id])).length;
+  const missing = Object.keys(state.records).filter(id => !BY_ID.has(id) && !C.isExam(id) && !C.isBlank(state.records[id])).length;
   const empties = {
     reading: ['Nothing on the go', 'Open any book and tap <b>Reading</b> to keep your place here.'],
     want: ['Your wish list is empty', 'Tap <b>Want to read</b> on any book to save it for later.'],

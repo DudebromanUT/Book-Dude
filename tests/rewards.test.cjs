@@ -53,6 +53,25 @@ test('school points: once a grown-up types her school total, the points above th
   assert.equal(C.reward({ schoolDate: '2026-02-30' }).schoolDate, '');
 });
 
+test('Book Dude\'s own tests: their points count for rewards (on top of a school total, too), but they aren\'t AR quizzes', () => {
+  const records = {
+    'hatchet--gary-paulsen': C.entry({ id: 'hatchet--gary-paulsen', status: 'finished', finishedDate: '2026-10-01', earnedPoints: 7, quizDate: '2026-10-01' }),
+    'exam:cobol': C.entry({ id: 'exam:cobol', earnedPoints: 2, quizScore: 90, quizDate: '2026-10-23' })
+  };
+  assert.ok(C.safeId('exam:cobol'));
+  assert.ok(C.isExam('exam:cobol'));
+  assert.ok(!C.isExam('hatchet--gary-paulsen'));
+  assert.equal(C.examPoints(records), 2);
+  const m = C.metrics([], records, '');
+  assert.equal(m.earned, 7);
+  assert.equal(m.quizzes, 1);
+  assert.equal(C.metrics([], records, '2026').months[9], 7);
+  assert.equal(C.rewardPoints(m.earned, {}, C.examPoints(records)), 9);
+  assert.equal(C.rewardPoints(m.earned, { school: 47.3, schoolStart: 40 }, 2), 9.3);
+  assert.equal(C.rewardPoints(m.earned, { school: 30, schoolStart: 40 }, 2), 2);
+  assert.equal(C.rewardPoints(0, {}, 'junk'), 0);
+});
+
 test('screen time: 60 minutes for each 10 points she spends on it, plus extras for books from the list finished since it started', () => {
   const list = [
     { book_id: 'bridge-to-terabithia--katherine-paterson', title: 'Bridge to Terabithia' },

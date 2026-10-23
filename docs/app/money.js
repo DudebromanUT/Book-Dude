@@ -11,7 +11,7 @@ import { renderMore } from './more.js';
 import { asGrownup, isOpen, keepOpen, codePanelHtml } from './grownup.js';
 import { findLink, syncSchool } from './school.js';
 import { refreshBubble } from './dude-talk.js';
-import { hoursText } from './dude-ai.js';
+import { hoursText } from './cobol.js';
 
 // "A trip to the bookstore" reads as "earned a trip to the bookstore" mid-sentence.
 const prizeText = prize => String(prize).replace(/^(A|An|The)\b/, w => w.toLowerCase());
@@ -21,9 +21,9 @@ const money = n => { const s = moneyFormat.format(n); return s.endsWith('.00') ?
 export const rewardLabel = cfg => (cfg.perPoint > 0 ? money(cfg.every * cfg.perPoint) + ' for ' + cfg.where : prizeText(cfg.prize));
 
 // The points that count for book money, screen time and the Secret Files: her school total above the starting
-// line once a grown-up has typed it in, otherwise the quiz results entered in this app.
+// line once a grown-up has typed it in, otherwise the quiz results entered in this app; plus Book Dude's own tests.
 export function rewardPoints() {
-  return C.rewardPoints(C.metrics(BOOKS, state.records, '').earned, state.settings.reward);
+  return C.rewardPoints(C.metrics(BOOKS, state.records, '').earned, state.settings.reward, C.examPoints(state.records));
 }
 
 // Screen time: what she has earned, and the extra a book earns when she finishes it (0 for books she added).
@@ -278,9 +278,9 @@ function schoolFieldsHtml(cfg, total) {
       : 'Paste the link from the Google script that reads her Renaissance quiz emails, and new quizzes add themselves. Setup steps are in the Book Dude repository, scripts/school-email.') + '</p>' +
     (link ? '<div class="row-actions"><button type="button" class="btn small" data-act="school-sync">Check for new quizzes now</button></div>' : '') +
     (link && state.ai && state.ai.on
-      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her use the Dude Terminal</label>' +
+      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her use COBOL</label>' +
         '<p class="hint">Claude is on in the Google script: new quizzes come with a Dude joke, you get a weekly email, and she can ask what to read next' +
-        (state.ai.chat && state.ai.chat.on ? ' and use the Dude Terminal, a chat with the Dude (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read; anything worrying, and every tap of Talk to a grown-up, is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
+        (state.ai.chat && state.ai.chat.on ? ' and chat with COBOL, a kid-safe AI helper on a mainframe-terminal screen, following your instructions in the script (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read, and the weekly email has a summary, anything flagged and the whole week’s chat; anything worrying, and every tap of Talk to a grown-up, is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
       : '') +
     '<h3 class="panel-sub">Points from school</h3>' +
     '<label class="switch"><input type="checkbox" id="school-on"' + (on ? ' checked' : '') + '> Count her total from the school’s AR report</label>' +
@@ -288,7 +288,7 @@ function schoolFieldsHtml(cfg, total) {
       ? '<div class="two"><label class="field"><span>Her school total now</span><input id="school-total" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.school + '"></label>' +
         '<label class="field"><span>Starting line</span><input id="school-start" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.schoolStart + '"></label></div>' +
         '<p class="hint">Copy her total from the school’s AR report' + (cfg.schoolDate ? ' (last updated ' + esc(fmtDay(cfg.schoolDate)) + ')' : '') +
-          '. Only points above the starting line count: use her total from the day the deal started, or 0 to count the whole school year. ' +
+          '. Only points above the starting line count: use her total from the day the deal started, or 0 to count the whole school year. Points from Book Dude’s own tests (like COBOL’s history test) are added on top. ' +
           plural(total, 'point counts', 'points count') + ' right now.</p>'
       : '<p class="hint">Turn this on to type in her total from the school’s report each week instead, so a quiz she forgets to enter here still counts.</p>');
 }
@@ -436,7 +436,7 @@ export const changes = guardAll({
   'dude-chat-on': async t => {
     await saveSetting('dudeChat', t.checked);
     refreshBubble();
-    toast(t.checked ? 'The Dude Terminal is on.' : 'The Dude Terminal is off on this device.');
+    toast(t.checked ? 'COBOL is on.' : 'COBOL is off on this device.');
   },
   'school-link': async t => {
     const typed = t.value.trim();

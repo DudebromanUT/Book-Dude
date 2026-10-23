@@ -654,41 +654,85 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .pick { display: grid; gap: 8px; align-content: start; }
 .pick .why { margin: 0; font-size: .92rem; line-height: 1.4; color: var(--ink-2); }
 @media (max-width: 559px) { .picks { grid-template-columns: minmax(0, 1fr); } .pick { grid-template-columns: 116px minmax(0, 1fr); gap: 14px; } }
-.ai-sheet.chat { gap: 14px; }
-/* Talk to a grown-up: big, warm, and always at the top of the terminal. */
-.grownup-btn { width: 100%; min-height: 60px; border: 0; border-radius: 16px; background: #F2B53A; color: #3A2600; font: inherit; font-size: 1.15rem; font-weight: 800; box-shadow: 0 3px 0 #C98612; cursor: pointer; }
-.grownup-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #C98612; }
+/* COBOL: an IBM 3270 mainframe terminal. Green on black, with the 3279's turquoise, blue, yellow and red for the
+   title line, her lines, the function keys and notices. Always dark inside, in light or dark mode. */
+.ai-sheet.cobol { gap: 12px; }
+.cobol-btn { border-color: #071407; background: #071407; color: #3DFF6E; font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .1em; text-shadow: 0 0 6px rgb(61 255 110 / .55); }
+/* Talk to a grown-up: small, yellow, and always at the top of every COBOL screen. */
+.grownup-btn { justify-self: start; min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: #F2B53A; color: #3A2600; font: inherit; font-size: .9rem; font-weight: 800; box-shadow: 0 2px 0 #C98612; cursor: pointer; }
+.grownup-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #C98612; }
 .grownup-panel { display: grid; gap: 12px; justify-items: start; }
 .grownup-panel h2 { margin: 0; font-family: var(--book); font-size: 1.6rem; }
 .grownup-panel p { margin: 0; line-height: 1.45; }
 .grownup-panel .big { font-size: 1.25rem; font-weight: 700; }
-/* The Dude Terminal: a 1986 green-screen monitor in a beige case. Always dark inside, in light or dark mode. */
-.crt { min-width: 0; padding: 18px 18px 10px; border-radius: 22px; background: linear-gradient(#ECE3CC, #D6CBB0); box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), 0 10px 24px -10px rgb(40 25 5 / .5); }
+.crt { min-width: 0; padding: 14px; border-radius: 18px; background: linear-gradient(#4A4D53, #2A2C30); box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 10px 24px -10px rgb(10 10 10 / .6); }
 .crt-screen {
-  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; overflow: hidden; border-radius: 18px / 24px;
-  background: radial-gradient(ellipse at center, #0F2A12 0%, #071407 75%, #030A03 100%); box-shadow: inset 0 0 30px rgb(0 0 0 / .85);
-  color: #3DFF6E; font-family: ui-monospace, "SF Mono", Menlo, Monaco, "Courier New", monospace; font-size: 16px; line-height: 1.45; text-shadow: 0 0 6px rgb(61 255 110 / .55);
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px; overflow: hidden; border-radius: 10px;
+  background: radial-gradient(ellipse at center, #061A09 0%, #020A03 80%, #010401 100%); box-shadow: inset 0 0 28px rgb(0 0 0 / .9);
+  color: #33FF66; font-family: ui-monospace, "SF Mono", Menlo, Monaco, "Courier New", monospace; font-size: 15px; line-height: 1.45; text-shadow: 0 0 6px rgb(51 255 102 / .5);
 }
-.crt-screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: repeating-linear-gradient(rgb(0 0 0 / .22) 0 1px, transparent 1px 3px); }
-.t-status { margin: 0; padding-bottom: 8px; border-bottom: 1px dashed rgb(61 255 110 / .5); font-size: 14px; }
-.t-log { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; max-height: min(46vh, 440px); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #2A7A3A transparent; }
-.t-line { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.t-line.t-me { color: #B6FFC9; }
-.t-line.t-note { opacity: .8; }
+.crt-screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: repeating-linear-gradient(rgb(0 0 0 / .2) 0 1px, transparent 1px 3px); }
+.crt-screen p { margin: 0; }
+.t-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding-bottom: 6px; border-bottom: 1px solid rgb(64 224 208 / .5); color: #40E0D0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-shadow: 0 0 6px rgb(64 224 208 / .5); }
+.t-status { padding-bottom: 8px; border-bottom: 1px dashed rgb(51 255 102 / .45); color: #E8FFF0; font-size: 13px; text-shadow: 0 0 6px rgb(232 255 240 / .4); }
+.t-log { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; max-height: min(46vh, 440px); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #1F7A35 transparent; }
+.t-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.t-line.t-me { color: #6FE7FF; text-shadow: 0 0 6px rgb(111 231 255 / .45); }
+.t-line.t-note { color: #FFE45C; text-shadow: 0 0 6px rgb(255 228 92 / .4); }
 .t-who { font-weight: 700; }
 .t-cursor { display: inline-block; width: .6em; height: 1em; margin-left: 6px; vertical-align: -2px; background: currentColor; animation: t-blink 1s steps(1) infinite; }
 @keyframes t-blink { 50% { opacity: 0; } }
 .t-prompt { display: flex; align-items: center; gap: 8px; }
-.t-prompt input { flex: 1; min-width: 0; padding: 6px 2px; border: 0; border-bottom: 1px solid rgb(61 255 110 / .5); border-radius: 0; outline: none; background: transparent; color: inherit; font: inherit; text-shadow: inherit; caret-color: #3DFF6E; }
-.t-prompt input:focus { border-bottom-color: #3DFF6E; }
-.t-key { flex: none; padding: 6px 10px; border: 1px solid rgb(61 255 110 / .6); border-radius: 4px; background: transparent; color: inherit; font: inherit; text-shadow: inherit; cursor: pointer; }
+.t-prompt label { color: #6FE7FF; }
+.t-prompt input { flex: 1; min-width: 0; padding: 6px 2px; border: 0; border-bottom: 1px solid rgb(51 255 102 / .5); border-radius: 0; outline: none; background: transparent; color: #6FE7FF; font: inherit; font-size: 16px; text-shadow: inherit; caret-color: #33FF66; }
+.t-prompt input:focus { border-bottom-color: #33FF66; }
+.t-key { flex: none; min-height: 36px; padding: 6px 10px; border: 1px solid rgb(51 255 102 / .6); border-radius: 3px; background: transparent; color: inherit; font: inherit; text-shadow: inherit; cursor: pointer; }
 .t-key:disabled { opacity: .5; }
-.t-break { display: grid; gap: 8px; justify-items: start; padding: 10px; border: 1px solid rgb(61 255 110 / .7); }
-.t-break p { margin: 0; }
-.crt-plate { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 6px 0; color: #7A6F55; font: 700 .72rem/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; }
-.t-sound { padding: 4px 8px; border: 1px solid #B5A988; border-radius: 4px; background: none; color: inherit; font: inherit; cursor: pointer; }
-.led { width: 9px; height: 9px; border-radius: 50%; background: #3DFF6E; box-shadow: 0 0 6px #3DFF6E; }
-@media (max-width: 559px) { .crt { padding: 12px 10px 8px; border-radius: 18px; } .crt-screen { padding: 12px; font-size: 16px; } }
+.t-break { display: grid; gap: 8px; justify-items: start; padding: 10px; border: 1px solid #FFE45C; color: #FFE45C; }
+/* The function keys, and the status line under them (the 3270's "operator information area"). */
+.t-pf { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid rgb(51 255 102 / .35); }
+.t-pf button { min-height: 36px; padding: 6px 10px; border: 1px solid rgb(127 178 255 / .65); border-radius: 3px; background: transparent; color: #8FBCFF; font: inherit; font-size: 13px; font-weight: 700; text-shadow: 0 0 6px rgb(127 178 255 / .5); cursor: pointer; }
+.t-pf button:active { background: rgb(127 178 255 / .18); }
+.t-oia { display: flex; justify-content: space-between; gap: 12px; padding-top: 4px; border-top: 2px solid rgb(51 255 102 / .5); font-size: 11px; letter-spacing: .08em; opacity: .85; }
+/* The history file and the test scroll inside the screen, so the function keys stay in sight. */
+.t-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-content: start; max-height: min(52vh, 520px); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #1F7A35 transparent; }
+.t-body:focus-visible { outline: 1px dashed #33FF66; outline-offset: 2px; }
+.t-filesec { display: grid; gap: 6px; }
+.t-filesec h3 { margin: 0; color: #E8FFF0; font: inherit; font-weight: 700; text-shadow: 0 0 6px rgb(232 255 240 / .4); }
+.t-code { margin: 0; padding: 8px 10px; overflow-x: auto; border: 1px dashed rgb(51 255 102 / .5); color: #6FE7FF; font: inherit; white-space: pre; }
+.t-keys { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; }
+.t-keys dt { color: #8FBCFF; font-weight: 700; }
+.t-keys dd { margin: 0; }
+.t-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.t-actions p { flex-basis: 100%; }
+.t-callout { padding: 8px 10px; border: 2px solid #FFE45C; color: #FFE45C; text-shadow: 0 0 6px rgb(255 228 92 / .4); }
+.t-callout b { font-weight: 800; }
+.t-ok, .t-score { color: #E8FFF0; font-weight: 700; text-shadow: 0 0 6px rgb(232 255 240 / .4); }
+.t-score { font-size: 1.15em; }
+.t-warn { color: #FF7A6B; font-weight: 700; text-shadow: 0 0 6px rgb(255 122 107 / .45); }
+.t-quiz { display: grid; gap: 12px; justify-items: start; }
+.t-q { display: grid; gap: 2px; width: 100%; box-sizing: border-box; margin: 0; padding: 8px 10px; border: 1px solid rgb(51 255 102 / .35); border-radius: 3px; }
+.t-q legend { padding: 0 4px; color: #E8FFF0; font-weight: 700; }
+.t-q label { display: flex; align-items: center; gap: 10px; min-height: 36px; cursor: pointer; }
+.t-q input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #33FF66; }
+.crt-screen .t-error { color: #FFE45C; font-size: inherit; font-weight: 700; }
+.t-missed { display: grid; gap: 4px; margin: 0; padding-left: 2.5ch; }
+.t-missed span { color: #FFE45C; }
+.t-body + .t-actions { padding-top: 10px; border-top: 1px dashed rgb(51 255 102 / .35); }
+.cobol-intro .crt { margin-top: 4px; }
+.cobol-intro .crt-screen { justify-items: start; }
+.story-body .cobol-intro .crt-screen p { margin: 0; font: inherit; }
+@media (max-width: 559px) {
+  .crt { padding: 8px; border-radius: 14px; }
+  .crt-screen { padding: 10px; font-size: 14px; }
+  .t-head span:nth-child(2) { display: none; }
+  .t-log { max-height: 36vh; }
+  .t-body { max-height: 40vh; }
+  .t-pf { gap: 5px; }
+  .t-pf button { padding: 6px 7px; font-size: 12px; }
+  .t-keys { grid-template-columns: minmax(0, 1fr); }
+  .t-keys dd { margin-bottom: 6px; }
+}
 @media (prefers-reduced-motion: reduce) { .thinking span { animation: none; opacity: 1; } .t-cursor { animation: none; } }
 .btn img.face { width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--surface); }
 .pet { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--line-strong), var(--shadow); }

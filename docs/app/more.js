@@ -23,7 +23,7 @@ function petsHint() {
 }
 
 export function renderMore() {
-  const total = Object.keys(state.records).filter(id => !C.isBlank(state.records[id])).length;
+  const total = Object.keys(state.records).filter(id => !C.isExam(id) && !C.isBlank(state.records[id])).length;
   const withPoints = CATALOG_BOOKS.filter(b => b._points !== null).length;
   const added = Object.keys(state.custom).length;
   const standalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;

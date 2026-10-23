@@ -1,5 +1,5 @@
-/* What the Dude says on screen: his speech bubble, the P.S. under it, and the About the Dude story.
- * The words themselves are in docs/dude.js. */
+/* What the Dude says on screen: his speech bubble, the P.S. under it, and the About the Dude story (which ends with
+ * COBOL's history file, from cobol.js). The Dude's words themselves are in docs/dude.js. */
 
 import { C, UI_KEY, $, esc, fmtNum, plural, DUDE, fill, pick } from './util.js';
 import { icon } from './icons.js';
@@ -9,6 +9,7 @@ import { main, sheet, sheetBar } from './page.js';
 import { rewardLabel, rewardPoints, screenStatus } from './money.js';
 import { hasCode } from './grownup.js';
 import { aiButtonsHtml } from './dude-ai.js';
+import { storySectionHtml } from './cobol.js';
 
 // Every line the Dude can say: his one-liners plus jokes tied to books in the catalog.
 const DUDE_KEY = UI_KEY + ':dude';
@@ -156,7 +157,7 @@ function storyHtml() {
   return sheetBar('About the Dude') + '<div class="sheet-body story">' +
     '<figure class="story-figure"><img src="img/dude.jpg" width="960" height="955" alt="The Dude in a worn leather armchair, surrounded by bookshelves, with a Welsh terrier and a tabby cat asleep on the rug"></figure>' +
     '<div class="story-title"><h1>About the Dude</h1><p>Scientist, explorer, war hero, jazz fanatic, former fairy</p></div>' +
-    '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p></div>' +
+    '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p>' + storySectionHtml() + '</div>' +
     '<div class="row-actions"><button type="button" class="btn primary" data-act="close-sheet">Let’s read</button></div></div>';
 }
 

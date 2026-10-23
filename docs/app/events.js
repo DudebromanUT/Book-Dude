@@ -27,8 +27,9 @@ import * as offline from './offline.js';
 import * as share from './share.js';
 import * as grownup from './grownup.js';
 import * as dudeAi from './dude-ai.js';
+import * as cobol from './cobol.js';
 
-const FEATURES = [page, tabs, explore, shelves, progress, more, book, myBooks, dudeTalk, money, backup, offline, share, grownup, dudeAi];
+const FEATURES = [page, tabs, explore, shelves, progress, more, book, myBooks, dudeTalk, money, backup, offline, share, grownup, dudeAi, cobol];
 
 // One list per kind of event. A name used twice would quietly lose one handler, so that is reported.
 function gather(kind) {

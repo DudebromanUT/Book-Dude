@@ -19,6 +19,7 @@ import { greeting } from './cards.js';
 import { goTab } from './tabs.js';
 import { rewardPoints, pointsNews } from './money.js';
 import { post, chatOn, mine, sendReport } from './dude-ai.js';
+import { linkOk, syncSchool } from './school.js';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The history file, in COBOL's voice, and the test about it.
@@ -153,19 +154,41 @@ function openNow(c) {
 const chatInfo = () => (state.ai && state.ai.chat) || {};
 const hourName = n => { n = Number(n) % 24; return (n % 12 || 12) + (n < 12 ? ' A.M.' : ' P.M.'); };
 
+// Whether this device can reach the script: 'setup' (no school link on this device), 'checking' (no answer yet),
+// 'net' (the last try failed and there's no earlier answer), or '' (it has an answer).
+function reach() {
+  if (!linkOk(state.settings.schoolLink)) return 'setup';
+  if (state.ai) return '';
+  return state.schoolError && !state.schoolChecking ? 'net' : 'checking';
+}
+
+// Opening COBOL asks the script again: always when there's no good answer yet, otherwise at most once a minute.
+function recheck() {
+  if (reach() === 'setup' || state.schoolChecking) return;
+  if (state.ai && !state.schoolError && Date.now() - (state.schoolCheckedAt || 0) < 60000) return;
+  syncSchool(true);
+}
+
 // Why the chat can't take a message right now, or '' when it can.
 function chatClosed() {
   const c = chatInfo();
+  const r = reach();
+  if (r === 'setup') return 'COBOL IS NOT SET UP ON THIS DEVICE YET. A GROWN-UP ADDS THE SCHOOL QUIZ LINK IN FARTY PANTS CENTRAL.';
+  if (r === 'checking') return 'CONNECTING TO THE MAINFRAME...';
+  if (r === 'net') return CHAT_TROUBLE.net;
   if (!chatOn()) return CHAT_TROUBLE.off;
   if (!openNow(c)) return 'COBOL IS OFF RIGHT NOW. IT RUNS FROM ' + hoursText(c.hours).toUpperCase() + '.';
   if (c.left === 0) return CHAT_TROUBLE.limit;
   return '';
 }
 
-// The chat's line on the menu: open until when, closed until when, done for today, or switched off.
+// The chat's line on the menu: not set up here, connecting, no connection, switched off, closed until when, done
+// for today, or open until when.
 function chatStatus() {
   const c = chatInfo();
   const m = /^(\d{1,2})-(\d{1,2})$/.exec(c.hours || '') || [0, 7, 21];
+  const r = reach();
+  if (r) return { setup: 'NOT SET UP ON THIS DEVICE', checking: 'CONNECTING...', net: 'NO CONNECTION' }[r];
   if (!chatOn()) return 'SWITCHED OFF';
   if (!openNow(c)) return 'CLOSED UNTIL ' + hourName(m[1]);
   if (c.left === 0) return 'DONE FOR TODAY';
@@ -294,7 +317,7 @@ function draw(focus) {
 function go(next) {
   if (next === 'test' && screen !== 'test') order = [];
   if (next === 'test' && (screen === 'menu' || screen === 'history')) testFrom = screen;
-  if (next === 'chat') enterChat();
+  if (next === 'chat') { enterChat(); recheck(); }
   menuError = '';
   screen = next;
   draw(true);
@@ -311,6 +334,7 @@ export function renderCobol(refresh) {
   main.innerHTML = '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>COBOL</h1></div></header>' +
     '<div class="cobol-view"></div>';
   if (screen === 'chat') enterChat();
+  recheck();
   draw(false);
 }
 

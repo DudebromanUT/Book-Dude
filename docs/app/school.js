@@ -38,10 +38,19 @@ async function addBook(q) {
 
 // Fetches the link and adds what's new. quiet: no toast when nothing is new (the check when the app opens).
 // One check at a time, so two at once (opening the app while a grown-up saves the link) can't add a quiz twice.
+// While it runs, state.schoolChecking is true; afterwards state.schoolError says why the last one failed ('' when it
+// didn't), and state.schoolCheckedAt is when the script last answered. COBOL's menu shows all three.
 let busy = null;
 export function syncSchool(quiet) {
   // After the check (and any new quizzes), the weekly email's numbers go to the script.
-  if (!busy) busy = check(quiet).then(sendReport).finally(() => { busy = null; });
+  if (!busy) {
+    state.schoolChecking = true;
+    busy = check(quiet).then(sendReport).finally(() => {
+      busy = null;
+      state.schoolChecking = false;
+      if (state.tab === 'cobol') refreshCobol();
+    });
+  }
   return busy;
 }
 
@@ -51,6 +60,7 @@ async function check(quiet) {
   // A plain request with the time on the end (so no saved copy answers). Asking with a cache setting instead makes
   // Safari on iPad check with Google first, which Google doesn't answer, and the request fails.
   let res, feed;
+  state.schoolError = 'net';
   try {
     res = await fetch(url + '&t=' + Date.now());
   } catch (e) {
@@ -64,10 +74,12 @@ async function check(quiet) {
     return;
   }
   if (feed && feed.error) { if (!quiet) toast('The school quiz link says: ' + String(feed.error).slice(0, 80)); return; }
+  state.schoolError = '';
+  state.schoolCheckedAt = Date.now();
   // Whether the script has Claude on (the Dude's chat and picks), and the chat's hours and messages left today.
   const was = JSON.stringify(state.ai || null);
   state.ai = { on: !!(feed && feed.ai), chat: feed && feed.chat && typeof feed.chat === 'object' ? feed.chat : null };
-  if (JSON.stringify(state.ai) !== was) { refreshBubble(); if (state.tab === 'cobol') refreshCobol(); }
+  if (JSON.stringify(state.ai) !== was) refreshBubble();
   const seen = new Set(state.settings.schoolSeen || []);
   const fresh = C.schoolQuizzes(feed).filter(q => !seen.has(q.id));
   if (!fresh.length) { if (!quiet) toast('No new quizzes from school yet.'); return; }

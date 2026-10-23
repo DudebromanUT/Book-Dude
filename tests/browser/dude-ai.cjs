@@ -57,8 +57,11 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
       const send = obj => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(obj) });
       if (req.method() === 'GET') {
         script.gets++;
-        return send({ app: 'book-dude-school', ai: script.ai, chat: script.ai ? script.chat : { on: false },
+        if (script.getMode === 'fail') return route.abort();
+        const feed = () => send({ app: 'book-dude-school', ai: script.ai, chat: script.ai ? script.chat : { on: false },
           quizzes: [{ id: 'q1', date: '2026-10-19', title: 'Hatchet', author: 'Gary Paulsen', points: 7, possible: 7, score: 100, level: 5.7, joke: JOKE }] });
+        if (script.getMode !== 'hold') return feed();
+        return new Promise(resolve => { script.releaseGet = () => { script.getMode = 'ok'; resolve(feed()); }; });
       }
       const body = JSON.parse(req.postData());
       posts.push({ body, type: req.headers()['content-type'] || '' });
@@ -86,6 +89,13 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.match((await txt(p, '.story .cobol-intro')), /TEST AVAILABLE: PASS WITH 8 OF 10 \(80%\) TO EARN 2 POINTS\./);
     await p.click('.story .btn[data-act="close-sheet"]'); await sleep(500);
     assert.equal(await p.$('.dude-asks'), null, 'nothing before the link is in');
+    // Before the school link is in, COBOL's tab is there, and says it isn't set up on this device.
+    await tab('cobol');
+    assert.match(await txt(p, '#main .t-opt[data-option="1"]'), /NOT SET UP ON THIS DEVICE$/);
+    await p.click('#main .t-opt[data-option="1"]'); await sleep(200);
+    assert.match(await txt(p, '#main .cobol-view'), /COBOL IS NOT SET UP ON THIS DEVICE YET\. A GROWN-UP ADDS THE SCHOOL QUIZ LINK IN FARTY PANTS CENTRAL\./);
+    await p.click('#main [data-act="cobol-pf3"]'); await sleep(200);
+    assert.equal(script.gets, 0, 'no link, no asking');
 
     // The link goes in: the quiz lands, and the Dude's line is his joke about it, linked to the book.
     await tab('more');
@@ -335,8 +345,10 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.ok(await p2.$('#chat-input'), 'she can still type');
     await p2.click('#main .t-break .t-key'); await sleep(300);
     assert.equal(await p2.evaluate(() => location.hash), '#explore', 'OK, BREAK goes to Explore');
-    await p2.$eval('.tab[data-tab="cobol"]', e => e.click()); await sleep(300);
+    const before = script.gets;
+    await p2.$eval('.tab[data-tab="cobol"]', e => e.click()); await sleep(500);
     assert.ok(await p2.$('#chat-input'), 'back on the chat');
+    assert.equal(script.gets, before + 1, 'opening COBOL asks the script again');
     const seen = script.gets;
     script.chat = { on: false, open: true, hours: '7-21', left: 40 };
     const visible = v => p2.evaluate(v => {
@@ -349,6 +361,22 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     await p2.waitForFunction(() => /COBOL IS SWITCHED OFF RIGHT NOW/.test(document.querySelector('#main .cobol-view').innerText), null, { timeout: 5000 });
     assert.equal(script.gets, seen + 1);
     await p2.close();
+
+    // When the app can't reach the script, option 1 says so (not "switched off"), and opening the chat tries again,
+    // saying it's connecting until the script answers.
+    script.chat = { on: true, open: true, hours: '7-21', left: 40 };
+    script.getMode = 'fail';
+    await p.clock.setFixedTime(new Date('2026-10-23T12:00:00-06:00'));
+    await p.reload(); await p.waitForSelector('.view-head'); await tab('cobol');
+    await p.waitForFunction(() => /NO CONNECTION$/.test(document.querySelector('#main .t-opt[data-option="1"]').innerText.trim()), null, { timeout: 10000 });
+    script.getMode = 'hold';
+    await option(1);
+    assert.match(await txt(p, V), /CONNECTING TO THE MAINFRAME\.\.\./);
+    assert.equal(await p.$('#chat-input'), null);
+    script.releaseGet();
+    await p.waitForSelector('#chat-input', { timeout: 10000 });
+    await key(3);
+    assert.match((await options())[0], /OPEN UNTIL 9 P\.M\.$/);
 
     // With Claude off in the script: no picks, and the chat says it's off, but the history file and the test work,
     // from the tab and from About the Dude (which opens the history on the COBOL tab).

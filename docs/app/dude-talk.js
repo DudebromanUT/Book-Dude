@@ -8,6 +8,7 @@ import { state, saveSetting } from './state.js';
 import { main, sheet, sheetBar } from './page.js';
 import { rewardLabel, rewardPoints, screenStatus } from './money.js';
 import { hasCode } from './grownup.js';
+import { aiButtonsHtml } from './dude-ai.js';
 
 // Every line the Dude can say: his one-liners plus jokes tied to books in the catalog.
 const DUDE_KEY = UI_KEY + ':dude';
@@ -117,7 +118,7 @@ export function dudeHtml() {
     '<div class="bubble" aria-live="polite"><span class="who">The Dude says</span>' +
       '<button type="button" class="line" data-act="next-saying" title="Tap for another">' + esc(text) + '</button>' +
       (b ? '<button type="button" class="bubble-link" data-act="open" data-id="' + esc(b.book_id) + '">' + icon('book') + esc(b.title) + '</button>' : '') +
-      (state.dudePs ? '<p class="ps">' + esc(state.dudePs) + '</p>' : '') +
+      (state.dudePs ? '<p class="ps">' + esc(state.dudePs) + '</p>' : '') + aiButtonsHtml() +
     '</div></section>';
 }
 

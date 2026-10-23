@@ -642,6 +642,29 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 }
 .bubble-link svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .bubble .ps { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-strong); font-size: .86rem; color: var(--ink-2); line-height: 1.4; }
+/* Asking the Dude (Claude on, through the Google script): the buttons under his bubble, his book picks, and the chat. */
+.dude-asks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.sheet-body.ai-sheet { grid-template-columns: minmax(0, 1fr); align-content: start; }
+.ai-sheet h2 { margin: 0; font-family: var(--book); font-size: 1.5rem; }
+.thinking span { animation: blink 1.2s infinite both; }
+.thinking span:nth-child(2) { animation-delay: .2s; }
+.thinking span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .15; } 40% { opacity: 1; } }
+.picks { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.pick { display: grid; gap: 8px; align-content: start; }
+.pick .why { margin: 0; font-size: .92rem; line-height: 1.4; color: var(--ink-2); }
+@media (max-width: 559px) { .picks { grid-template-columns: minmax(0, 1fr); } .pick { grid-template-columns: 116px minmax(0, 1fr); gap: 14px; } }
+.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: min(58vh, 520px); overflow-y: auto; padding: 4px 2px; overscroll-behavior: contain; }
+.msg { margin: 0; max-width: 82%; padding: 10px 14px; border-radius: 18px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.dude { align-self: flex-start; background: var(--accent-soft); color: var(--ink); border-bottom-left-radius: 6px; }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 6px; }
+.msg.note { align-self: center; max-width: 100%; background: none; color: var(--muted); font-size: .88rem; text-align: center; padding: 2px 8px; }
+.msg.typing span { animation: blink 1.2s infinite both; font-weight: 800; }
+.msg.typing span:nth-child(2) { animation-delay: .2s; }
+.msg.typing span:nth-child(3) { animation-delay: .4s; }
+.chat-form { display: flex; gap: 8px; }
+.chat-form .input { flex: 1; min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .thinking span, .msg.typing span { animation: none; opacity: 1; } }
 .btn img.face { width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--surface); }
 .pet { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--line-strong), var(--shadow); }
 

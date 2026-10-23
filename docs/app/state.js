@@ -21,7 +21,7 @@ export const state = {
   limit: PAGE,
   records: {},
   custom: {},
-  settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}), pets: true, schoolLink: '', schoolSeen: [] },
+  settings: { goals: {}, readerName: '', accent: 'leather', lastExportAt: '', storySeen: false, reward: C.reward({}), pets: true, schoolLink: '', schoolSeen: [], dudeChat: true, reportAt: '' },
   dudeLine: null,
   dudePs: '',
   offline: 'checking',

@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Unit and offline tests
-        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs tests/school-email.test.cjs
+        run: node --test tests/core.test.cjs tests/offline.test.cjs tests/custom-books.test.cjs tests/rewards.test.cjs tests/covers.test.cjs tests/modules.test.cjs tests/school-email.test.cjs tests/school-script.test.cjs
       - name: Every name in docs/app is defined or imported
         run: npx --yes eslint@10.1.0 docs/app
       - name: Generated files are up to date
@@ -42,3 +42,5 @@ jobs:
         run: node tests/browser/school-email.cjs
       - name: The app version shows, and updates switch over
         run: node tests/browser/update.cjs
+      - name: The talking Dude, with the Google script played by the test
+        run: node tests/browser/dude-ai.cjs

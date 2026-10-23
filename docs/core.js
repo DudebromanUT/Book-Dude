@@ -517,7 +517,8 @@
   /**
    * Quiz results from the school's emails, as the Google script serves them (scripts/school-email): the ones that
    * make sense, oldest first. Each has the email's id, the quiz date, the title and author, the points she earned
-   * and the most she could, her % score and the book level (null when the email had none).
+   * and the most she could, her % score, the book level (null when the email had none), and the Dude's joke about it
+   * ('' when there isn't one).
    */
   function schoolQuizzes(feed) {
     const list = isPlain(feed) && Array.isArray(feed.quizzes) ? feed.quizzes : [];
@@ -531,7 +532,8 @@
       const num = (v, max) => { const n = amount(v, max); return n === null || Number.isNaN(n) ? null : n; };
       out.push({
         id, date: day(q.date), title, author: typeof q.author === 'string' ? q.author.trim().slice(0, CUSTOM_TEXT.author) : '',
-        points, possible: num(q.possible, 999), score: num(q.score, 100), level: num(q.level, 20)
+        points, possible: num(q.possible, 999), score: num(q.score, 100), level: num(q.level, 20),
+        joke: typeof q.joke === 'string' ? q.joke.replace(/\s+/g, ' ').trim().slice(0, 300) : ''
       });
     }
     return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -548,9 +550,38 @@
     return found ? found.book_id : '';
   }
 
+  /**
+   * The books the Dude may suggest when she asks what to read next: catalog books for her age (no heads-up note, not
+   * written for teens, no age listing over 11, and the teen and adult award lists only for books marked for kids) that
+   * she hasn't finished, started or set aside, near the level of what she has been reading, best rated first.
+   * Only these go to Claude, and only these can come back.
+   */
+  function readNextCandidates(books, records, max) {
+    const level = b => { const n = parseFloat(b.ar_level); return Number.isFinite(n) ? n : null; };
+    const recs = records || {};
+    const levels = (books || []).filter(b => recs[b.book_id] && recs[b.book_id].status === 'finished' && level(b) !== null)
+      .sort((x, y) => String(recs[y.book_id].finishedDate || '').localeCompare(String(recs[x.book_id].finishedDate || '')))
+      .slice(0, 10).map(level).sort((x, y) => x - y);
+    const middle = levels.length ? levels[Math.floor(levels.length / 2)] : 5.5;
+    const kids = (books || []).filter(b => {
+      if (!b || isCustomId(b.book_id) || (b.heads_up || '').trim()) return false;
+      if (b.ar_interest === 'UG' || b.ar_interest === 'MG+' || parseInt(b.ages, 10) >= 12) return false;
+      if (['Printz', 'Pulitzer', 'National Book Award', 'Carnegie'].includes(b.award) && !['LG', 'MG'].includes(b.ar_interest)) return false;
+      const r = recs[b.book_id];
+      return !(r && ['finished', 'reading', 'paused'].includes(r.status));
+    });
+    const score = b => (Number(b.amz_rating) || 0) * Math.min(1, (Number(b.amz_ratings) || 0) / 50);
+    for (const widen of [0, 1, 2, 9]) {
+      const lo = middle - 1 - widen, hi = middle + 1.5 + widen;
+      const near = kids.filter(b => level(b) === null ? widen >= 2 : level(b) >= lo && level(b) <= hi);
+      if (near.length >= 12 || widen === 9) return near.sort((x, y) => score(y) - score(x)).slice(0, max || 60);
+    }
+    return [];
+  }
+
   return {
     STATUSES, BACKUP_VERSION, CUSTOM_PREFIX, BackupError, day, entry, isBlank, safeId, isCustomId, customBook, knownPoints,
     reward, rewardStatus, rewardPoints, choices, screenTime, codeHash, metrics, periods, parseBackup, mergeBackup, exportBackup, fold,
-    schoolQuizzes, findBook
+    schoolQuizzes, findBook, readNextCandidates
   };
 });

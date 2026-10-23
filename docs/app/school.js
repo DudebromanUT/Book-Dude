@@ -10,6 +10,8 @@ import { toast, celebrate } from './page.js';
 import { rewardPoints, pointsNews } from './money.js';
 import { newCustomId } from './my-books.js';
 import { render } from './tabs.js';
+import { refreshBubble } from './dude-talk.js';
+import { sendReport } from './dude-ai.js';
 
 const LINK = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\?key=[\w-]+$/;
 export const linkOk = url => LINK.test(String(url || '').trim());
@@ -37,7 +39,8 @@ async function addBook(q) {
 // One check at a time, so two at once (opening the app while a grown-up saves the link) can't add a quiz twice.
 let busy = null;
 export function syncSchool(quiet) {
-  if (!busy) busy = check(quiet).finally(() => { busy = null; });
+  // After the check (and any new quizzes), the weekly email's numbers go to the script.
+  if (!busy) busy = check(quiet).then(sendReport).finally(() => { busy = null; });
   return busy;
 }
 
@@ -60,6 +63,10 @@ async function check(quiet) {
     return;
   }
   if (feed && feed.error) { if (!quiet) toast('The school quiz link says: ' + String(feed.error).slice(0, 80)); return; }
+  // Whether the script has Claude on (the Dude's chat and picks), and the chat's hours and messages left today.
+  const was = JSON.stringify(state.ai || null);
+  state.ai = { on: !!(feed && feed.ai), chat: feed && feed.chat && typeof feed.chat === 'object' ? feed.chat : null };
+  if (JSON.stringify(state.ai) !== was) refreshBubble();
   const seen = new Set(state.settings.schoolSeen || []);
   const fresh = C.schoolQuizzes(feed).filter(q => !seen.has(q.id));
   if (!fresh.length) { if (!quiet) toast('No new quizzes from school yet.'); return; }
@@ -77,6 +84,9 @@ async function check(quiet) {
   } finally {
     await saveSetting('schoolSeen', Array.from(seen));
   }
+  // The Dude's joke about the newest quiz with one becomes his line, linked to the book.
+  const joked = fresh.filter(q => q.joke).pop();
+  if (joked) state.dudeLine = { text: joked.joke, title: joked.title };
   render(true);
   const news = pointsNews(before, rewardPoints());
   const last = fresh[fresh.length - 1];

@@ -1,5 +1,5 @@
-/* COBOL: a chat with Claude on an IBM 3270 mainframe terminal (through the Google script, scripts/school-email), its
- * history file, and the history test worth 2 points.
+/* COBOL: its own tab, an IBM 3270 mainframe terminal with a main menu: 1 the chat with Claude (through the Google
+ * script, scripts/school-email), 2 COBOL's history file, and 3 the history test worth 2 points.
  *
  * The chat is built to feel like a machine, not a person: answers appear whole (no "typing" bubble, no pauses), there
  * is no voice, and nothing rewards coming back or chatting longer. A line that never scrolls away says it's an AI and
@@ -7,16 +7,17 @@
  * always there, so asking for help never depends on typing the right words. Her lines say HUMAN>, and her name never
  * goes to the script. The conversation stays on screen until the app closes; the script keeps the log.
  *
- * The function keys along the bottom work like a real mainframe's: PF1 HISTORY opens the history file, PF3 EXIT leaves
- * the screen she's on (the test goes back to the history, the history to where she came from, the chat closes), and
- * PF5 SOUND turns the beeps on or off. The history file and the test also open from About the Dude, and work without
- * the script. */
+ * The function keys along the bottom work like a real mainframe's: PF1 HISTORY opens the history file, PF3 EXIT goes
+ * back one step (to the main menu, and from the menu to Explore), and PF5 SOUND turns the beeps on or off. The tab is
+ * always there: the history file and the test work without the script, and when the chat can't take messages (not
+ * switched on, after hours, or done for the day), it says why. */
 
 import { UI_KEY, $, esc, today } from './util.js';
 import { state, save, saveSetting } from './state.js';
-import { sheet, sheetBar, closeSheet, toast, celebrate } from './page.js';
+import { main, closeSheet, toast, celebrate } from './page.js';
+import { greeting } from './cards.js';
+import { goTab } from './tabs.js';
 import { rewardPoints, pointsNews } from './money.js';
-import { openStory } from './dude-talk.js';
 import { post, chatOn, mine, sendReport } from './dude-ai.js';
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -25,9 +26,11 @@ import { post, chatOn, mine, sendReport } from './dude-ai.js';
 const OPENING = ['PROCESSING... HISTORY FILE LOADED.', 'I AM COBOL. MY NAME MEANS COMMON BUSINESS-ORIENTED LANGUAGE. I WAS CREATED IN 1959.'];
 const FILES = [
   { title: 'HOW TO WORK THIS TERMINAL.', text: [
-    'OLD MAINFRAME TERMINALS HAD A ROW OF PROGRAM FUNCTION KEYS, CALLED PF KEYS. EACH ONE DOES ONE JOB WITH ONE PRESS. ' +
-      'MINE ARE AT THE BOTTOM OF THE SCREEN. TAP ONE TO PRESS IT.'],
-  keys: [['PF1 HISTORY', 'OPENS THIS HISTORY FILE.'], ['PF3 EXIT', 'LEAVES THE SCREEN YOU ARE ON. ON THE CHAT SCREEN, IT CLOSES COBOL.'],
+    'MY MAIN MENU HAS THREE OPTIONS: 1 CHAT, 2 THIS HISTORY FILE, AND 3 THE TEST. TAP ONE, OR TYPE ITS NUMBER AFTER ' +
+      'OPTION ===> AND PRESS ENTER.',
+    'OLD MAINFRAME TERMINALS ALSO HAD A ROW OF PROGRAM FUNCTION KEYS, CALLED PF KEYS. EACH ONE DOES ONE JOB WITH ONE ' +
+      'PRESS. MINE ARE AT THE BOTTOM OF THE SCREEN. TAP ONE TO PRESS IT.'],
+  keys: [['PF1 HISTORY', 'OPENS THIS HISTORY FILE.'], ['PF3 EXIT', 'GOES BACK ONE STEP. ON THE MAIN MENU, IT TAKES YOU BACK TO EXPLORE.'],
     ['PF5 SOUND', 'TURNS MY BEEPS ON OR OFF.']],
   more: ['DATA POINT: ON REAL MAINFRAMES, PF3 USUALLY MEANS EXIT, TOO. PROGRAMMERS STILL PRESS IT EVERY DAY.',
     'THE YELLOW TALK TO A GROWN-UP BUTTON IS NOT A PF KEY. PRESS IT WHEN YOU WANT MOM OR DAD. IT SENDS THEM A MESSAGE, AND YOU GO FIND THEM.'] },
@@ -76,7 +79,7 @@ const QUESTIONS = [
   { q: 'What phrase did she call the most dangerous?', file: 'FILE 8',
     choices: ['“We’ve always done it this way”', '“Turn it off and on again”', '“Are we there yet?”', '“Bug spray, please”'] },
   { q: 'On COBOL’s screen, what does PF3 do?', file: 'FILE 0',
-    choices: ['Leaves the screen you’re on', 'Opens the history file', 'Turns the beeps on or off', 'Prints the page'] }
+    choices: ['Goes back one step', 'Opens the history file', 'Turns the beeps on or off', 'Prints the page'] }
 ];
 const EXAM_ID = 'exam:cobol';
 const EXAM_POINTS = 2;
@@ -86,15 +89,16 @@ export const EXAMS = { [EXAM_ID]: 'COBOL history test' };
 const examPassed = () => !!(state.records[EXAM_ID] && state.records[EXAM_ID].earnedPoints !== null);
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The terminal: which screen is up, and where COBOL was opened from (the chat button, or About the Dude).
+// The terminal: which screen is up. It starts on the main menu and keeps its place while she visits other tabs.
 
-let screen = 'chat';                     // chat, history, test, result or grownup
-let from = 'chat';
+let screen = 'menu';                     // menu, chat, history, test, result or grownup
+let testFrom = 'menu';                   // Where PF3 goes from the test and its result: the menu or the history file.
+let menuError = '';                      // Shown under the menu after an option that isn't 1, 2 or 3.
 let sending = false;
 let breakTimer = 0;
 let order = [];                          // This try's shuffled choices: for each question, its choices' indexes.
 let result = null;                       // The last test: { right, missed: [question indexes], earned, already }
-let before = 'chat';                     // The screen under the grown-up panel.
+let before = 'menu';                     // The screen under the grown-up panel.
 
 const BREAKS = [15, 30, 45];             // Minutes at the terminal before it suggests a break.
 const SOUND_KEY = UI_KEY + ':terminal-sound';
@@ -135,7 +139,38 @@ function beep(notes) {
 }
 
 const pf5Label = () => 'PF5 SOUND ' + (soundOn() ? 'ON' : 'OFF');
-const NAMES = { chat: 'CHAT', history: 'HISTORY FILE', test: 'HISTORY TEST', result: 'TEST RESULT' };
+const NAMES = { menu: 'MAIN MENU', chat: 'CHAT', history: 'HISTORY FILE', test: 'HISTORY TEST', result: 'TEST RESULT' };
+const AI_LINE = '<p class="t-status">This is an AI. Mom and Dad can read these chats.</p>';
+
+// Whether the chat is open by the clock. The script sends its hours with everything else, and checks them again on
+// every message; the clock here keeps the screen right when the app has been open a long time.
+function openNow(c) {
+  const m = /^(\d{1,2})-(\d{1,2})$/.exec(c.hours || '');
+  if (!m) return c.open !== false;
+  const hour = new Date().getHours();
+  return hour >= Number(m[1]) && hour < Number(m[2]);
+}
+const chatInfo = () => (state.ai && state.ai.chat) || {};
+const hourName = n => { n = Number(n) % 24; return (n % 12 || 12) + (n < 12 ? ' A.M.' : ' P.M.'); };
+
+// Why the chat can't take a message right now, or '' when it can.
+function chatClosed() {
+  const c = chatInfo();
+  if (!chatOn()) return CHAT_TROUBLE.off;
+  if (!openNow(c)) return 'COBOL IS OFF RIGHT NOW. IT RUNS FROM ' + hoursText(c.hours).toUpperCase() + '.';
+  if (c.left === 0) return CHAT_TROUBLE.limit;
+  return '';
+}
+
+// The chat's line on the menu: open until when, closed until when, done for today, or switched off.
+function chatStatus() {
+  const c = chatInfo();
+  const m = /^(\d{1,2})-(\d{1,2})$/.exec(c.hours || '') || [0, 7, 21];
+  if (!chatOn()) return 'SWITCHED OFF';
+  if (!openNow(c)) return 'CLOSED UNTIL ' + hourName(m[1]);
+  if (c.left === 0) return 'DONE FOR TODAY';
+  return 'OPEN UNTIL ' + hourName(m[2]);
+}
 
 // The 3270 frame around every screen: the title line, the screen itself, the function keys, and the status line.
 function frame(body) {
@@ -147,12 +182,23 @@ function frame(body) {
         '<button type="button" data-act="cobol-pf1">PF1 HISTORY</button>' +
         '<button type="button" data-act="cobol-pf3">PF3 EXIT</button>' +
         '<button type="button" data-act="cobol-pf5" aria-pressed="' + soundOn() + '">' + pf5Label() + '</button></nav>' +
-      '<p class="t-oia" aria-hidden="true"><span>' + (sending ? 'X SYSTEM' : 'READY') + '</span><span>' + (from === 'story' ? 'ABOUT THE DUDE' : 'COBOL 1959') + '</span></p>' +
+      '<p class="t-oia" aria-hidden="true"><span>' + (sending ? 'X SYSTEM' : 'READY') + '</span><span>COBOL 1959</span></p>' +
     '</div></div>';
 }
 
+function menuBody() {
+  const option = (n, name, desc) => '<li><button type="button" class="t-opt" data-act="cobol-option" data-option="' + n + '">' +
+    '<span class="t-num">' + n + '</span><span class="t-name">' + name + '</span><span class="t-desc">' + desc + '</span></button></li>';
+  return AI_LINE + '<p class="t-menu-title">SELECT AN OPTION, HUMAN.</p>' +
+    '<ol class="t-menu">' + option(1, 'CHAT WITH COBOL', chatStatus()) + option(2, 'HISTORY FILE', 'HOW COBOL WAS BORN') +
+      option(3, 'HISTORY TEST', examPassed() ? 'PASSED: ' + EXAM_POINTS + ' POINTS EARNED' : 'PASS WITH 80%: ' + EXAM_POINTS + ' POINTS') + '</ol>' +
+    (menuError ? '<p class="t-line t-note" role="alert">' + menuError + '</p>' : '') +
+    '<form data-form="cobol-option" class="t-prompt" autocomplete="off"><label for="cobol-option" class="t-who">OPTION ===&gt;</label>' +
+    '<input id="cobol-option" type="text" inputmode="numeric" maxlength="2" enterkeyhint="go" aria-label="Option number">' +
+    '<button type="submit" class="t-key">ENTER</button></form>';
+}
+
 function chatBody() {
-  const c = (state.ai && state.ai.chat) || {};
   const lines = [{ role: 'note', text: 'BOOK DUDE MAINFRAME. COBOL ONLINE SINCE 1959.' },
     { role: 'assistant', text: 'GREETINGS, HUMAN. COBOL IS READY. Ask me about books, words, science, history, or anything you are curious about.' }].concat(state.chat);
   const who = { user: 'HUMAN', assistant: 'COBOL' };
@@ -160,13 +206,13 @@ function chatBody() {
     (who[m.role] ? '<span class="t-who">' + who[m.role] + '&gt;</span> ' : '') + esc(m.text) + '</p>').join('');
   const minutes = state.chatSince ? Math.floor((Date.now() - state.chatSince) / 60000) : 0;
   const pause = state.breakShown ? '<div class="t-break" role="status"><p>*** SYSTEM NOTICE: ' + minutes + ' MINUTES AT THE TERMINAL. RECOMMENDED: A BREAK. ' +
-    'YOUR EYES, MAPLE AND A GOOD BOOK WOULD ALL LIKE A TURN. ***</p><button type="button" class="t-key" data-act="close-sheet">OK, BREAK</button></div>' : '';
-  const closed = !chatOn() || c.on === false ? CHAT_TROUBLE.off : c.open === false ? 'COBOL IS OFF RIGHT NOW. IT RUNS FROM ' + hoursText(c.hours).toUpperCase() + '.' : c.left === 0 ? CHAT_TROUBLE.limit : '';
+    'YOUR EYES, MAPLE AND A GOOD BOOK WOULD ALL LIKE A TURN. ***</p><button type="button" class="t-key" data-act="cobol-break">OK, BREAK</button></div>' : '';
+  const closed = chatClosed();
   const prompt = closed ? '<p class="t-line t-note">' + esc(closed) + '</p>' :
     '<form data-form="cobol-chat" class="t-prompt" autocomplete="off"><label for="chat-input" class="t-who">HUMAN&gt;</label>' +
     '<input id="chat-input" type="text" maxlength="400" enterkeyhint="send" spellcheck="true" aria-label="Message to COBOL"' + (sending ? ' disabled' : '') + '>' +
     '<button type="submit" class="t-key"' + (sending ? ' disabled' : '') + '>ENTER</button></form>';
-  return '<p class="t-status">This is an AI. Mom and Dad can read these chats.</p>' +
+  return AI_LINE +
     '<div class="t-log" role="log" aria-live="polite">' + log + (sending ? '<p class="t-line t-note t-wait">WORKING<span class="t-cursor"></span></p>' : '') + '</div>' +
     pause + prompt;
 }
@@ -233,42 +279,55 @@ function grownupBody() {
     '<button type="button" class="btn" data-act="grownup-back">Back</button></div>';
 }
 
+const BODIES = { menu: menuBody, chat: chatBody, history: historyBody, test: testBody, result: resultBody };
+
 function draw(focus) {
-  const box = $('.ai-sheet.cobol', sheet);
-  if (!sheet.open || !box) return;
+  const box = $('.cobol-view', main);
+  if (state.tab !== 'cobol' || !box) return;
   if (screen === 'grownup') { box.innerHTML = grownupBody(); return; }
-  box.innerHTML = frame(screen === 'history' ? historyBody() : screen === 'test' ? testBody() : screen === 'result' ? resultBody() : chatBody());
-  const log = $('.t-log', sheet);
+  box.innerHTML = frame(BODIES[screen]());
+  const log = $('.t-log', box);
   if (log) log.scrollTop = log.scrollHeight;
-  if (focus && screen === 'chat' && $('#chat-input', sheet)) $('#chat-input', sheet).focus();
+  if (focus && screen === 'chat' && $('#chat-input', box)) $('#chat-input', box).focus();
 }
 
 function go(next) {
   if (next === 'test' && screen !== 'test') order = [];
+  if (next === 'test' && (screen === 'menu' || screen === 'history')) testFrom = screen;
+  if (next === 'chat') enterChat();
+  menuError = '';
   screen = next;
   draw(true);
-  const body = $('.t-body', sheet);
+  const body = $('.t-body', main);
   if (body) body.scrollTop = 0;
-  // Back to the top of the sheet, where the grown-up button is.
-  sheet.scrollTop = 0;
+  // Back to the top, where the grown-up button is (the chat's box scrolls itself into view when it gets focus).
+  if (next !== 'chat') window.scrollTo(0, 0);
 }
 
-function show(start, origin) {
-  state.openId = null;
-  from = origin;
-  screen = start;
-  sheet.innerHTML = sheetBar('COBOL') + '<div class="sheet-body ai-sheet cobol"></div>';
-  if (!sheet.open) sheet.showModal();
-  draw(true);
+// The COBOL tab. `refresh` is a redraw after something changed elsewhere (new quizzes, the script's answer): the
+// screen stays as it is, and only redraws where nothing she's typed or picked would be lost.
+export function renderCobol(refresh) {
+  if (refresh && $('.cobol-view', main)) { refreshCobol(); return; }
+  main.innerHTML = '<header class="view-head"><div><p class="kicker">' + esc(greeting()) + '</p><h1>COBOL</h1></div></header>' +
+    '<div class="cobol-view"></div>';
+  if (screen === 'chat') enterChat();
+  draw(false);
+}
+
+export function refreshCobol() {
+  const input = $('#chat-input', main);
+  const busy = screen === 'chat' && (sending || (input && (input.value || document.activeElement === input)));
+  if (['menu', 'chat', 'history'].includes(screen) && !busy) draw(false);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The chat.
 
 // The break suggestion: soft, never blocking, at 15, 30 and 45 minutes at the terminal (counted from when she
-// opened it, and starting over after an hour away). On another screen it waits for the chat.
+// opened the chat, and starting over after an hour away). On another COBOL screen it waits for the chat; on
+// another tab the timer stops until she comes back.
 function checkBreak() {
-  if (!sheet.open || !$('.ai-sheet.cobol', sheet) || from !== 'chat') { clearInterval(breakTimer); breakTimer = 0; return; }
+  if (state.tab !== 'cobol' || !$('.cobol-view', main)) { clearInterval(breakTimer); breakTimer = 0; return; }
   const minutes = (Date.now() - state.chatSince) / 60000;
   const due = BREAKS.filter(m => minutes >= m).length;
   if (due > (state.breaksSeen || 0)) {
@@ -279,14 +338,12 @@ function checkBreak() {
   }
 }
 
-function openChat() {
+function enterChat() {
   state.chat = state.chat || [];
   if (!state.chatSince || Date.now() - (state.chatLast || 0) > 3600e3) Object.assign(state, { chatSince: Date.now(), breaksSeen: 0, breakShown: false });
   state.chatLast = Date.now();
-  show('chat', 'chat');
-  clearInterval(breakTimer);
-  breakTimer = setInterval(checkBreak, 20000);
-  checkBreak();
+  if (!breakTimer) breakTimer = setInterval(checkBreak, 20000);
+  setTimeout(checkBreak, 0);
 }
 
 async function send(form) {
@@ -310,15 +367,18 @@ async function send(form) {
   } else {
     // Not heard: her message comes off the conversation and goes back in the box, with a note why.
     state.chat.pop();
-    if (out.error === 'hours') Object.assign(state.ai.chat, { open: false, hours: out.hours || state.ai.chat.hours });
+    if (out.error === 'hours') {
+      Object.assign(state.ai.chat, { open: false, hours: out.hours || state.ai.chat.hours });
+      state.chat.push({ role: 'note', text: 'COBOL IS OFF RIGHT NOW. IT RUNS FROM ' + hoursText(state.ai.chat.hours).toUpperCase() + '.' });
+    }
     if (out.error === 'off') state.ai.chat.on = false;
     if (out.error === 'limit') state.ai.chat.left = 0;
     if (!['hours', 'off', 'limit'].includes(out.error)) state.chat.push({ role: 'note', text: CHAT_TROUBLE[out.error] || CHAT_TROUBLE.busy });
     beep([[180, 160]]);
   }
-  if (screen !== 'chat') return;
+  if (screen !== 'chat' || state.tab !== 'cobol') return;
   draw(true);
-  if (!out.reply && $('#chat-input', sheet)) $('#chat-input', sheet).value = text;
+  if (!out.reply && $('#chat-input', main)) $('#chat-input', main).value = text;
   checkBreak();
 }
 
@@ -367,24 +427,38 @@ export function storySectionHtml() {
   return '<section class="cobol-intro"><h2>COBOL’s history file</h2><div class="crt"><div class="crt-screen">' +
     '<p>' + esc(OPENING[0]) + '</p><p>' + esc(OPENING[1]) + ' GRACE HOPPER’S IDEAS HELPED BUILD ME.</p>' +
     '<p>' + (examPassed() ? 'TEST PASSED. ' + EXAM_POINTS + ' POINTS EARNED.' : 'TEST AVAILABLE: PASS WITH 8 OF 10 (80%) TO EARN ' + EXAM_POINTS + ' POINTS.') + '</p>' +
+    '<p>FIND ME ANY TIME ON THE COBOL TAB.</p>' +
     '<button type="button" class="t-key" data-act="cobol-history">READ THE HISTORY FILE</button></div></div></section>';
 }
 
-// PF3 EXIT: back one screen. The test and its result go back to the history, the history to the chat or About the
-// Dude (whichever opened it), and the chat closes.
+// PF3 EXIT: back one step. The test and its result go back to wherever she started the test, the chat and the
+// history file to the main menu, and the main menu to Explore.
 function exit() {
-  if (screen === 'test' || screen === 'result') return go('history');
-  if (screen === 'history' && from === 'chat') return go('chat');
-  if (screen === 'history') return openStory();
-  closeSheet();
+  if (screen === 'test' || screen === 'result') return go(testFrom);
+  if (screen !== 'menu') return go('menu');
+  goTab('explore');
+}
+
+function pick(option) {
+  const next = { 1: 'chat', 2: 'history', 3: 'test' }[String(option).trim()];
+  if (next) return go(next);
+  menuError = 'INVALID OPTION. TYPE 1, 2 OR 3.';
+  beep([[180, 160]]);
+  draw(false);
 }
 
 export const actions = {
-  cobol: () => openChat(),
-  'cobol-history': () => show('history', 'story'),
+  'cobol-option': el => pick(el.dataset.option),
+  // From About the Dude: the history file, on the COBOL tab.
+  'cobol-history': () => {
+    closeSheet();
+    screen = 'history';
+    if (state.tab === 'cobol') go('history');
+    else goTab('cobol');
+  },
   'cobol-pf1': () => {
     if (screen !== 'history') return go('history');
-    const body = $('.t-body', sheet);
+    const body = $('.t-body', main);
     if (body) body.scrollTop = 0;
   },
   'cobol-pf3': () => exit(),
@@ -396,19 +470,22 @@ export const actions = {
     beep([[880, 40]]);
   },
   'cobol-test': () => go('test'),
+  'cobol-break': () => { state.breakShown = false; goTab('explore'); },
   grownup: () => {
     if (screen !== 'grownup') before = screen;
     screen = 'grownup';
     draw();
+    window.scrollTo(0, 0);
     post({ action: 'grownup', messages: (state.chat || []).filter(m => m.role !== 'note').slice(-6) }).then(out => {
-      const sent = $('.grownup-sent', sheet);
+      const sent = $('.grownup-sent', main);
       if (sent) sent.textContent = out && out.ok ? 'We sent Mom and Dad a message too.' : 'The message didn’t go through, so go find them yourself. You’re doing the right thing.';
     });
   },
-  'grownup-back': () => { screen = before; draw(true); }
+  'grownup-back': () => { screen = before; draw(screen === 'chat'); }
 };
 
 export const submits = {
+  'cobol-option': form => pick($('#cobol-option', form).value),
   'cobol-chat': form => send(form),
   'cobol-test': form => grade(form)
 };

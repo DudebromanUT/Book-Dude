@@ -12,6 +12,8 @@ import { sheet, confirmBox, closeSheet } from './page.js';
 import { newDudeLine, refreshBubble } from './dude-talk.js';
 import { flushNote } from './book.js';
 import { render, route, goTab } from './tabs.js';
+import { syncSchool } from './school.js';
+import { refreshCobol } from './cobol.js';
 import * as page from './page.js';
 import * as tabs from './tabs.js';
 import * as explore from './explore.js';
@@ -45,6 +47,7 @@ function gather(kind) {
 
 // Coming back to the app after a while counts as opening it: the Dude has something new to say.
 let hiddenAt = 0;
+const RECHECK_AFTER = 3 * 60000;
 
 export function listen() {
   const actions = gather('actions');
@@ -108,7 +111,11 @@ export function listen() {
     if (hiddenAt && Date.now() - hiddenAt > 30000) {
       newDudeLine();
       if (state.tab === 'explore' && !sheet.open) refreshBubble(true);
+      if (state.tab === 'cobol') refreshCobol();
     }
+    // An iPad keeps the app open for days, so after a few minutes away it asks the school script again: new quizzes,
+    // and whether COBOL's chat is on.
+    if (hiddenAt && Date.now() - hiddenAt > RECHECK_AFTER) syncSchool(true);
     hiddenAt = 0;
   });
 }

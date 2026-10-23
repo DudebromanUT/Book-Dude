@@ -1,6 +1,6 @@
-story length: 11688
+story length: 11723
 story start: About the Dude About the Dude SCIENTIST, EXPLORER, WAR HERO, JAZZ FANATIC, FORMER FAIRY Meet the Dude Real name: unknown. Nobody knows the Dude’s real name. Not the mail carrier. Not the librarian. Not even Maple, whose olfactory talents are legendary. He is a scientist, an explorer, a war hero, a jazz fanatic and a former fairy. But above everything else, he is a reader. A bibliophile, if you wan
-story end: . What are we reading? The Dude COBOL’s history file PROCESSING... HISTORY FILE LOADED. I AM COBOL. MY NAME MEANS COMMON BUSINESS-ORIENTED LANGUAGE. I WAS CREATED IN 1959. GRACE HOPPER’S IDEAS HELPED BUILD ME. TEST AVAILABLE: PASS WITH 8 OF 10 (80%) TO EARN 2 POINTS. READ THE HISTORY FILE Let’s read
+story end: OL’s history file PROCESSING... HISTORY FILE LOADED. I AM COBOL. MY NAME MEANS COMMON BUSINESS-ORIENTED LANGUAGE. I WAS CREATED IN 1959. GRACE HOPPER’S IDEAS HELPED BUILD ME. TEST AVAILABLE: PASS WITH 8 OF 10 (80%) TO EARN 2 POINTS. FIND ME ANY TIME ON THE COBOL TAB. READ THE HISTORY FILE Let’s read
 pet visiting: BB the blanket came to visit. Tap to hear what they have to say.
 pets off toast: The pets are taking a nap.
 pet layer after off: 0
@@ -167,8 +167,8 @@ restore junk: Could not restore This file is not a Reading Room backup. Nothing 
 more after restore: Backups Your shelves, notes, quiz points, and the books you added are saved only on this device. A backup file lets you move them to a new device or get them back if something goes wrong. Last backup: Oct 9, 2026 · 4 book records and 1 added book on this device. Save a backup Restore from backup Restoring adds books from the file and keeps whichever copy of each book was changed most recently. Nothing is deleted. Backup files contain your notes in plain text, so keep them somewhere private.
 hash progress: My progress
 brand: Find your next book / hash=#explore
-story again: 11688
-story from avatar: 11688
+story again: 11723
+story from avatar: 11723
 after update reload: Find your next book / Good morning, Maddy / accent=teal
 reloaded shelves: Reading 0 Want to read 1 Finished 3 Paused 0 Favorites 1 Read Books 1
 set code box: Set a grown-up passcode New 4-digit passcode Type it again Save passcode Cancel

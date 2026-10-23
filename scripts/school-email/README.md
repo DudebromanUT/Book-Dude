@@ -38,12 +38,12 @@ With a Claude API key, the same script also adds:
    and her week with COBOL: a short summary, every flagged exchange in full, and the whole week's chat at the bottom.
 3. **"What should I read next?"**, a button under the Dude's bubble. Book Dude sends only books right for her age that
    she hasn't read (no heads-up warnings, nothing marked for teens, near her level), and only those can come back.
-4. **COBOL**, a chat with a kid-safe AI helper (the button under the Dude's bubble), made to feel like a machine, not a
+4. **COBOL**, a chat with a kid-safe AI helper on its own tab in Book Dude, made to feel like a machine, not a
    person: an IBM 3270 mainframe terminal with retro beeps. It calls her "Human"; her name is never sent to Claude.
    Answers appear whole, with no "typing" bubble or pauses, and there is no voice and no pictures. Nothing rewards
    coming back or chatting longer: no streaks, no counters, no "come back tomorrow". The keys along the bottom work like
-   a mainframe's: **PF1 HISTORY** (COBOL's history file and its test), **PF3 EXIT** (leave the screen she's on) and
-   **PF5 SOUND** (beeps on or off).
+   a mainframe's: **PF1 HISTORY** (COBOL's history file and its test), **PF3 EXIT** (back one step, toward the main
+   menu) and **PF5 SOUND** (beeps on or off).
    - A line that never scrolls away says **"This is an AI. Mom and Dad can read these chats."**
    - A small yellow **Talk to a grown-up** button is always at the top, whatever COBOL is doing (even after hours, at
      the day's limit, or offline). It tells her to go talk to Mom or Dad right now, and **emails you right away** with
@@ -79,7 +79,8 @@ pass (8 of 10, 80%) earns 2 points once, counted like AR points.
 5. **Deploy → Manage deployments → pencil → Version: New version → Deploy.** The link stays the same.
 6. Choose **setup** in the function menu and click **Run**. Google asks for new permissions (to send email as you, to
    make the chat Sheet, and to reach Claude). Allow them the same way as before. The log says the Claude features are on.
-7. On her iPad, open Book Dude. **COBOL** and **What should I read next?** show up under the Dude's bubble.
+7. On her iPad, open Book Dude. **What should I read next?** shows up under the Dude's bubble, and the chat on the
+   **COBOL** tab opens (option 1 on its menu).
    To see the weekly email right away, run **sendWeeklyEmailNow** in the editor.
 
 ### Settings you can change (Script Properties)

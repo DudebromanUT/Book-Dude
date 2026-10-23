@@ -1,6 +1,6 @@
 /* The Claude features, through the Google script at the school quiz link (scripts/school-email): the buttons under the
  * Dude's bubble, "What should I read next?", the numbers for the weekly email to her parents, and the link COBOL (the
- * chat, in cobol.js) talks through. The script holds the Claude key and checks every rule (hours, daily limits, no
+ * chat on its own tab, in cobol.js) talks through. The script holds the Claude key and checks every rule (hours, daily limits, no
  * personal details, the chat log, telling her parents); this file only asks and shows. None of it works offline, and
  * none of it shows until the script says Claude is on. */
 
@@ -30,12 +30,10 @@ export async function post(body) {
 const daysAgo = n => { const d = new Date(Date.now() - n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 export const mine = () => Object.keys(state.records).filter(id => BY_ID.has(id)).map(id => [BY_ID.get(id), state.records[id]]);
 
-// The buttons under the Dude's speech bubble on Explore.
+// The button under the Dude's speech bubble on Explore (COBOL has its own tab).
 export function aiButtonsHtml() {
   if (!aiOn()) return '';
-  return '<div class="dude-asks">' +
-    (chatOn() ? '<button type="button" class="btn small cobol-btn" data-act="cobol">COBOL</button>' : '') +
-    '<button type="button" class="btn small" data-act="dude-picks">What should I read next?</button></div>';
+  return '<div class="dude-asks"><button type="button" class="btn small" data-act="dude-picks">What should I read next?</button></div>';
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

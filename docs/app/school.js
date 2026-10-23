@@ -1,6 +1,6 @@
 /* Quiz results from the school's emails. A Google script in the account that gets Maddy's Renaissance emails
  * (scripts/school-email) serves them at a private link; a grown-up types that link in once, and it stays on this
- * device. Each time the app opens online, new results land: the book is marked Finished with her points and % score,
+ * device. Each time the app opens online (or comes back after a few minutes away), new results land: the book is marked Finished with her points and % score,
  * or added to her books first when it isn't here. A result already typed in by hand is never changed. */
 
 import { C, plural } from './util.js';
@@ -11,6 +11,7 @@ import { rewardPoints, pointsNews } from './money.js';
 import { newCustomId } from './my-books.js';
 import { render } from './tabs.js';
 import { refreshBubble } from './dude-talk.js';
+import { refreshCobol } from './cobol.js';
 import { sendReport } from './dude-ai.js';
 
 const LINK = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\?key=[\w-]+$/;
@@ -66,7 +67,7 @@ async function check(quiet) {
   // Whether the script has Claude on (the Dude's chat and picks), and the chat's hours and messages left today.
   const was = JSON.stringify(state.ai || null);
   state.ai = { on: !!(feed && feed.ai), chat: feed && feed.chat && typeof feed.chat === 'object' ? feed.chat : null };
-  if (JSON.stringify(state.ai) !== was) refreshBubble();
+  if (JSON.stringify(state.ai) !== was) { refreshBubble(); if (state.tab === 'cobol') refreshCobol(); }
   const seen = new Set(state.settings.schoolSeen || []);
   const fresh = C.schoolQuizzes(feed).filter(q => !seen.has(q.id));
   if (!fresh.length) { if (!quiet) toast('No new quizzes from school yet.'); return; }

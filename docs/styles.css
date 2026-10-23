@@ -144,7 +144,7 @@ main {
 }
 .tabbar {
   position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 6px calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l));
   background: color-mix(in srgb, var(--surface) 86%, transparent);
   -webkit-backdrop-filter: saturate(1.6) blur(18px);
@@ -656,8 +656,8 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 @media (max-width: 559px) { .picks { grid-template-columns: minmax(0, 1fr); } .pick { grid-template-columns: 116px minmax(0, 1fr); gap: 14px; } }
 /* COBOL: an IBM 3270 mainframe terminal. Green on black, with the 3279's turquoise, blue, yellow and red for the
    title line, her lines, the function keys and notices. Always dark inside, in light or dark mode. */
-.ai-sheet.cobol { gap: 12px; }
-.cobol-btn { border-color: #071407; background: #071407; color: #3DFF6E; font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .1em; text-shadow: 0 0 6px rgb(61 255 110 / .55); }
+.cobol-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 980px; }
+.cobol-view .t-log { max-height: min(52vh, 560px); }
 /* Talk to a grown-up: small, yellow, and always at the top of every COBOL screen. */
 .grownup-btn { justify-self: start; min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: #F2B53A; color: #3A2600; font: inherit; font-size: .9rem; font-weight: 800; box-shadow: 0 2px 0 #C98612; cursor: pointer; }
 .grownup-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #C98612; }
@@ -718,6 +718,14 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .crt-screen .t-error { color: #FFE45C; font-size: inherit; font-weight: 700; }
 .t-missed { display: grid; gap: 4px; margin: 0; padding-left: 2.5ch; }
 .t-missed span { color: #FFE45C; }
+/* The main menu: three options to tap, or a number to type after OPTION ===>. */
+.t-menu-title { color: #E8FFF0; font-weight: 700; text-shadow: 0 0 6px rgb(232 255 240 / .4); }
+.t-menu { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.t-opt { display: grid; grid-template-columns: 2ch minmax(0, 1fr); column-gap: 14px; align-items: baseline; width: 100%; min-height: 52px; padding: 8px 12px; border: 1px solid rgb(51 255 102 / .4); border-radius: 3px; background: transparent; color: inherit; font: inherit; text-align: left; text-shadow: inherit; cursor: pointer; }
+.t-opt:active { background: rgb(51 255 102 / .12); }
+.t-num { grid-row: span 2; color: #E8FFF0; font-weight: 800; }
+.t-name { color: #E8FFF0; font-weight: 700; }
+.t-desc { grid-column: 2; color: #6FE7FF; font-size: .9em; }
 .t-body + .t-actions { padding-top: 10px; border-top: 1px dashed rgb(51 255 102 / .35); }
 .cobol-intro .crt { margin-top: 4px; }
 .cobol-intro .crt-screen { justify-items: start; }
@@ -726,7 +734,7 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
   .crt { padding: 8px; border-radius: 14px; }
   .crt-screen { padding: 10px; font-size: 14px; }
   .t-head span:nth-child(2) { display: none; }
-  .t-log { max-height: 36vh; }
+  .t-log, .cobol-view .t-log { max-height: 38vh; }
   .t-body { max-height: 40vh; }
   .t-pf { gap: 5px; }
   .t-pf button { padding: 6px 7px; font-size: 12px; }

@@ -278,9 +278,9 @@ function schoolFieldsHtml(cfg, total) {
       : 'Paste the link from the Google script that reads her Renaissance quiz emails, and new quizzes add themselves. Setup steps are in the Book Dude repository, scripts/school-email.') + '</p>' +
     (link ? '<div class="row-actions"><button type="button" class="btn small" data-act="school-sync">Check for new quizzes now</button></div>' : '') +
     (link && state.ai && state.ai.on
-      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her use COBOL</label>' +
+      ? '<label class="switch"><input type="checkbox" id="dude-chat-on"' + (state.settings.dudeChat !== false ? ' checked' : '') + '> Let her chat with COBOL</label>' +
         '<p class="hint">Claude is on in the Google script: new quizzes come with a Dude joke, you get a weekly email, and she can ask what to read next' +
-        (state.ai.chat && state.ai.chat.on ? ' and chat with COBOL, a kid-safe AI helper on a mainframe-terminal screen, following your instructions in the script (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read, and the weekly email has a summary, anything flagged and the whole week’s chat; anything worrying, and every tap of Talk to a grown-up, is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
+        (state.ai.chat && state.ai.chat.on ? ' and chat with COBOL (its own tab), a kid-safe AI helper on a mainframe-terminal screen, following your instructions in the script (' + esc(hoursText(state.ai.chat.hours)) + ', a limited number of messages a day). Every chat is saved in a Google Sheet you can read, and the weekly email has a summary, anything flagged and the whole week’s chat; anything worrying, and every tap of Talk to a grown-up, is emailed to you right away' : '; the chat is switched off in the script') + '.</p>'
       : '') +
     '<h3 class="panel-sub">Points from school</h3>' +
     '<label class="switch"><input type="checkbox" id="school-on"' + (on ? ' checked' : '') + '> Count her total from the school’s AR report</label>' +
@@ -436,7 +436,7 @@ export const changes = guardAll({
   'dude-chat-on': async t => {
     await saveSetting('dudeChat', t.checked);
     refreshBubble();
-    toast(t.checked ? 'COBOL is on.' : 'COBOL is off on this device.');
+    toast(t.checked ? 'COBOL’s chat is on.' : 'COBOL’s chat is off on this device. Its history file and test still work.');
   },
   'school-link': async t => {
     const typed = t.value.trim();

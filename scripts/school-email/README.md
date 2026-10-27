@@ -49,7 +49,7 @@ With a Claude API key, the same script also adds:
      the day's limit, or offline). It tells her to go talk to Mom or Dad right now, and **emails you right away** with
      the last few messages. Asking for help never depends on her typing the right words.
    - A soft timer suggests a break at 15, 30 and 45 minutes. It never blocks her.
-   - The script checks the rules before Claude sees anything: open 7 a.m. to 9 p.m., 40 messages a day, 400 letters a
+   - The script checks the rules before Claude sees anything: open 7 a.m. to 8 p.m., 40 messages a day, 400 letters a
      message, and phone numbers, email addresses, street addresses and passwords never go to Claude.
    - **COBOL's instructions are yours**, in this script (`COBOL_PROMPT`; the same words are in `cobol-prompt.md` to read
      or edit): your prompt, with your choices. Questions about bodies and growing up go to you; anything serious points
@@ -89,7 +89,7 @@ pass (8 of 10, 80%) earns 2 points once, counted like AR points.
 | --- | --- | --- |
 | `MODEL` | `claude-opus-5-5` | The Claude model. `claude-haiku-5-5` costs far less, if the bill matters more than the polish. |
 | `CHAT` | `on` | `off` stops COBOL. |
-| `CHAT_HOURS` | `7-21` | Hours she can chat, Utah time (7 a.m. to 9 p.m.). |
+| `CHAT_HOURS` | `7-20` | Hours she can chat, Utah time (7 a.m. to 8 p.m.). |
 | `CHAT_LIMIT` | `40` | Messages to COBOL a day. |
 | `PICKS_LIMIT` | `10` | "What should I read next?" asks a day. |
 | `REPLY_LIMIT` | `2500` | The longest answer COBOL can give, in characters. A longer one ends at its last full sentence. |

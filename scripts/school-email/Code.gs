@@ -24,7 +24,7 @@ var RUN_HOUR = 15;             // 3 p.m. Utah time (Google runs it some time in 
 var DEFAULTS = {
   MODEL: 'claude-opus-5-5',    // claude-haiku-5-5 costs far less, if the bill matters more than the polish.
   CHAT: 'on',                  // "off" stops COBOL, the chat (Book Dude also has its own switch, behind the passcode).
-  CHAT_HOURS: '7-21',          // She can chat from 7:00 a.m. until 9:00 p.m., Utah time.
+  CHAT_HOURS: '7-20',          // She can chat from 7:00 a.m. until 8:00 p.m., Utah time.
   CHAT_LIMIT: '40',            // Messages she can send COBOL in a day.
   PICKS_LIMIT: '10',           // "What should I read next?" asks in a day.
   REPLY_LIMIT: '2500',         // The longest answer COBOL can give, in characters (a longer one ends at a full sentence).

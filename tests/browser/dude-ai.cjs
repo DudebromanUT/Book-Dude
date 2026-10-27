@@ -47,7 +47,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
   const browser = await chromium.launch();
   const errors = [];
   // What the stand-in script says, and everything Book Dude sent it.
-  const script = { ai: true, chat: { on: true, open: true, hours: '7-21', left: 40 }, chatAnswer: null, slow: false, release: () => {}, gets: 0 };
+  const script = { ai: true, chat: { on: true, open: true, hours: '7-20', left: 40 }, chatAnswer: null, slow: false, release: () => {}, gets: 0 };
   const posts = [];
   try {
     const ctx = await browser.newContext({ ...devices['iPad (gen 7)'], timezoneId: 'America/Denver', serviceWorkers: 'block' });
@@ -81,7 +81,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     });
     const p = await ctx.newPage();
     p.on('pageerror', e => errors.push(e.message));
-    // Midday in Utah: COBOL's chat is open 7 a.m. to 9 p.m. by the iPad's clock.
+    // Midday in Utah: COBOL's chat is open 7 a.m. to 8 p.m. by the iPad's clock.
     await p.clock.setFixedTime(new Date('2026-10-23T12:00:00-06:00'));
     const tab = async t => { await p.$eval('.tab[data-tab="' + t + '"]', e => e.click()); await sleep(500); };
 
@@ -148,7 +148,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     const btn = await p.$eval(V + ' .grownup-btn', e => ({ bg: getComputedStyle(e).backgroundColor, h: e.getBoundingClientRect().height }));
     assert.equal(btn.bg, 'rgb(242, 181, 58)', 'yellow');
     assert.ok(btn.h <= 44, 'small: ' + btn.h);
-    assert.deepEqual(await options(), ['1 CHAT WITH COBOL OPEN UNTIL 9 P.M.', '2 HISTORY FILE HOW COBOL WAS BORN', '3 HISTORY TEST PASS WITH 80%: 2 POINTS']);
+    assert.deepEqual(await options(), ['1 CHAT WITH COBOL OPEN UNTIL 8 P.M.', '2 HISTORY FILE HOW COBOL WAS BORN', '3 HISTORY TEST PASS WITH 80%: 2 POINTS']);
     assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND ON']);
     // Typing an option: a number that isn't one says so; 1 opens the chat.
     await p.fill('#cobol-option', '9'); await p.$eval('form[data-form="cobol-option"] button', e => e.click()); await sleep(200);
@@ -313,12 +313,12 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.equal(posts.filter(x => x.body.action === 'report').length, 2, 'reopening doesn’t send the numbers again so soon');
 
     // After hours: the menu and the chat say when it runs, and the grown-up button still works, even with no internet.
-    script.chat = { on: true, open: false, hours: '7-21', left: 40 };
+    script.chat = { on: true, open: false, hours: '7-20', left: 40 };
     await p.clock.setFixedTime(new Date('2026-10-23T22:30:00-06:00'));
     await p.reload(); await p.waitForSelector('.view-head'); await tab('cobol');
     await p.waitForFunction(() => /CLOSED UNTIL 7 A\.M\./.test(document.querySelector('#main .cobol-view').innerText), null, { timeout: 10000 });
     await option(1);
-    assert.match((await txt(p, V)), /COBOL IS OFF RIGHT NOW\. IT RUNS FROM 7 A\.M\. TO 9 P\.M\./);
+    assert.match((await txt(p, V)), /COBOL IS OFF RIGHT NOW\. IT RUNS FROM 7 A\.M\. TO 8 P\.M\./);
     assert.equal(await p.$('#chat-input'), null);
     assert.equal((await txt(p, V + ' .t-status')), AI_LINE);
     assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND OFF'], 'the sound choice was remembered');
@@ -331,12 +331,12 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
 
     // The soft break timer: after 15 minutes at the terminal it suggests a break, without stopping anything. Then,
     // after a few minutes away, the app asks the script again, and COBOL shows what changed without a restart.
-    script.chat = { on: true, open: true, hours: '7-21', left: 40 };
+    script.chat = { on: true, open: true, hours: '7-20', left: 40 };
     const p2 = await ctx.newPage();
     p2.on('pageerror', e => errors.push(e.message));
     await p2.clock.install({ time: new Date('2026-10-23T12:00:00-06:00') });
     await p2.goto(BASE + '#cobol');
-    await p2.waitForFunction(() => /OPEN UNTIL 9 P\.M\./.test((document.querySelector('#main .cobol-view') || {}).innerText || ''), null, { timeout: 10000 });
+    await p2.waitForFunction(() => /OPEN UNTIL 8 P\.M\./.test((document.querySelector('#main .cobol-view') || {}).innerText || ''), null, { timeout: 10000 });
     await p2.click('#main .t-opt[data-option="1"]'); await sleep(300);
     assert.equal(await p2.$('#main .t-break'), null);
     await p2.clock.fastForward('15:30');
@@ -350,7 +350,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.ok(await p2.$('#chat-input'), 'back on the chat');
     assert.equal(script.gets, before + 1, 'opening COBOL asks the script again');
     const seen = script.gets;
-    script.chat = { on: false, open: true, hours: '7-21', left: 40 };
+    script.chat = { on: false, open: true, hours: '7-20', left: 40 };
     const visible = v => p2.evaluate(v => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v });
       document.dispatchEvent(new Event('visibilitychange'));
@@ -364,7 +364,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
 
     // When the app can't reach the script, option 1 says so (not "switched off"), and opening the chat tries again,
     // saying it's connecting until the script answers.
-    script.chat = { on: true, open: true, hours: '7-21', left: 40 };
+    script.chat = { on: true, open: true, hours: '7-20', left: 40 };
     script.getMode = 'fail';
     await p.clock.setFixedTime(new Date('2026-10-23T12:00:00-06:00'));
     await p.reload(); await p.waitForSelector('.view-head'); await tab('cobol');
@@ -376,7 +376,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     script.releaseGet();
     await p.waitForSelector('#chat-input', { timeout: 10000 });
     await key(3);
-    assert.match((await options())[0], /OPEN UNTIL 9 P\.M\.$/);
+    assert.match((await options())[0], /OPEN UNTIL 8 P\.M\.$/);
 
     // With Claude off in the script: no picks, and the chat says it's off, but the history file and the test work,
     // from the tab and from About the Dude (which opens the history on the COBOL tab).

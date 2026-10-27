@@ -27,6 +27,7 @@ var DEFAULTS = {
   CHAT_HOURS: '7-21',          // She can chat from 7:00 a.m. until 9:00 p.m., Utah time.
   CHAT_LIMIT: '40',            // Messages she can send COBOL in a day.
   PICKS_LIMIT: '10',           // "What should I read next?" asks in a day.
+  REPLY_LIMIT: '2500',         // The longest answer COBOL can give, in characters (a longer one ends at a full sentence).
   DIGEST_TO: '',               // Who gets the weekly email and alerts (commas between addresses); blank = this account.
   DIGEST_HOUR: '9'             // The weekly email goes out Sunday at this hour.
 };
@@ -604,12 +605,28 @@ function countToday(what, limit) {
   }
 }
 
+// COBOL's answer, at most `max` characters. A longer one ends at its last full sentence before the limit (or, with
+// no sentence end in reach, its last whole word and an ellipsis), so she never sees one cut off mid-word. A run of
+// dots ("PROCESSING...") isn't a sentence end.
+function fitReply(text, max) {
+  var all = clip(text, 100000);
+  if (all.length <= max) return all;
+  var cut = all.slice(0, max);
+  var sentence = cut.match(/^[\s\S]*(?:[!?]|[^.]\.)["')\]]?(?=\s|$)/);
+  if (sentence && sentence[0].length >= max / 2) return sentence[0];
+  return cut.replace(/\s+\S*$/, '') + '…';
+}
+
+function replyLimit() { return Math.max(200, Number(setting('REPLY_LIMIT')) || 2500); }
+
 function chat(r) {
   var state = chatState();
   if (!state.on) return { error: 'off' };
   if (!state.open) return { error: 'hours', hours: state.hours };
+  var max = replyLimit();
+  // Her messages are 400 letters at most; COBOL's earlier answers come back whole, so it remembers what it said.
   var history = (Array.isArray(r.messages) ? r.messages : []).slice(-12).map(function (m) {
-    return { role: m && m.role === 'assistant' ? 'assistant' : 'user', content: clip(m && m.text, 600) };
+    return { role: m && m.role === 'assistant' ? 'assistant' : 'user', content: clip(m && m.text, max) };
   }).filter(function (m) { return m.content; });
   while (history.length && history[0].role !== 'user') history.shift();
   // Two turns in a row from the same side become one.
@@ -631,18 +648,19 @@ function chat(r) {
   }
   var shelf = (Array.isArray(r.reading) ? r.reading : []).slice(0, 5).map(function (t) { return clip(t, 120); }).filter(String);
   var recent = (Array.isArray(r.recent) ? r.recent : []).slice(0, 8).map(function (t) { return clip(t, 120); }).filter(String);
-  var context = (shelf.length ? '\nShe is reading: ' + shelf.join('; ') + '.' : '') + (recent.length ? '\nShe recently finished: ' + recent.join('; ') + '.' : '');
+  var context = (shelf.length ? '\nShe is reading: ' + shelf.join('; ') + '.' : '') + (recent.length ? '\nShe recently finished: ' + recent.join('; ') + '.' : '') +
+    '\nKeep each reply under ' + max + ' characters.';
   var out = askClaude(COBOL_PROMPT + context, history,
     { type: 'object', additionalProperties: false, required: ['reply', 'flag', 'why'], properties: {
       reply: { type: 'string' }, flag: { type: 'string', enum: ['none', 'tell_parent'] }, why: { type: 'string' } } },
-    4000, 'low');
+    8000, 'low');
   if (!out) return { error: 'busy', left: left };
   if (out.refused) {
     var skip = 'COBOL cannot answer that one. If something is bothering you, go talk to Mom or Dad. The yellow Talk to a grown-up button is right there, too.';
     logChat(last.content, skip, 'refused', 'Claude declined to answer this one.');
     return { reply: skip, left: left };
   }
-  var reply = clip(out.reply, 700) || 'PROCESSING ERROR. COBOL lost that answer. Please type it again.';
+  var reply = fitReply(out.reply, max) || 'PROCESSING ERROR. COBOL lost that answer. Please type it again.';
   var flag = out.flag === 'tell_parent' ? 'tell_parent' : '';
   logChat(last.content, reply, flag, flag ? clip(out.why, 200) : '');
   return { reply: reply, left: left };
@@ -678,7 +696,7 @@ function logChat(said, reply, flag, why) {
 // and her parents get an email right away with the last few messages (up to 10 emails a day).
 function grownup(r) {
   var recent = (Array.isArray(r.messages) ? r.messages : []).slice(-6).map(function (m) {
-    return (m && m.role === 'assistant' ? 'COBOL: ' : 'Maddy: ') + clip(m && m.text, 400);
+    return (m && m.role === 'assistant' ? 'COBOL: ' : 'Maddy: ') + clip(m && m.text, replyLimit());
   }).filter(function (line) { return !/: $/.test(line); });
   logChat('(tapped Talk to a grown-up)', '', 'grownup', 'She tapped Talk to a grown-up.');
   if (!countToday('grownup', 10)) return { ok: true };

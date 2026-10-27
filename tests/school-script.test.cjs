@@ -43,7 +43,7 @@ function load({ props = {}, claude, emails = [] } = {}) {
     MailApp: { sendEmail: m => sent.mail.push(m) },
     Session: { getEffectiveUser: () => ({ getEmail: () => 'owner@example.com' }) },
     ContentService: { createTextOutput: s => ({ text: s, setMimeType() { return this; } }), MimeType: { JSON: 'json' } },
-    GmailApp: { search: () => emails.map((e, i) => ({ getMessages: () => [{ getId: () => 'm' + i, getFrom: () => 'Renaissance <autodelivery@renlearnrp.com>', getPlainBody: () => e, getDate: () => new Date('2026-10-19T17:00:00Z') }] })) },
+    GmailApp: { search: () => emails.map((e, i) => ({ getMessages: () => [{ getId: () => 'm' + i, getFrom: () => 'Renaissance <autodelivery@renlearnrp.com>', getPlainBody: () => e, getDate: () => new Date(Date.now() - 2 * 864e5) }] })) },
     ScriptApp: { getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => trigger, WeekDay: { SUNDAY: 'SUNDAY' }, getService: () => ({ getUrl: () => 'https://script.google.com/macros/s/X/exec' }) },
     Logger: { log: s => sent.log.push(String(s)) },
     Date, JSON, Math, Number, String, Object, Array, isFinite
@@ -133,6 +133,28 @@ test('COBOL answers under her parents\' instructions, the history is tidied, and
   assert.deepEqual([...s.sent.rows[0]], ['When', 'Maddy', 'COBOL', 'Flag', 'Why']);
   assert.deepEqual([...s.sent.rows[1].slice(1)], ['hi\nwhat is Hatchet about?', out.reply, '', '']);
   assert.equal(s.sent.mail.length, 0);
+});
+
+test('COBOL: long answers end at a full sentence under the limit (REPLY_LIMIT), and its earlier answers come back whole', () => {
+  const sentence = 'PROCESSING... Hatchet is a survival story about a boy named Brian. ';
+  let asked;
+  const s = load({ props: AI, claude: body => { asked = body; return { reply: sentence.repeat(60), flag: 'none', why: '' }; } });
+  const earlier = 'COBOL> '.concat('A long earlier answer. '.repeat(80)).trim();
+  const out = s.post({ action: 'chat', messages: [{ role: 'user', text: 'tell me about Hatchet' }, { role: 'assistant', text: earlier }, { role: 'user', text: 'more please' }] });
+  assert.ok(out.reply.length <= 2500 && out.reply.length > 2000, 'length ' + out.reply.length);
+  assert.match(out.reply, /named Brian\.$/, 'ends at a full sentence');
+  assert.equal(asked.messages[1].content, earlier, 'its earlier answer is not cut to 600');
+  assert.match(asked.system, /Keep each reply under 2500 characters\.$/);
+  assert.equal(asked.max_tokens, 8000);
+  assert.equal(s.sent.rows[1][2], out.reply, 'the log keeps what she saw');
+  // A smaller limit from Script Properties, and an answer with no sentence end in reach.
+  const small = load({ props: Object.assign({ REPLY_LIMIT: '300' }, AI), claude: () => ({ reply: 'beep '.repeat(200), flag: 'none', why: '' }) });
+  const cut = small.post({ action: 'chat', messages: [{ role: 'user', text: 'hi' }] }).reply;
+  assert.ok(cut.length <= 301, 'length ' + cut.length);
+  assert.match(cut, /beep…$/, 'ends on a whole word');
+  // Short answers are untouched.
+  const short = load({ props: AI, claude: () => ({ reply: 'BEEP. Hatchet is great.', flag: 'none', why: '' }) });
+  assert.equal(short.post({ action: 'chat', messages: [{ role: 'user', text: 'hi' }] }).reply, 'BEEP. Hatchet is great.');
 });
 
 test('COBOL: personal details never reach Claude', () => {

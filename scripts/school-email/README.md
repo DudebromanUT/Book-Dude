@@ -92,6 +92,7 @@ pass (8 of 10, 80%) earns 2 points once, counted like AR points.
 | `CHAT_HOURS` | `7-21` | Hours she can chat, Utah time (7 a.m. to 9 p.m.). |
 | `CHAT_LIMIT` | `40` | Messages to COBOL a day. |
 | `PICKS_LIMIT` | `10` | "What should I read next?" asks a day. |
+| `REPLY_LIMIT` | `2500` | The longest answer COBOL can give, in characters. A longer one ends at its last full sentence. |
 | `DIGEST_TO` | this account | Who gets the weekly email and alerts. |
 | `DIGEST_HOUR` | `9` | Sunday hour for the weekly email (run **setup** again after changing it). |
 

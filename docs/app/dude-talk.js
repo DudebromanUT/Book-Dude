@@ -155,7 +155,7 @@ function storyHtml() {
     return '<section>' + html + '</section>';
   }).join('');
   return sheetBar('About the Dude') + '<div class="sheet-body story">' +
-    '<figure class="story-figure"><img src="img/dude.jpg" width="960" height="955" alt="The Dude in a worn leather armchair, surrounded by bookshelves, with a Welsh terrier and a tabby cat asleep on the rug"></figure>' +
+    '<figure class="story-figure"><img src="img/dude.jpg" width="642" height="723" alt="The Dude in a bathrobe and sunglasses, holding a carton of milk"></figure>' +
     '<div class="story-title"><h1>About the Dude</h1><p>Scientist, explorer, war hero, jazz fanatic, former fairy</p></div>' +
     '<div class="story-body">' + sections + '<p class="signoff">' + esc(fill(DUDE.signoff)) + '</p>' + storySectionHtml() + '</div>' +
     '<div class="row-actions"><button type="button" class="btn primary" data-act="close-sheet">Let’s read</button></div></div>';

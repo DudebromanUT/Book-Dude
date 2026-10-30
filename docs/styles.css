@@ -751,7 +751,7 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 
 .story { padding-top: 0; }
 .story-figure { position: relative; margin: 0 -20px; }
-.story-figure img { width: 100%; height: auto; max-height: 560px; object-fit: cover; object-position: 50% 30%; }
+.story-figure img { display: block; width: auto; max-width: 100%; height: auto; max-height: 560px; margin: 0 auto; object-fit: contain; }
 .story-figure::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 38%; background: linear-gradient(transparent, var(--bg)); }
 .story-title { position: relative; margin-top: -58px; }
 .story-title h1 { font-size: clamp(2rem, 8vw, 2.6rem); }

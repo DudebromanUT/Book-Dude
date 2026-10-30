@@ -77,7 +77,7 @@ const PICK_TROUBLE = {
 async function openPicks() {
   state.openId = null;
   sheet.innerHTML = sheetBar('What should I read next?') + '<div class="sheet-body ai-sheet pick-sheet"><h2>What should I read next?</h2>' +
-    '<p class="thinking" role="status">The Dude is thinking. And looking for his glasses<span>.</span><span>.</span><span>.</span></p></div>';
+    '<p class="thinking" role="status">The Dude is thinking. And looking for his sunglasses<span>.</span><span>.</span><span>.</span></p></div>';
   if (!sheet.open) sheet.showModal();
   const candidates = C.readNextCandidates(BOOKS, state.records, 60).map(b => {
     const a = b._awards[0];

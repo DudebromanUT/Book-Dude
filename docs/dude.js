@@ -14,12 +14,13 @@ window.BOOK_DUDE = {
   // have been seen). Tapping the speech bubble shows another.
   sayings: [
     'Shoes off. Socks on. What are we reading?',
-    'I found my glasses. They were on my head. Again.',
-    'My cardigan has eleven pockets. Four have bookmarks. Six have snacks. One has {cat}.',
-    'Gerald the octopus sent me a postcard. It just said “thanks for the glasses.”',
+    'I found my sunglasses. They were on my head. Again.',
+    'My bathrobe has eleven pockets. Four have bookmarks. Six have snacks. One has {cat}.',
+    'Gerald the octopus sent me a postcard. It just said “thanks for the sunglasses.”',
+    'Milk. It does a body good. Books do a brain good. I carry both everywhere.',
     'I asked {cat} for a book recommendation. {cat} recommended a nap. {cat} always recommends a nap.',
     '{cat} knocked a book off the shelf. On purpose. While looking right at me. It was a great book. I think that was the point.',
-    'I lost my glasses again. {dog} found them. {dog} was wearing them.',
+    'I lost my sunglasses again. {dog} found them. {dog} was wearing them.',
     '{dog} has 212 socks. I have 211. Do the math.',
     'Today’s forecast: 90% chance of a good book. 10% chance of {cat} sitting on it.',
     'Fun fact: a group of owls is called a parliament. A group of books is called a Tuesday.',
@@ -94,7 +95,7 @@ window.BOOK_DUDE = {
     'The Westing Game': ['In The Westing Game, sixteen heirs race to solve a puzzle. I once did a 500-piece puzzle of a picture of a puzzle. Took me a year. Worth it.'],
     'Mrs. Frisby and the Rats of NIMH': ['The rats of NIMH taught themselves to read. {cat} refuses. {cat} says books are for napping on.'],
     'From the Mixed-Up Files of Mrs. Basil E. Frankweiler': ['Claudia ran away to live in an art museum and bathed in the fountain. I ran away to the library once. I lasted four hours. The snack situation was bad.'],
-    'A Wrinkle in Time': ['A Wrinkle in Time explains the tesseract, a shortcut through space. I use the same technology to find my glasses. (Head. They’re on my head.)'],
+    'A Wrinkle in Time': ['A Wrinkle in Time explains the tesseract, a shortcut through space. I use the same technology to find my sunglasses. (Head. They’re on my head.)'],
     'Island of the Blue Dolphins': ['Karana lived alone on an island for years. I spent one weekend alone in a library and started talking to the encyclopedias. Volume K was a great listener.'],
     'Treasure Island': ['Long John Silver’s parrot shouts “Pieces of eight!” {cat} shouts “Pieces of ham!” at 6 a.m. every day. Same energy.'],
     "Alice's Adventures in Wonderland": ['Alice drinks a bottle labeled DRINK ME and shrinks. I drank a bottle labeled DRINK ME once. It was apple juice. I have never been so disappointed.'],
@@ -128,7 +129,7 @@ window.BOOK_DUDE = {
     "The Inquisitor's Tale": ['There’s a dragon in The Inquisitor’s Tale whose farts are deadly. I’m not saying {dog} is a dragon. I’m saying crack a window.'],
     'The Wednesday Wars': ['In The Wednesday Wars, Holling has to read Shakespeare every Wednesday. I read Shakespeare every Wednesday too. Also Thursdays. Also in the bathtub.'],
     'Princess Academy': ['Princess Academy takes place on a mountain where everybody cuts stone. I licked three rocks just reading it. Old geologist habits.'],
-    'El Deafo': ['Cece turns her hearing aid into a superpower in El Deafo. I turned my cardigan into a snack pouch. Also a superpower.'],
+    'El Deafo': ['Cece turns her hearing aid into a superpower in El Deafo. I turned my bathrobe into a snack pouch. Also a superpower.'],
     'The Candy Shop War': ['The Moon Rocks in The Candy Shop War make kids bounce like astronauts. I tried a regular jelly bean. Nothing. I’m writing a complaint.'],
     'The Chocolate Touch': ['In The Chocolate Touch, everything John’s lips touch turns to chocolate. Sounds great until you try to drink water. I have thought about this way too much.'],
     'Superfudge': ['There’s a bird in Superfudge that says “Bonjour, stupid.” {cat} says something like that to me every morning. Without the French.'],
@@ -138,7 +139,7 @@ window.BOOK_DUDE = {
     'Duck and Moose: Duck Moves In!': ['Duck moves in with Moose without asking. {cat} moved into my favorite chair without asking. Nobody asked me either.'],
     'Garlic and the Vampire': ['Garlic is a vegetable who has to face a vampire. I once had to face a vegetable. It was broccoli. I lost.'],
     'The Graveyard Book': ['Bod is raised by ghosts in a graveyard. I was raised by librarians. Also very quiet. Also always saying “shh.”'],
-    'When You Reach Me': ['Miranda gets mysterious notes from someone who knows the future. I got a note from the future once. It said, “Your glasses are on your head.”'],
+    'When You Reach Me': ['Miranda gets mysterious notes from someone who knows the future. I got a note from the future once. It said, “Your sunglasses are on your head.”'],
     'The Twenty-One Balloons': ['The professor in The Twenty-One Balloons sets off to cross the ocean in a balloon. I tried to float in the bathtub with a book. The book did not float.'],
     'Hoot': ['Hoot is about kids saving burrowing owls. {cat} would love to meet the owls. {cat} would love it a little too much. {cat} is not invited.'],
     'Skyward': ['The spaceship in Skyward is completely obsessed with mushrooms. I respect that. I am completely obsessed with socks.'],
@@ -146,14 +147,14 @@ window.BOOK_DUDE = {
     'Shiloh': ['Marty hides a beagle named Shiloh. {dog} hides socks. Nobody has ever found them. Not even Marty.'],
     'Julie of the Wolves': ['Julie learns to talk to wolves. {dog} is part Welsh terrier, part wolf, and part couch cushion.'],
     'The Crossover': ['The Crossover tells a whole basketball season in poems. I tried to write my grocery list in poems. “Milk, so cold, so white, so true.” The cashier was not impressed.'],
-    'New Kid': ['Jordan draws comics about his new school in New Kid. I drew a comic once. It was a guy losing his glasses. It was based on a true story.'],
+    'New Kid': ['Jordan draws comics about his new school in New Kid. I drew a comic once. It was a guy losing his sunglasses. It was based on a true story.'],
     'Lulu and the Brontosaurus': ['Lulu wants a brontosaurus for her birthday. I also wanted a brontosaurus for my birthday. I got socks. Okay, I love socks. But still.'],
     'Restart': ['Chase forgets everything in Restart and has to figure out who he was. I do that every morning before breakfast.']
   },
 
   // A "P.S." under the Dude's line about her own books and rewards. {title}, {p}, {toGo}, and {prize} are filled in.
   ps: {
-    owed: ['P.S. Book money is waiting: {prize}. Go tell a grown-up before {dog} spends it on socks.', 'P.S. You have book money waiting! ({prize}.) The Dude is already putting on his bookstore cardigan.'],
+    owed: ['P.S. Book money is waiting: {prize}. Go tell a grown-up before {dog} spends it on socks.', 'P.S. You have book money waiting! ({prize}.) The Dude is already putting on his bookstore robe.'],
     quiz: ['P.S. You finished {title}! Take the AR quiz and add your points on its page. {cat} will supervise.', 'P.S. {title}: finished. Quiz: not yet. The Dude is tapping his sock impatiently.'],
     quizGrownup: ['P.S. You finished {title}! After the AR quiz, bring a grown-up to add your points. {cat} will supervise.', 'P.S. {title}: finished. Quiz: not yet. When it is, a grown-up adds the points. The Dude is tapping his sock impatiently.'],
     choose: ['P.S. You have {points} points to spend on the Progress tab. Money or {minutes} minutes for every 10? {cat} votes minutes. {dog} votes dog treats.', 'P.S. {points} points are waiting for you to decide: money or minutes? The Dude can’t decide either. He is still deciding about lunch.'],
@@ -187,7 +188,7 @@ window.BOOK_DUDE = {
         "“Howdy,” said the bird. “Name’s Bobby Joe. Y’all came through the stinky door, huh?”",
         "Bobby Joe is a secretary bird. Secretary birds hunt snakes by stomping on them faster than you can blink (true, look it up), which was awkward at first, since the Dude is a herpetologist. They worked it out. Bobby Joe now only stomps typos.",
         "High overhead, a red tailed hawk circled once and let out a magnificent screech. That was Reddy. If you have ever heard an eagle scream in a movie, you were actually hearing a red tailed hawk, because real bald eagles sound a lot like squeaky toys. (True. Look it up.) Reddy does all of the Reading Room’s dramatic sound effects and is very proud of it.",
-        "Bobby Joe led them down a **labyrinthine** street to a tall, crooked, creaky house with one light on at the very top. A man in a cardigan leaned out the window, glasses on top of his head. He sniffed the air and raised an eyebrow.",
+        "Bobby Joe led them down a **labyrinthine** street to a tall, crooked, creaky house with one light on at the very top. A man in a bathrobe leaned out the window, sunglasses on top of his head, a carton of milk in one hand. He sniffed the air and raised an eyebrow.",
         "“Ah,” he said. “Taco night? Excellent. The new staff.”",
         "The Dude says what Maddy made that night was technically a **tesseract**, like the ones in A Wrinkle in Time, only with beans. So the copy {dog} became Head of Fetching, and the copy {cat} became Head of Naps. The Dude believes the two {cat}s share one nap across both universes, which is why both of them are always asleep.",
         "Maddy, for the record, still says it was the cat."
@@ -242,7 +243,7 @@ window.BOOK_DUDE = {
       "paragraphs": [
         "That war is how the Dude met Napoleon Bonaparte. They were supposed to negotiate an **armistice** but spent six hours arguing about books instead. Napoleon was a **voracious** reader (true: he carried a traveling library of hundreds of small books on his campaigns), and by morning he had borrowed the Dude’s copy of The Sorrows of Young Werther.",
         "He never gave it back. The overdue fine is now about four billion dollars.",
-        "Also, Napoleon was not short. He was about five feet seven inches, perfectly ordinary for his time. The Dude measured him with the emergency ruler in his cardigan pocket. Napoleon was not amused."
+        "Also, Napoleon was not short. He was about five feet seven inches, perfectly ordinary for his time. The Dude measured him with the emergency ruler in his bathrobe pocket. Napoleon was not amused."
       ]
     },
     {
@@ -306,12 +307,12 @@ window.BOOK_DUDE = {
         {
           "art": "gerald",
           "name": "Gerald, Head of Mischief",
-          "text": "Octopus. Eight arms, three hearts, no respect for other people’s glasses."
+          "text": "Octopus. Eight arms, three hearts, no respect for other people’s sunglasses."
         },
         {
           "img": "img/dude-face.jpg",
           "name": "The Dude, Head of Cardigans",
-          "text": "Loses his glasses about nine times a day. They are usually on his head."
+          "text": "Loses his sunglasses about nine times a day. They are usually on his head."
         }
       ]
     },
@@ -385,7 +386,7 @@ window.BOOK_DUDE = {
     { at: 60, job: 'Cowboy', title: 'Cowboy Who Lost the Cows',
       text: 'I was a cowboy for one long season. My horse was named Pancake. Every night I read by the campfire, and every morning the cows were gone. I finished eleven books and lost forty-two cows. Pancake was not impressed. The cows were fine. They went home. Cows know the way.' },
     { at: 80, job: 'Marine biologist', title: 'Octopus Wrangler',
-      text: 'Out on the ocean I studied octopuses. One of them, Gerald, could open jars, unscrew bottles, and take the glasses right off my face. That’s when I started losing my glasses. I like to think Gerald is wearing them somewhere, reading.' },
+      text: 'Out on the ocean I studied octopuses. One of them, Gerald, could open jars, unscrew bottles, and take the sunglasses right off my face. That’s when I started losing my sunglasses. I like to think Gerald is wearing them somewhere, reading.' },
     { at: 100, job: 'Physicist', title: 'Bedtime Physicist',
       text: 'As a physicist, I made one important discovery: bedtime arrives 40% faster when you are in the middle of a good chapter. I measured it very carefully, with a stopwatch and a flashlight under the covers. Nobody gave me a prize. I know I’m right.' },
     { at: 125, job: 'Doctor', title: 'Dr. Two-Chapters',
@@ -472,7 +473,7 @@ window.BOOK_DUDE = {
     [0.01, 'A few points are rattling around in there. {cat} opened one eye.'],
     [0.25, 'A quarter full! The Dude did a small, dignified sock wiggle.'],
     [0.5, 'Halfway! {dog} is wagging so hard the whole back half of {dog} is wagging.'],
-    [0.75, 'Three-quarters! The Dude is looking for his bookstore cardigan.'],
+    [0.75, 'Three-quarters! The Dude is looking for his bookstore robe.'],
     [0.9, 'Only {toGo} points to go. The jar is shaking. (That might be {dog}.)']
   ],
   jarFull: 'BOOK MONEY! You earned {prize}. Go tell a grown-up. The Dude says: wear good socks to the bookstore.',

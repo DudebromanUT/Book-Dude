@@ -17,6 +17,7 @@ export const state = {
   sort: 'award-new',
   layout: 'grid',
   shelf: 'reading',
+  shelfSort: 'points-new',
   period: thisYear(),
   limit: PAGE,
   records: {},
@@ -43,6 +44,7 @@ export function loadUi() {
     if (SORTS[saved.sort]) state.sort = saved.sort;
     if (saved.layout === 'list' || saved.layout === 'grid') state.layout = saved.layout;
     if (['reading', 'want', 'finished', 'paused', 'favorites', 'mine'].includes(saved.shelf)) state.shelf = saved.shelf;
+    if (['points-new', 'points-most', 'title'].includes(saved.shelfSort)) state.shelfSort = saved.shelfSort;
     if (saved.period === 'all' || /^\d{4}$/.test(saved.period || '')) state.period = saved.period;
     state.installTipDismissed = saved.installTipDismissed === true;
   } catch (e) { /* storage unavailable: defaults are fine */ }
@@ -50,7 +52,7 @@ export function loadUi() {
 export function saveUi() {
   try {
     localStorage.setItem(UI_KEY, JSON.stringify({
-      filters: state.filters, sort: state.sort, layout: state.layout, shelf: state.shelf, period: state.period, installTipDismissed: state.installTipDismissed
+      filters: state.filters, sort: state.sort, layout: state.layout, shelf: state.shelf, shelfSort: state.shelfSort, period: state.period, installTipDismissed: state.installTipDismissed
     }));
   } catch (e) { /* ignore */ }
 }

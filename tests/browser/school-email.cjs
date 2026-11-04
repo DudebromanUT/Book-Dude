@@ -107,6 +107,20 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await p.$eval('.tab[data-tab="progress"]', e => e.click()); await sleep(600);
     assert.match(clean(await p.textContent('#main')), /16 points all time/);
 
+    // Finished sorts by AR points, newest quiz first (Hatchet's hand-typed points are dated today); "Most points" and
+    // "Title A to Z" change the order, and the choice is remembered.
+    await shelves();
+    await p.$eval('[data-act="shelf"][data-shelf="finished"]', e => e.click()); await sleep(500);
+    const firstThree = () => p.$$eval('#main .list .row .t', ts => ts.slice(0, 3).map(t => t.textContent));
+    assert.equal(await p.inputValue('#shelf-sort'), 'points-new');
+    assert.deepStrictEqual(await firstThree(), ['Hatchet', 'Frindle', 'Adventure in Grand Canyon National Park']);
+    await p.selectOption('#shelf-sort', 'points-most'); await sleep(400);
+    assert.deepStrictEqual(await firstThree(), ['Hatchet', 'Adventure in Grand Canyon National Park', 'Frindle']);
+    await p.selectOption('#shelf-sort', 'title'); await sleep(400);
+    const titles = await p.$$eval('#main .list .row .t', ts => ts.map(t => t.textContent));
+    assert.ok(titles.length > 3 && !titles.slice(0, 3).includes('Hatchet'), 'alphabetical, not by points');
+    await p.selectOption('#shelf-sort', 'points-new'); await sleep(300);
+
     // Opening again asks the link again, but nothing lands twice.
     const before = asked;
     await p.reload(); await p.waitForSelector('.view-head'); await sleep(2500);

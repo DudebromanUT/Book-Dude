@@ -1,4 +1,5 @@
-/* The My Shelves tab: Reading, Want to read, Finished, Paused, Favorites, and Read Books. */
+/* The My Shelves tab: Reading, Want to read, Finished, Paused, Favorites, and Read Books. Finished and Read Books
+ * can be sorted by AR points (newest or most) or title. */
 
 import { C, $, esc, fmtNum, plural, collator, fmtDay } from './util.js';
 import { icon } from './icons.js';
@@ -12,11 +13,28 @@ const SHELVES = [
   ['reading', 'Reading'], ['want', 'Want to read'], ['finished', 'Finished'], ['paused', 'Paused'], ['favorites', 'Favorites'], ['mine', 'Read Books']
 ];
 
+// Finished and Read Books can be sorted: AR points newest first (by quiz date), most points, or title. Books without
+// points follow, newest finished (or added) first.
+const SORTS = [['points-new', 'AR points, newest first'], ['points-most', 'Most points'], ['title', 'Title A to Z']];
+const SORTED = ['finished', 'mine'];
+const hasPoints = r => r.earnedPoints !== null && r.earnedPoints !== undefined;
+function sortShelf(out, fallback) {
+  const by = state.shelfSort;
+  if (by === 'title') return out.sort((x, y) => collator.compare(x[0]._sortTitle, y[0]._sortTitle));
+  return out.sort((x, y) => {
+    const px = hasPoints(x[1]), py = hasPoints(y[1]);
+    if (px !== py) return px ? -1 : 1;
+    if (px && by === 'points-most' && y[1].earnedPoints !== x[1].earnedPoints) return y[1].earnedPoints - x[1].earnedPoints;
+    if (px) { const d = (y[1].quizDate || '').localeCompare(x[1].quizDate || ''); if (d) return d; }
+    return fallback(x, y);
+  });
+}
+
 export function shelfBooks(key) {
   const out = [];
   if (key === 'mine') {
     for (const id of Object.keys(state.custom)) if (BY_ID.has(id)) out.push([BY_ID.get(id), rec(id)]);
-    return out.sort((x, y) => String(state.custom[y[0].book_id].createdAt).localeCompare(String(state.custom[x[0].book_id].createdAt)));
+    return sortShelf(out, (x, y) => String(state.custom[y[0].book_id].createdAt).localeCompare(String(state.custom[x[0].book_id].createdAt)));
   }
   for (const id of Object.keys(state.records)) {
     const r = state.records[id];
@@ -25,7 +43,7 @@ export function shelfBooks(key) {
     if (key === 'favorites' ? r.favorite : r.status === key) out.push([b, r]);
   }
   const time = r => r.updatedAt || '';
-  if (key === 'finished') out.sort((x, y) => (y[1].finishedDate || '').localeCompare(x[1].finishedDate || '') || time(y[1]).localeCompare(time(x[1])));
+  if (key === 'finished') sortShelf(out, (x, y) => (y[1].finishedDate || '').localeCompare(x[1].finishedDate || '') || time(y[1]).localeCompare(time(x[1])));
   else if (key === 'favorites') out.sort((x, y) => collator.compare(x[0]._sortTitle, y[0]._sortTitle));
   else out.sort((x, y) => time(y[1]).localeCompare(time(x[1])));
   return out;
@@ -75,6 +93,8 @@ export function renderShelves() {
       '<button type="button" class="btn small" data-act="add-book">' + icon('plus') + 'Add a book</button></header>' +
     '<div class="chips" role="group" aria-label="Shelves">' + SHELVES.map(([k, label]) =>
       '<button type="button" class="chip" data-act="shelf" data-shelf="' + k + '" aria-pressed="' + (k === key) + '">' + label + ' <span class="n">' + counts[k] + '</span></button>').join('') + '</div>' +
+    (SORTED.includes(key) && list.length > 1 ? '<label class="field shelf-sort"><span>Sort</span><select id="shelf-sort" class="input">' +
+      SORTS.map(([v, l]) => '<option value="' + v + '"' + (v === state.shelfSort ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></label>' : '') +
     '<div class="list">' + (list.length ? list.map(([b, r]) => row(b, shelfSub(b, r, key))).join('') :
       emptyState(empties[key][0], empties[key][1], key === 'mine' ? addBtn : '<button type="button" class="btn primary" data-act="tab" data-tab="explore">Explore books</button>')) + '</div>' +
     (list.length ? '<div class="row-actions share-list"><button type="button" class="btn small" data-act="share-shelf">' + icon('share') + 'Share this list</button></div>' : '') +
@@ -82,6 +102,10 @@ export function renderShelves() {
   applySizes(main);
   revealChip($('.chips', main));
 }
+
+export const changes = {
+  'shelf-sort': t => { state.shelfSort = t.value; saveUi(); renderShelves(); }
+};
 
 export const actions = {
   shelf: el => { state.shelf = el.dataset.shelf; saveUi(); renderShelves(); },

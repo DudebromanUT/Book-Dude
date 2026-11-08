@@ -4,7 +4,8 @@
  *   2. A weekly email to her parents: her week in reading, dinner-table questions about the books she read, and her
  *      chats with COBOL (a short summary, everything flagged, and the whole week's log).
  *   3. "What should I read next?": three picks from a list of books Book Dude sends, each with the Dude's reason.
- *   4. COBOL, the chat: kid-safe answers under her parents' instructions (COBOL_PROMPT). Every chat is logged in a
+ *   4. COBOL, the chat: kid-safe answers under her parents' instructions (COBOL_PROMPT), and replies to her answers to
+ *      the Library tests' think-about-it questions (shown in the weekly email as "What she thought"). Every chat is logged in a
  *      Google Sheet her parents can read, and anything a parent should know about, or a tap of "Talk to a grown-up",
  *      is emailed to them right away.
  * Her name is never sent to Claude. Setup steps: scripts/school-email/README.md.
@@ -315,6 +316,27 @@ function weeklyEmail() {
           return c.when + ' · ' + (FLAG_NAMES[c.flag] || c.flag) + (c.why ? ': ' + c.why : '') + '\nMaddy: ' + c.said + (c.reply ? '\nCOBOL: ' + c.reply : '');
         }).join('\n\n'));
       }
+    }
+    // Her think-about-it answers from Library tests, with COBOL's reply (one per answer, the reply over the wait note).
+    var thoughts = {};
+    (chats || []).forEach(function (c) {
+      if (c.said.indexOf('[Think: ') !== 0) return;
+      if (!thoughts[c.said] || thoughts[c.said].reply === THINK_WAIT) thoughts[c.said] = c;
+    });
+    var thought = Object.keys(thoughts).map(function (k) { return thoughts[k]; });
+    if (thought.length) {
+      var parts = function (c) {
+        var m = /^\[Think: (.*?)\] (.*) \| ([\s\S]*)$/.exec(c.said) || [0, '', '', c.said];
+        return { title: m[1], q: m[2], a: m[3], reply: c.reply === THINK_WAIT ? '(COBOL hasn\'t replied yet.)' : c.reply };
+      };
+      add('<h2 style="font-size:18px;margin:20px 0 6px">What she thought</h2>' + thought.map(function (c) {
+        var t = parts(c);
+        return '<p style="margin:10px 0 2px"><b>' + h(t.title) + ':</b> <i>' + h(t.q) + '</i></p><p style="margin:2px 0">Maddy: ' + h(t.a) +
+          '</p><p style="margin:2px 0 12px;color:#4a5a40">COBOL: ' + h(t.reply) + '</p>';
+      }).join(''), '\nWHAT SHE THOUGHT\n' + thought.map(function (c) {
+        var t = parts(c);
+        return t.title + ': ' + t.q + '\nMaddy: ' + t.a + '\nCOBOL: ' + t.reply;
+      }).join('\n\n'));
     }
     add('<p style="color:#7a6a58;font-size:13px">Claude cost this week: about $' + weekCost(all, since).toFixed(2) + '.</p>', '\nClaude cost this week: about $' + weekCost(all, since).toFixed(2));
     // The whole week's chat goes last. An email has a size limit, so a very long week shows its newest messages and
@@ -692,6 +714,48 @@ function logChat(said, reply, flag, why) {
   }
 }
 
+// Her answer to a Library test's think-about-it question (no right answer). COBOL replies to her idea, through the
+// same checks as the chat: the switch, the hours, private details, the log, and the alert email. When COBOL can't
+// answer yet (switched off, closed, or busy), her answer is logged once and Book Dude asks again later (`again`).
+var THINK_WAIT = '(saved; COBOL will reply when it is open)';
+function think(r) {
+  var title = clip(r.title, 120), question = clip(r.question, 300), answer = clip(r.answer, 400);
+  if (!answer || !question) return { error: 'empty' };
+  var said = '[Think: ' + title + '] ' + question + ' | ' + answer;
+  var wait = function () {
+    if (!r.again) logChat(said, THINK_WAIT, '', '');
+    return { later: true };
+  };
+  if (privateDetails(answer)) {
+    var keep = 'PRIVATE DATA DETECTED. That looks like a phone number, an address or a password. Keep that to yourself, ' +
+      'even here. Your bonus point is still yours.';
+    logChat(said, keep, 'private', 'Her think-about-it answer looked like personal information (it was not sent to Claude).');
+    return { reply: keep };
+  }
+  var state = chatState();
+  if (!state.open || !countToday('think', 20)) return wait();
+  var max = replyLimit();
+  var out = askClaude(COBOL_PROMPT + '\n\n## This reply\n\nShe just read the Library article "' + title + '" in Book Dude and is ' +
+    'answering its think-about-it question: "' + question + '" There is no right or wrong answer, and you are not grading ' +
+    'it. Reply to her idea in two to four sentences: take it seriously, connect it to something true from the article ' +
+    'or the real world, and add one small idea she could keep thinking about. Do not flatter her, and do not ask her to ' +
+    'keep chatting. Keep the reply under ' + max + ' characters.\n\nThe article:\n' + clip(r.article, 12000),
+    [{ role: 'user', content: answer }],
+    { type: 'object', additionalProperties: false, required: ['reply', 'flag', 'why'], properties: {
+      reply: { type: 'string' }, flag: { type: 'string', enum: ['none', 'tell_parent'] }, why: { type: 'string' } } },
+    8000, 'low');
+  if (!out) return wait();
+  if (out.refused) {
+    var skip = 'COBOL cannot answer that one. If something is bothering you, go talk to Mom or Dad. Your bonus point is still yours.';
+    logChat(said, skip, 'refused', 'Claude declined to answer her think-about-it answer.');
+    return { reply: skip };
+  }
+  var reply = fitReply(out.reply, max) || 'PROCESSING... FASCINATING IDEA. COBOL IS STILL THINKING ABOUT IT.';
+  var flag = out.flag === 'tell_parent' ? 'tell_parent' : '';
+  logChat(said, reply, flag, flag ? clip(out.why, 200) : '');
+  return { reply: reply };
+}
+
 // She tapped "Talk to a grown-up" in COBOL. It works whether or not Claude or the chat is on: it goes in the chat log,
 // and her parents get an email right away with the last few messages (up to 10 emails a day).
 function grownup(r) {
@@ -726,7 +790,7 @@ function doGet(e) {
   return json({ app: 'book-dude-school', quizzes: quizzes, ai: aiOn(), chat: chatState() });
 }
 
-// Book Dude sending something: { action: 'chat' | 'picks' | 'report' | 'grownup', ... }, with the key in the link.
+// Book Dude sending something: { action: 'chat' | 'picks' | 'report' | 'grownup' | 'think', ... }, with the key in the link.
 function doPost(e) {
   if (!keyOk(e && e.parameter && e.parameter.key)) return json({ error: 'That link is not right.' });
   var r;
@@ -735,5 +799,6 @@ function doPost(e) {
   if (r.action === 'picks') return json(pickBooks(r));
   if (r.action === 'report') return json(saveReport(r));
   if (r.action === 'grownup') return json(grownup(r));
+  if (r.action === 'think') return json(think(r));
   return json({ error: 'bad' });
 }

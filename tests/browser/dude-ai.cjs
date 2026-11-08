@@ -2,9 +2,10 @@
  * weekly numbers go to the script, and "What should I read next?" shows only real books. COBOL has its own tab that
  * opens on a main menu: the chat answers like a machine (no typing bubble, no name), always shows the AI line and the
  * small yellow Talk to a grown-up button, works its PF keys (PF3 always steps back toward the menu), suggests breaks,
- * keeps to its limits and hours, and follows the grown-up switch; its history file and test give 2 points once. After
+ * keeps to its limits and hours, and follows the grown-up switch; its Library holds articles, and their tests give points
+ * once plus a bonus point for the think-about-it question, which COBOL replies to. After
  * a few minutes away the app asks the script again. With Claude off in the script, the picks don't show and the chat
- * says it's off, but the history file and test still work, from the tab and from About the Dude.
+ * says it's off, but the Library and tests still work, from the tab and from About the Dude.
  *
  *   Run:     node tests/browser/dude-ai.cjs
  *
@@ -71,6 +72,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
         return send({ picks: [{ id: 'not-a-book', why: 'Made up' }].concat(ids.slice(0, 3).map(id => ({ id, why: 'You will love ' + id + '.' }))) });
       }
       if (body.action === 'grownup') return send({ ok: true });
+      if (body.action === 'think') return send(script.thinkAnswer || { reply: 'PROCESSING... A SONG FOR DINNER IS EXCELLENT DATA. Pavlov used a sound too.' });
       if (body.action === 'chat') {
         const answer = () => send(script.chatAnswer || { reply: 'Hatchet is about Brian, a plane, and one very useful hatchet.', left: 39 });
         if (!script.slow) return answer();
@@ -81,12 +83,14 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     });
     const p = await ctx.newPage();
     p.on('pageerror', e => errors.push(e.message));
+    // SHOTS=<folder> saves screenshots of the Library screens there, for a grown-up to look over.
+    const shot = name => process.env.SHOTS ? p.screenshot({ path: path.join(process.env.SHOTS, name + '.png') }) : null;
     // Midday in Utah: COBOL's chat is open 7 a.m. to 8 p.m. by the iPad's clock.
     await p.clock.setFixedTime(new Date('2026-10-23T12:00:00-06:00'));
     const tab = async t => { await p.$eval('.tab[data-tab="' + t + '"]', e => e.click()); await sleep(500); };
 
     await p.goto(BASE); await p.waitForSelector('#sheet[open] .story');
-    assert.match((await txt(p, '.story .cobol-intro')), /TEST AVAILABLE: PASS WITH 8 OF 10 \(80%\) TO EARN 2 POINTS\./);
+    assert.match((await txt(p, '.story .cobol-intro')), /MY FILE IS IN THE LIBRARY ON THE COBOL TAB/);
     await p.click('.story .btn[data-act="close-sheet"]'); await sleep(500);
     assert.equal(await p.$('.dude-asks'), null, 'nothing before the link is in');
     // Before the school link is in, COBOL's tab is there, and says it isn't set up on this device.
@@ -140,7 +144,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     const screenName = () => txt(p, V + ' .t-head span:last-child');
     const key = async k => { await p.click(V + ' [data-act="cobol-pf' + k + '"]'); await sleep(200); };
     const option = async n => { await p.click(V + ' .t-opt[data-option="' + n + '"]'); await sleep(200); };
-    const records = () => p.evaluate(async () => (await import('/Book-Dude/app/state.js')).state.records['exam:cobol'] || null);
+    const records = id => p.evaluate(async id => (await import('/Book-Dude/app/state.js')).state.records[id] || null, id);
     await tab('cobol');
     assert.equal(await screenName(), 'MAIN MENU');
     assert.equal((await txt(p, V + ' .t-status')), AI_LINE);
@@ -148,8 +152,8 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     const btn = await p.$eval(V + ' .grownup-btn', e => ({ bg: getComputedStyle(e).backgroundColor, h: e.getBoundingClientRect().height }));
     assert.equal(btn.bg, 'rgb(242, 181, 58)', 'yellow');
     assert.ok(btn.h <= 44, 'small: ' + btn.h);
-    assert.deepEqual(await options(), ['1 CHAT WITH COBOL OPEN UNTIL 8 P.M.', '2 HISTORY FILE HOW COBOL WAS BORN', '3 HISTORY TEST PASS WITH 80%: 2 POINTS']);
-    assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND ON']);
+    assert.deepEqual(await options(), ['1 CHAT WITH COBOL OPEN UNTIL 8 P.M.', '2 LIBRARY 2 ARTICLES TO READ', '3 TESTS 5 POINTS UP FOR GRABS']);
+    assert.deepEqual(await pfKeys(), ['PF1 LIBRARY', 'PF3 EXIT', 'PF5 SOUND ON']);
     // Typing an option: a number that isn't one says so; 1 opens the chat.
     await p.fill('#cobol-option', '9'); await p.$eval('form[data-form="cobol-option"] button', e => e.click()); await sleep(200);
     assert.match(await txt(p, V), /INVALID OPTION\. TYPE 1, 2 OR 3\./);
@@ -178,7 +182,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
 
     // PF5 flips the beeps, and the choice is remembered.
     await key(5);
-    assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND OFF']);
+    assert.deepEqual(await pfKeys(), ['PF1 LIBRARY', 'PF3 EXIT', 'PF5 SOUND OFF']);
 
     // Talk to a grown-up: a calm, plain screen that says to go talk to Mom or Dad (no phone numbers), and her parents
     // get the last messages.
@@ -191,88 +195,133 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.deepEqual(help.messages.map(m => m.role), ['user', 'assistant']);
     await p.click('[data-act="grownup-back"]'); await sleep(200);
     assert.equal(await screenName(), 'CHAT');
-    assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND OFF']);
+    assert.deepEqual(await pfKeys(), ['PF1 LIBRARY', 'PF3 EXIT', 'PF5 SOUND OFF']);
 
-    // PF1: the history file, in COBOL's voice, starting with how the menu and the PF keys work. PF3 goes back to the
-    // menu, and the chat keeps its place.
+    // PF1: the Library. COBOL's history file reads like a mainframe file, starts with how the menu and the PF keys
+    // work, and has no test now. PF3 steps back (article to Library to menu), and the chat keeps its place.
     await key(1);
-    assert.equal(await screenName(), 'HISTORY FILE');
+    assert.equal(await screenName(), 'LIBRARY');
+    await shot('1-library');
+    assert.deepEqual(await options(), ['1 COBOL’S HISTORY FILE READING ONLY', '2 THE GUARD DOG, THE WISE OWL, AND DOPAMINE HAS A TEST']);
+    await p.click(V + ' [data-act="cobol-read"][data-id="cobol-history"]'); await sleep(200);
     const file = (await txt(p, V + ' .t-file'));
     assert.match(file, /^PROCESSING\.\.\. HISTORY FILE LOADED\. I AM COBOL\. MY NAME MEANS COMMON BUSINESS-ORIENTED LANGUAGE\./);
-    assert.match(file, /FILE 0: HOW TO WORK THIS TERMINAL\. MY MAIN MENU HAS THREE OPTIONS: 1 CHAT, 2 THIS HISTORY FILE, AND 3 THE TEST\./);
-    assert.match(file, /PF1 HISTORY ?OPENS THIS HISTORY FILE\. ?PF3 EXIT ?GOES BACK ONE STEP\. ON THE MAIN MENU, IT TAKES YOU BACK TO EXPLORE\. ?PF5 SOUND ?TURNS MY BEEPS ON OR OFF\./);
+    assert.match(file, /FILE 0: HOW TO WORK THIS TERMINAL\. MY MAIN MENU HAS THREE OPTIONS: 1 CHAT, 2 THE LIBRARY, AND 3 TESTS\./);
+    assert.match(file, /PF1 LIBRARY ?OPENS THE LIBRARY, WHERE THIS FILE LIVES\. ?PF3 EXIT ?GOES BACK ONE STEP\./);
     for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) assert.match(file, new RegExp('FILE ' + n + ': '));
-    assert.match(file, /DISPLAY "HELLO, HUMAN\."\./);
     assert.match(file, /END OF FILE\.$/);
-    assert.match((await txt(p, V + ' .t-actions')), /TEST AVAILABLE: 10 QUESTIONS\. PASS WITH 8 OF 10 \(80%\) TO EARN 2 POINTS\./);
+    assert.equal(await p.$(V + ' [data-act="cobol-test"]'), null, 'the history file has no test now');
     assert.ok(await p.$(V + ' .grownup-btn'), 'the grown-up button is on every COBOL screen');
     await key(3);
+    assert.equal(await screenName(), 'LIBRARY');
+    await key(3);
     assert.equal(await screenName(), 'MAIN MENU');
+    assert.equal((await options())[2], '3 TESTS 5 POINTS UP FOR GRABS');
     await option(1);
     assert.equal((await lines()).length, 4, 'the conversation is still there');
 
-    // The test, from the history file: 80% called out, the math-exam note, 10 questions, the last about PF3.
+    // The new article and its test: 80% called out, 15 questions, then the think-about-it question.
+    const GUARD = 'guard-dog-wise-owl-dopamine';
     await key(1);
-    await p.click(V + ' [data-act="cobol-test"]'); await sleep(200);
-    assert.equal(await screenName(), 'HISTORY TEST');
+    await p.click(V + ' [data-act="cobol-read"][data-id="' + GUARD + '"]'); await sleep(200);
+    const art = await txt(p, V + ' .t-file');
+    await shot('2-article');
+    assert.match(art, /^The Guard Dog, the Wise Owl, and Dopamine Most of what people do/);
+    assert.match(art, /a scientist named Wolfram Schultz, working in Switzerland/);
+    assert.match(await txt(p, V + ' .t-actions'), /TEST AVAILABLE: 15 QUESTIONS\. PASS 12 OF 15 \(80%\): 4 POINTS, \+1 BONUS\./);
+    await p.click(V + ' .t-actions [data-act="cobol-test"]'); await sleep(200);
+    assert.equal(await screenName(), 'TEST');
     const intro = (await txt(p, V + ' .t-test'));
-    assert.match(intro, /PASSING SCORE: 80%\. Pass with 8 of 10 \(80%\) or better to earn 2 points\. Points count just like AR points, and you can earn them once\. You can retake the test\./);
-    assert.match(intro, /More exams are coming\. Math exams will need 90% or higher, and they earn more points\./);
-    assert.equal((await p.$$(V + ' .t-q')).length, 10);
-    assert.match((await txt(p, V + ' .t-q:last-of-type legend')), /^10\. On COBOL’s screen, what does PF3 do\?$/);
+    assert.match(intro, /PASSING SCORE: 80%\. Pass with 12 of 15 \(80%\) or better to earn 4 points\. Points count just like AR points, and you can earn them once\. You can retake the test\./);
+    assert.match(intro, /one think-about-it question with no wrong answer\. Answering it earns 1 bonus point\./);
+    await shot('3-test');
+    assert.equal((await p.$$(V + ' .t-q')).length, 15);
     // Every question needs an answer.
     await p.$eval('form[data-form="cobol-test"] button[type="submit"]', e => e.click()); await sleep(200);
-    assert.equal((await txt(p, V + ' .t-error')), 'ANSWER EVERY QUESTION FIRST. STILL BLANK: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.');
-    // 7 right is not a pass: her score and what to reread, never the right answers, and no points.
+    assert.equal((await txt(p, V + ' .t-error')), 'ANSWER EVERY QUESTION FIRST. STILL BLANK: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15.');
+    // 11 right is not a pass: her score and what to reread, never the right answers, and no points.
     const answer = async rightOnes => {
-      for (let i = 0; i < 10; i++) await p.check(V + ' input[name="q' + i + '"][value="' + (rightOnes.includes(i) ? 0 : 1) + '"]');
+      for (let i = 0; i < 15; i++) await p.check(V + ' input[name="q' + i + '"][value="' + (rightOnes.includes(i) ? 0 : 1) + '"]');
     };
-    await answer([0, 1, 2, 3, 4, 5, 6]);
+    await answer([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     // PF5 on the test leaves her answers picked.
     await key(5);
     assert.equal(await p.isChecked(V + ' input[name="q0"][value="0"]'), true);
     await key(5);
-    assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND OFF']);
+    assert.deepEqual(await pfKeys(), ['PF1 LIBRARY', 'PF3 EXIT', 'PF5 SOUND OFF']);
     await p.$eval('form[data-form="cobol-test"] button[type="submit"]', e => e.click()); await sleep(300);
+    await shot('4-not-yet');
     let res = (await txt(p, V + ' .t-result'));
-    assert.match(res, /^SCORE: 7 OF 10 \(70%\) RESULT: NOT YET\. You need 8 of 10 \(80%\) to pass\. REREAD THESE, THEN TRY AGAIN:/);
-    assert.match(res, /08\. How long was her “nanosecond” wire\? \(FILE 7\)/);
-    assert.match(res, /10\. On COBOL’s screen, what does PF3 do\? \(FILE 0\)/);
-    assert.doesNotMatch(res, /11\.8 inches|Goes back one step/, 'no right answers shown');
-    assert.equal(await records(), null, 'no points for 70%');
-    // 9 right passes: 2 points, once, counted like AR points (and the weekly numbers hear about it).
+    assert.match(res, /^SCORE: 11 OF 15 \(73%\) RESULT: NOT YET\. You need 12 of 15 \(80%\) to pass\. REREAD THESE, THEN TRY AGAIN:/);
+    assert.match(res, /12\. What did the rats in the McGill experiment do over and over\? \(The Rats and the Lever\)/);
+    assert.doesNotMatch(res, /Press a lever|Two marshmallows/, 'no right answers shown');
+    assert.match(res, /THINK ABOUT IT If you were a scientist, what experiment would you design/);
+    assert.equal(await records('exam:' + GUARD), null, 'no points for 73%');
+    // 13 right passes: 4 points, once, counted like AR points (and the weekly numbers hear about it).
     await p.click(V + ' .t-result + .t-actions [data-act="cobol-test"]'); await sleep(200);
-    await answer([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    await answer([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     await p.$eval('form[data-form="cobol-test"] button[type="submit"]', e => e.click()); await sleep(400);
     res = (await txt(p, V + ' .t-result'));
-    assert.match(res, /^SCORE: 9 OF 10 \(90%\) RESULT: PASSED\. \+2 POINTS\. They count just like AR points\. FOR A PERFECT SCORE, REREAD:/);
-    assert.match((await txt(p, '#toast')), /You passed COBOL’s history test: \+2 points!/);
-    const rec = await records();
-    assert.equal(rec.earnedPoints, 2);
-    assert.equal(rec.quizScore, 90);
+    assert.match(res, /^SCORE: 13 OF 15 \(87%\) RESULT: PASSED\. \+4 POINTS\. They count just like AR points\. FOR A PERFECT SCORE, REREAD:/);
+    assert.match((await txt(p, '#toast')), /You passed the test on The Guard Dog, the Wise Owl, and Dopamine: \+4 points!/);
+    const rec = await records('exam:' + GUARD);
+    assert.equal(rec.earnedPoints, 4);
+    assert.equal(rec.quizScore, 87);
     await sleep(300);
-    const report = posts.filter(x => x.body.action === 'report');
+    let report = posts.filter(x => x.body.action === 'report');
     assert.equal(report.length, 2);
-    assert.equal(report[1].body.points, 9);
-    assert.equal(report[1].body.exams.length, 1);
-    assert.deepEqual([report[1].body.exams[0].title, report[1].body.exams[0].score, report[1].body.exams[0].points], ['COBOL history test', 90, 2]);
-    // Again, all right: no more points.
+    assert.equal(report[1].body.points, 11);
+    assert.deepEqual(report[1].body.exams.map(x => [x.title, x.score, x.points]), [['test on The Guard Dog, the Wise Owl, and Dopamine', 87, 4]]);
+    // The think-about-it question: too short asks for more; a real answer earns 1 bonus point and COBOL replies.
+    await p.fill('#think-input', 'idk');
+    await p.$eval('form[data-form="cobol-think"] button', e => e.click()); await sleep(200);
+    assert.equal(await txt(p, V + ' .t-think .t-error'), 'TELL COBOL A LITTLE MORE: A SENTENCE OR TWO.');
+    const THOUGHT = 'I would test if dogs can learn a song means dinner, like Pavlov.';
+    await p.fill('#think-input', THOUGHT);
+    await p.$eval('form[data-form="cobol-think"] button', e => e.click());
+    await p.waitForSelector(V + ' .t-think .t-cobol', { timeout: 10000 });
+    assert.match(await txt(p, '#toast'), /Thanks for thinking about it: \+1 bonus point!/);
+    assert.equal(await txt(p, V + ' .t-think .t-cobol'), 'COBOL> PROCESSING... A SONG FOR DINNER IS EXCELLENT DATA. Pavlov used a sound too.');
+    await p.$eval(V + ' .t-think', e => e.scrollIntoView({ block: 'center' })); await sleep(100);
+    await shot('5-think-reply');
+    assert.equal(await txt(p, V + ' .t-think .t-me'), 'HUMAN> ' + THOUGHT);
+    const thinkPost = posts.filter(x => x.body.action === 'think')[0].body;
+    assert.equal(thinkPost.answer, THOUGHT);
+    assert.equal(thinkPost.again, false);
+    assert.match(thinkPost.question, /what experiment would you design/);
+    assert.match(thinkPost.article, /Phineas Gage/);
+    assert.doesNotMatch(JSON.stringify(thinkPost), /Maddy|Madeleine/);
+    assert.equal((await records('exam:' + GUARD + ':think')).earnedPoints, 1);
+    await sleep(300);
+    report = posts.filter(x => x.body.action === 'report');
+    assert.equal(report.length, 3);
+    assert.equal(report[2].body.points, 12);
+    assert.deepEqual(report[2].body.exams.map(x => x.title).sort(), ['test on The Guard Dog, the Wise Owl, and Dopamine', 'think-about-it question on The Guard Dog, the Wise Owl, and Dopamine']);
+    // Again, all right: no more points, and her answer with COBOL's reply stay on the test.
     await p.click(V + ' .t-result + .t-actions [data-act="cobol-test"]'); await sleep(200);
-    assert.match((await txt(p, V + ' .t-test')), /You already passed and earned your 2 points\. This try is for fun\./);
-    await answer([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    assert.match((await txt(p, V + ' .t-test')), /You already passed and earned your 4 points\. This try is for fun\./);
+    assert.match(await txt(p, V + ' .t-test .t-think'), /COBOL> PROCESSING\.\.\. A SONG FOR DINNER/);
+    await answer([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
     await p.$eval('form[data-form="cobol-test"] button[type="submit"]', e => e.click()); await sleep(300);
-    assert.match((await txt(p, V + ' .t-result')), /SCORE: 10 OF 10 \(100%\) RESULT: PASSED\. You already earned these 2 points, so none were added this time\./);
-    assert.equal((await records()).earnedPoints, 2);
-    // PF3 steps back: the result to the history (where the test started), the history to the menu.
+    assert.match((await txt(p, V + ' .t-result')), /SCORE: 15 OF 15 \(100%\) RESULT: PASSED\. You already earned these 4 points, so none were added this time\./);
+    assert.equal(await p.$('#think-input'), null, 'the bonus is earned once');
+    assert.equal((await records('exam:' + GUARD)).earnedPoints, 4);
+    // PF3 steps back: the result to the article (where the test started), then the Library, then the menu.
     await key(3);
-    assert.equal(await screenName(), 'HISTORY FILE');
-    assert.match((await txt(p, V + ' .t-actions')), /TEST PASSED\. 2 POINTS EARNED\./);
+    assert.match((await txt(p, V + ' .t-actions')), /TEST PASSED\. 4 POINTS EARNED\./);
+    await key(3);
+    assert.equal(await screenName(), 'LIBRARY');
     await key(3);
     assert.equal(await screenName(), 'MAIN MENU');
-    assert.match((await options())[2], /PASSED: 2 POINTS EARNED$/);
-    // From the menu, option 3 is the test, and PF3 comes straight back to the menu.
+    assert.equal((await options())[2], '3 TESTS ALL POINTS EARNED');
+    // Option 3 lists the tests; PF3 from a test goes back to the list.
     await option(3);
-    assert.equal(await screenName(), 'HISTORY TEST');
+    assert.equal(await screenName(), 'TESTS');
+    assert.deepEqual(await options(), ['1 THE GUARD DOG, THE WISE OWL, AND DOPAMINE PASSED · BONUS EARNED']);
+    await p.click(V + ' .t-opt[data-act="cobol-test"]'); await sleep(200);
+    assert.equal(await screenName(), 'TEST');
+    await key(3);
+    assert.equal(await screenName(), 'TESTS');
     await key(3);
     assert.equal(await screenName(), 'MAIN MENU');
 
@@ -295,7 +344,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
 
     // The Progress tab counts the test's points with her AR points.
     await tab('progress');
-    assert.equal(await p.evaluate(async () => (await import('/Book-Dude/app/money.js')).rewardPoints()), 9);
+    assert.equal(await p.evaluate(async () => (await import('/Book-Dude/app/money.js')).rewardPoints()), 12);
 
     // The grown-up switch turns the chat off on this device; the tab, the history and the picks stay.
     await tab('more');
@@ -310,7 +359,7 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
 
     // Opening the app again soon after doesn't send the weekly numbers again.
     await p.reload(); await p.waitForSelector('.view-head'); await sleep(1500);
-    assert.equal(posts.filter(x => x.body.action === 'report').length, 2, 'reopening doesn’t send the numbers again so soon');
+    assert.equal(posts.filter(x => x.body.action === 'report').length, 3, 'reopening doesn’t send the numbers again so soon');
 
     // After hours: the menu and the chat say when it runs, and the grown-up button still works, even with no internet.
     script.chat = { on: true, open: false, hours: '7-20', left: 40 };
@@ -321,13 +370,13 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     assert.match((await txt(p, V)), /COBOL IS OFF RIGHT NOW\. IT RUNS FROM 7 A\.M\. TO 8 P\.M\./);
     assert.equal(await p.$('#chat-input'), null);
     assert.equal((await txt(p, V + ' .t-status')), AI_LINE);
-    assert.deepEqual(await pfKeys(), ['PF1 HISTORY', 'PF3 EXIT', 'PF5 SOUND OFF'], 'the sound choice was remembered');
+    assert.deepEqual(await pfKeys(), ['PF1 LIBRARY', 'PF3 EXIT', 'PF5 SOUND OFF'], 'the sound choice was remembered');
     await ctx.setOffline(true);
     await p.click(V + ' .grownup-btn');
     assert.match((await txt(p, V + ' .grownup-panel')), /Go talk to Mom or Dad right now/);
     await p.waitForFunction(() => /didn’t go through, so go find them yourself/.test(document.querySelector('#main .grownup-sent').textContent), null, { timeout: 10000 });
     await ctx.setOffline(false);
-    assert.equal(posts.filter(x => x.body.action === 'report').length, 3, 'ten hours later, the numbers go again');
+    assert.equal(posts.filter(x => x.body.action === 'report').length, 4, 'ten hours later, the numbers go again');
 
     // The soft break timer: after 15 minutes at the terminal it suggests a break, without stopping anything. Then,
     // after a few minutes away, the app asks the script again, and COBOL shows what changed without a restart.
@@ -384,19 +433,22 @@ const txt = (pg, sel) => pg.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').tri
     await p.reload(); await p.waitForSelector('.view-head'); await tab('explore'); await sleep(2500);
     assert.equal(await p.$('.dude-asks'), null);
     await p.click('.dude-avatar'); await p.waitForSelector('#sheet .story');
-    assert.match((await txt(p, '.story .cobol-intro')), /TEST PASSED\. 2 POINTS EARNED\. FIND ME ANY TIME ON THE COBOL TAB\./);
+    assert.match((await txt(p, '.story .cobol-intro')), /MY FILE IS IN THE LIBRARY ON THE COBOL TAB, WITH MORE ARTICLES AND TESTS FOR POINTS\./);
     await p.click('.story [data-act="cobol-history"]'); await sleep(400);
     assert.equal(await p.$('#sheet[open]'), null, 'About the Dude closes');
     assert.equal(await p.evaluate(() => location.hash), '#cobol');
-    assert.equal(await screenName(), 'HISTORY FILE');
+    assert.match(await txt(p, V + ' .t-file'), /^PROCESSING\.\.\. HISTORY FILE LOADED\./);
+    await key(3);
+    assert.equal(await screenName(), 'LIBRARY');
     await key(3);
     assert.match((await options())[0], /SWITCHED OFF$/);
     await option(1);
     assert.match((await txt(p, V)), /COBOL IS SWITCHED OFF RIGHT NOW\./);
     await key(3); await option(3);
-    assert.equal((await p.$$(V + ' .t-q')).length, 10);
+    await p.click(V + ' .t-opt[data-act="cobol-test"]'); await sleep(200);
+    assert.equal((await p.$$(V + ' .t-q')).length, 15);
     assert.deepEqual(errors, []);
-    console.log('The Dude jokes about new quizzes and picks real books; COBOL has its own tab with a main menu, a safe chat, its history and a 2-point test; the app re-checks the script after time away.');
+    console.log('The Dude jokes about new quizzes and picks real books; COBOL has its own tab with a main menu, a safe chat, its Library, tests with a think-about-it bonus, and re-checks the script after time away.');
   } finally {
     await browser.close();
     server.close();

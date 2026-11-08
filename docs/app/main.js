@@ -44,6 +44,7 @@ async function start() {
   if (typeof s.schoolLink === 'string') state.settings.schoolLink = s.schoolLink;
   if (s.dudeChat === false) state.settings.dudeChat = false;
   if (typeof s.reportAt === 'string') state.settings.reportAt = s.reportAt;
+  if (s.thinkReplies && typeof s.thinkReplies === 'object') state.settings.thinkReplies = s.thinkReplies;
   if (Array.isArray(s.schoolSeen)) state.settings.schoolSeen = s.schoolSeen.filter(id => typeof id === 'string');
   if (s.reward && typeof s.reward === 'object') state.settings.reward = C.reward(s.reward);
   // The first start with screen time on this device: extra minutes count for books finished from today on, and the

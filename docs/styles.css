@@ -727,6 +727,18 @@ input[type="range"] { flex: 1; accent-color: var(--accent); height: 32px; }
 .t-num { grid-row: span 2; color: #E8FFF0; font-weight: 800; }
 .t-name { color: #E8FFF0; font-weight: 700; }
 .t-desc { grid-column: 2; color: #6FE7FF; font-size: .9em; }
+/* Library articles in the plain voice read in a sans face; every article gets a title line. */
+.t-title { margin: 0; color: #E8FFF0; font: 700 1.15em/1.3 inherit; text-shadow: 0 0 6px rgb(232 255 240 / .4); }
+.t-plain { font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+.t-plain .t-filesec h3 { font-family: var(--sans); }
+/* The think-about-it question at the end of a test. */
+.t-think { display: grid; gap: 8px; padding: 12px; border: 1px dashed rgb(111 231 255 / .6); border-radius: 4px; }
+.t-think h3 { margin: 0; color: #6FE7FF; font: inherit; font-weight: 700; }
+.t-think-q { color: #E8FFF0; }
+.t-think-form { display: grid; gap: 8px; }
+.t-think textarea { width: 100%; box-sizing: border-box; min-height: 5.5em; padding: 8px; border: 1px solid rgb(51 255 102 / .5); border-radius: 3px; background: transparent; color: #6FE7FF; font: inherit; font-size: 16px; caret-color: #33FF66; resize: vertical; }
+.t-think textarea:focus { outline: none; border-color: #33FF66; }
+.t-think .t-key { justify-self: start; }
 .t-body + .t-actions { padding-top: 10px; border-top: 1px dashed rgb(51 255 102 / .35); }
 .cobol-intro .crt { margin-top: 4px; }
 .cobol-intro .crt-screen { justify-items: start; }

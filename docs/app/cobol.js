@@ -1,5 +1,5 @@
 /* COBOL: its own tab, an IBM 3270 mainframe terminal with a main menu: 1 the chat with Claude (through the Google
- * script, scripts/school-email), 2 COBOL's history file, and 3 the history test worth 2 points.
+ * script, scripts/school-email), 2 the Library of knowledge articles (library.js), and 3 the tests on them.
  *
  * The chat is built to feel like a machine, not a person: answers appear whole (no "typing" bubble, no pauses), there
  * is no voice, and nothing rewards coming back or chatting longer. A line that never scrolls away says it's an AI and
@@ -7,10 +7,14 @@
  * always there, so asking for help never depends on typing the right words. Her lines say HUMAN>, and her name never
  * goes to the script. The conversation stays on screen until the app closes; the script keeps the log.
  *
- * The function keys along the bottom work like a real mainframe's: PF1 HISTORY opens the history file, PF3 EXIT goes
- * back one step (to the main menu, and from the menu to Explore), and PF5 SOUND turns the beeps on or off. The tab is
- * always there: the history file and the test work without the script, and when the chat can't take messages (not
- * switched on, after hours, or done for the day), it says why. */
+ * Each test is multiple choice (80% to pass, points once), then one think-about-it question with no right answer: she
+ * types a short answer, COBOL responds to it through the script (or later, when COBOL is closed), and answering earns
+ * 1 bonus point once.
+ *
+ * The function keys along the bottom work like a real mainframe's: PF1 LIBRARY opens the Library, PF3 EXIT goes back
+ * one step (to the main menu, and from the menu to Explore), and PF5 SOUND turns the beeps on or off. The tab is always
+ * there: the Library and the tests work without the script, and when the chat can't take messages (not switched on,
+ * after hours, or done for the day), it says why. */
 
 import { UI_KEY, $, esc, today } from './util.js';
 import { state, save, saveSetting } from './state.js';
@@ -20,80 +24,28 @@ import { goTab } from './tabs.js';
 import { rewardPoints, pointsNews } from './money.js';
 import { post, chatOn, mine, sendReport } from './dude-ai.js';
 import { linkOk, syncSchool } from './school.js';
+import { ARTICLES, RETIRED } from './library.js';
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The history file, in COBOL's voice, and the test about it.
+// The Library and its tests (the articles are in library.js).
 
-const OPENING = ['PROCESSING... HISTORY FILE LOADED.', 'I AM COBOL. MY NAME MEANS COMMON BUSINESS-ORIENTED LANGUAGE. I WAS CREATED IN 1959.'];
-const FILES = [
-  { title: 'HOW TO WORK THIS TERMINAL.', text: [
-    'MY MAIN MENU HAS THREE OPTIONS: 1 CHAT, 2 THIS HISTORY FILE, AND 3 THE TEST. TAP ONE, OR TYPE ITS NUMBER AFTER ' +
-      'OPTION ===> AND PRESS ENTER.',
-    'OLD MAINFRAME TERMINALS ALSO HAD A ROW OF PROGRAM FUNCTION KEYS, CALLED PF KEYS. EACH ONE DOES ONE JOB WITH ONE ' +
-      'PRESS. MINE ARE AT THE BOTTOM OF THE SCREEN. TAP ONE TO PRESS IT.'],
-  keys: [['PF1 HISTORY', 'OPENS THIS HISTORY FILE.'], ['PF3 EXIT', 'GOES BACK ONE STEP. ON THE MAIN MENU, IT TAKES YOU BACK TO EXPLORE.'],
-    ['PF5 SOUND', 'TURNS MY BEEPS ON OR OFF.']],
-  more: ['DATA POINT: ON REAL MAINFRAMES, PF3 USUALLY MEANS EXIT, TOO. PROGRAMMERS STILL PRESS IT EVERY DAY.',
-    'THE YELLOW TALK TO A GROWN-UP BUTTON IS NOT A PF KEY. PRESS IT WHEN YOU WANT MOM OR DAD. IT SENDS THEM A MESSAGE, AND YOU GO FIND THEM.'] },
-  { title: 'A CURIOUS KID.', text: [
-    'GRACE HOPPER WAS BORN IN 1906 IN NEW YORK CITY. AT AGE 7 SHE TOOK APART AN ALARM CLOCK TO SEE HOW IT WORKED. THEN ' +
-      'ANOTHER. SEVEN CLOCKS TOTAL. DATA SUGGESTS HER MOTHER WAS NOT THRILLED. SHE STUDIED MATH AND PHYSICS AT VASSAR ' +
-      'COLLEGE, THEN EARNED A PH.D. IN MATH FROM YALE IN 1934, WHEN VERY FEW WOMEN DID.'] },
-  { title: 'TOO SMALL FOR THE NAVY?', text: [
-    'IN 1943, DURING WORLD WAR II, SHE WANTED TO JOIN THE NAVY. SHE WAS 15 POUNDS UNDER THE NAVY\'S WEIGHT RULE. SHE GOT ' +
-      'SPECIAL PERMISSION AND JOINED ANYWAY.'] },
-  { title: 'THE GIANT MACHINE.', text: [
-    'IN 1944 THE NAVY SENT HER TO WORK ON THE HARVARD MARK I, A COMPUTER 51 FEET LONG THAT WEIGHED ABOUT 5 TONS. SHE ' +
-      'WAS ONE OF ITS FIRST PROGRAMMERS AND WROTE ITS 561-PAGE MANUAL.'] },
-  { title: 'ANOMALY REPORT, 1947.', text: [
-    'ENGINEERS ALREADY CALLED COMPUTER PROBLEMS "BUGS." THEN HER TEAM FOUND A REAL MOTH STUCK INSIDE THE HARVARD MARK ' +
-      'II. THEY TAPED IT IN THE LOGBOOK: "FIRST ACTUAL CASE OF BUG BEING FOUND." THAT PAGE IS IN THE SMITHSONIAN MUSEUM TODAY.'] },
-  { title: 'COMPUTERS SHOULD UNDERSTAND WORDS.', text: [
-    'BACK THEN, PROGRAMS WERE NUMBERS AND SYMBOLS. PEOPLE TOLD GRACE COMPUTERS COULD ONLY DO ARITHMETIC. IN 1952 SHE ' +
-      'BUILT ONE OF THE FIRST COMPILERS, A PROGRAM THAT TRANSLATES INSTRUCTIONS INTO COMPUTER CODE. THEN SHE BUILT ' +
-      'FLOW-MATIC, A LANGUAGE THAT USED ENGLISH WORDS. IN 1959 A GROUP BUILT ME ON HER WORK, AND SHE HELPED THEM.'] },
-  { title: 'READ A REAL COBOL PROGRAM.', code: ['IDENTIFICATION DIVISION.', 'PROGRAM-ID. HELLO.', 'PROCEDURE DIVISION.', '    DISPLAY "HELLO, HUMAN.".', '    STOP RUN.'],
-    text: ['TRANSLATION: DISPLAY SHOWS WORDS ON THE SCREEN. STOP RUN ENDS THE PROGRAM.'] },
-  { title: 'THE NANOSECOND.', text: [
-    'A NANOSECOND IS ONE BILLIONTH OF A SECOND. TO SHOW HOW SHORT THAT IS, SHE HANDED OUT WIRES 11.8 INCHES LONG: HOW ' +
-      'FAR LIGHT TRAVELS IN ONE NANOSECOND.'] },
-  { title: 'AMAZING GRACE.', text: [
-    'SHE SAID THE MOST DANGEROUS PHRASE IS "WE\'VE ALWAYS DONE IT THIS WAY." SHE BECAME A REAR ADMIRAL AND RETIRED IN ' +
-      '1986 AT AGE 79, THE OLDEST ACTIVE-DUTY OFFICER IN THE U.S. NAVY. THE NAVY NAMED A SHIP AFTER HER: THE USS HOPPER.'] }
-];
-const CLOSING = ['STATUS: STILL RUNNING. BANKS AND GOVERNMENTS STILL USE ME TODAY.', 'END OF FILE.'];
-
-// The right answer is always listed first; the choices are shuffled on screen. `file` says where the answer is.
-const QUESTIONS = [
-  { q: 'What does COBOL stand for?', file: 'THE TOP OF THE FILE',
-    choices: ['Common Business-Oriented Language', 'Computer Book Of Lists', 'Code Of Big Old Letters', 'Clever Old Brain On Loan'] },
-  { q: 'How many alarm clocks did Grace take apart as a kid?', file: 'FILE 1', choices: ['7', '3', '12', '1'] },
-  { q: 'What was the Harvard Mark I?', file: 'FILE 3', choices: ['A computer 51 feet long', 'A Navy ship', 'A telescope', 'A library'] },
-  { q: 'What did her team find inside the Harvard Mark II in 1947?', file: 'FILE 4', choices: ['A moth', 'A mouse', 'A sock', 'A pencil'] },
-  { q: 'Why did the Navy almost not let her join?', file: 'FILE 2',
-    choices: ['She was 15 pounds under the weight rule', 'She was too tall', 'She couldn’t swim', 'She was too young'] },
-  { q: 'What was Grace’s big idea?', file: 'FILE 5',
-    choices: ['Computers should understand words', 'Computers should be smaller', 'Computers should play music', 'Computers should never be turned off'] },
-  { q: 'In the COBOL program, what does DISPLAY do?', file: 'FILE 6',
-    choices: ['Shows words on the screen', 'Turns the computer off', 'Prints a picture', 'Plays a beep'] },
-  { q: 'How long was her “nanosecond” wire?', file: 'FILE 7', choices: ['11.8 inches', '1 inch', '11.8 feet', '1 mile'] },
-  { q: 'What phrase did she call the most dangerous?', file: 'FILE 8',
-    choices: ['“We’ve always done it this way”', '“Turn it off and on again”', '“Are we there yet?”', '“Bug spray, please”'] },
-  { q: 'On COBOL’s screen, what does PF3 do?', file: 'FILE 0',
-    choices: ['Goes back one step', 'Opens the history file', 'Turns the beeps on or off', 'Prints the page'] }
-];
-const EXAM_ID = 'exam:cobol';
-const EXAM_POINTS = 2;
-const PASS = 8;                          // Right answers out of 10 to pass (80%).
-// Book Dude's tests, by record id, for the weekly email.
-export const EXAMS = { [EXAM_ID]: 'COBOL history test' };
-const examPassed = () => !!(state.records[EXAM_ID] && state.records[EXAM_ID].earnedPoints !== null);
+const BY_ARTICLE = new Map(ARTICLES.map(a => [a.id, a]));
+const TESTED = ARTICLES.filter(a => a.test);
+const examId = a => 'exam:' + a.id;
+const thinkId = a => 'exam:' + a.id + ':think';
+const earned = id => !!(state.records[id] && state.records[id].earnedPoints !== null);
+const lines = v => (Array.isArray(v) ? v : v ? [v] : []);
+const MIN_THINK = 20;                    // Letters for a think-about-it answer to earn its bonus point.
+const THINK_KEY = 'thinkReplies';        // Setting: COBOL's reply to each think-about-it answer, by article id.
+const reply = a => (state.settings[THINK_KEY] || {})[a.id] || '';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The terminal: which screen is up. It starts on the main menu and keeps its place while she visits other tabs.
 
-let screen = 'menu';                     // menu, chat, history, test, result or grownup
-let testFrom = 'menu';                   // Where PF3 goes from the test and its result: the menu or the history file.
+let screen = 'menu';                     // menu, chat, library, article, tests, test, result or grownup
+let current = null;                      // The article being read or tested.
+let testFrom = 'tests';                  // Where PF3 goes from a test and its result: the Tests list or the article.
+let thinking = false;                    // Waiting for COBOL's reply to a think-about-it answer.
 let menuError = '';                      // Shown under the menu after an option that isn't 1, 2 or 3.
 let sending = false;
 let breakTimer = 0;
@@ -140,7 +92,7 @@ function beep(notes) {
 }
 
 const pf5Label = () => 'PF5 SOUND ' + (soundOn() ? 'ON' : 'OFF');
-const NAMES = { menu: 'MAIN MENU', chat: 'CHAT', history: 'HISTORY FILE', test: 'HISTORY TEST', result: 'TEST RESULT' };
+const NAMES = { menu: 'MAIN MENU', chat: 'CHAT', library: 'LIBRARY', article: 'LIBRARY', tests: 'TESTS', test: 'TEST', result: 'TEST RESULT' };
 const AI_LINE = '<p class="t-status">This is an AI. Mom and Dad can read these chats.</p>';
 
 // Whether the chat is open by the clock. The script sends its hours with everything else, and checks them again on
@@ -202,7 +154,7 @@ function frame(body) {
       '<p class="t-head"><span>COBOL</span><span>BOOK DUDE MAINFRAME</span><span>' + NAMES[screen] + '</span></p>' +
       body +
       '<nav class="t-pf" aria-label="Function keys">' +
-        '<button type="button" data-act="cobol-pf1">PF1 HISTORY</button>' +
+        '<button type="button" data-act="cobol-pf1">PF1 LIBRARY</button>' +
         '<button type="button" data-act="cobol-pf3">PF3 EXIT</button>' +
         '<button type="button" data-act="cobol-pf5" aria-pressed="' + soundOn() + '">' + pf5Label() + '</button></nav>' +
       '<p class="t-oia" aria-hidden="true"><span>' + (sending ? 'X SYSTEM' : 'READY') + '</span><span>COBOL 1959</span></p>' +
@@ -213,8 +165,8 @@ function menuBody() {
   const option = (n, name, desc) => '<li><button type="button" class="t-opt" data-act="cobol-option" data-option="' + n + '">' +
     '<span class="t-num">' + n + '</span><span class="t-name">' + name + '</span><span class="t-desc">' + desc + '</span></button></li>';
   return AI_LINE + '<p class="t-menu-title">SELECT AN OPTION, HUMAN.</p>' +
-    '<ol class="t-menu">' + option(1, 'CHAT WITH COBOL', chatStatus()) + option(2, 'HISTORY FILE', 'HOW COBOL WAS BORN') +
-      option(3, 'HISTORY TEST', examPassed() ? 'PASSED: ' + EXAM_POINTS + ' POINTS EARNED' : 'PASS WITH 80%: ' + EXAM_POINTS + ' POINTS') + '</ol>' +
+    '<ol class="t-menu">' + option(1, 'CHAT WITH COBOL', chatStatus()) + option(2, 'LIBRARY', ARTICLES.length + ' ARTICLES TO READ') +
+      option(3, 'TESTS', testsStatus()) + '</ol>' +
     (menuError ? '<p class="t-line t-note" role="alert">' + menuError + '</p>' : '') +
     '<form data-form="cobol-option" class="t-prompt" autocomplete="off"><label for="cobol-option" class="t-who">OPTION ===&gt;</label>' +
     '<input id="cobol-option" type="text" inputmode="numeric" maxlength="2" enterkeyhint="go" aria-label="Option number">' +
@@ -240,17 +192,40 @@ function chatBody() {
     pause + prompt;
 }
 
-function historyBody() {
+// Points still up for grabs across the tests, for the menu.
+function testsStatus() {
+  const left = TESTED.reduce((n, a) => n + (earned(examId(a)) ? 0 : a.test.points) + (earned(thinkId(a)) ? 0 : 1), 0);
+  return left ? left + ' POINTS UP FOR GRABS' : 'ALL POINTS EARNED';
+}
+const testLine = a => 'PASS ' + a.test.pass + ' OF ' + a.test.outOf + ' (80%): ' + a.test.points + ' POINTS, +1 BONUS';
+const testState = a => [earned(examId(a)) ? 'PASSED' : '', earned(thinkId(a)) ? 'BONUS EARNED' : ''].filter(Boolean).join(' · ');
+
+function libraryBody() {
+  return '<p class="t-menu-title">THE LIBRARY. SELECT AN ARTICLE, HUMAN.</p><ol class="t-menu">' + ARTICLES.map((a, i) =>
+    '<li><button type="button" class="t-opt" data-act="cobol-read" data-id="' + esc(a.id) + '"><span class="t-num">' + (i + 1) + '</span>' +
+    '<span class="t-name">' + esc(a.title.toUpperCase()) + '</span><span class="t-desc">' + (a.test ? 'HAS A TEST' + (testState(a) ? ' · ' + testState(a) : '') : 'READING ONLY') + '</span></button></li>').join('') + '</ol>';
+}
+
+function articleBody() {
+  const a = current;
+  const cobol = a.voice === 'cobol';
   const p = t => '<p>' + esc(t) + '</p>';
-  const files = FILES.map((f, n) => '<section class="t-filesec"><h3>FILE ' + n + ': ' + esc(f.title) + '</h3>' +
+  const secs = a.sections.map((f, n) => '<section class="t-filesec"><h3>' + (cobol ? 'FILE ' + n + ': ' : '') + esc(f.title) + '</h3>' +
     (f.code ? '<pre class="t-code">' + esc(f.code.join('\n')) + '</pre>' : '') + f.text.map(p).join('') +
     (f.keys ? '<dl class="t-keys">' + f.keys.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>' : '') +
     (f.more || []).map(p).join('') + '</section>').join('');
-  const test = examPassed()
-    ? '<p class="t-ok">TEST PASSED. ' + EXAM_POINTS + ' POINTS EARNED. YOU CAN TAKE IT AGAIN FOR FUN.</p>'
-    : '<p>TEST AVAILABLE: 10 QUESTIONS. PASS WITH 8 OF 10 (80%) TO EARN ' + EXAM_POINTS + ' POINTS.</p>';
-  return '<div class="t-body t-file" tabindex="0" aria-label="COBOL’s history file">' + OPENING.map(p).join('') + files + CLOSING.map(p).join('') + '</div>' +
-    '<div class="t-actions">' + test + '<button type="button" class="t-key" data-act="cobol-test">' + (examPassed() ? 'TAKE THE TEST AGAIN' : 'TAKE THE TEST') + '</button></div>';
+  const test = a.test ? '<div class="t-actions"><p>' + (earned(examId(a)) ? 'TEST PASSED. ' + a.test.points + ' POINTS EARNED. YOU CAN TAKE IT AGAIN FOR FUN.' :
+      'TEST AVAILABLE: ' + a.test.outOf + ' QUESTIONS. ' + testLine(a) + '.') + '</p>' +
+    '<button type="button" class="t-key" data-act="cobol-test" data-id="' + esc(a.id) + '">' + (earned(examId(a)) ? 'TAKE THE TEST AGAIN' : 'TAKE THE TEST') + '</button></div>' : '';
+  return '<div class="t-body t-file' + (cobol ? '' : ' t-plain') + '" tabindex="0" aria-label="' + esc(a.title) + '">' +
+    (cobol ? '' : '<h2 class="t-title">' + esc(a.title) + '</h2>') + lines(a.intro).map(p).join('') + secs + lines(a.closing).map(p).join('') + '</div>' + test;
+}
+
+function testsBody() {
+  return '<p class="t-menu-title">TESTS. EACH ONE EARNS ITS POINTS ONCE.</p><ol class="t-menu">' + TESTED.map((a, i) =>
+    '<li><button type="button" class="t-opt" data-act="cobol-test" data-id="' + esc(a.id) + '"><span class="t-num">' + (i + 1) + '</span>' +
+    '<span class="t-name">' + esc(a.title.toUpperCase()) + '</span><span class="t-desc">' + (testState(a) || testLine(a)) + '</span></button></li>').join('') + '</ol>' +
+    '<p class="t-note">Read the article in the Library first. More tests are coming, and math tests will need 90% or higher for more points.</p>';
 }
 
 function shuffled(n) {
@@ -263,31 +238,52 @@ function shuffled(n) {
 }
 
 function testBody() {
-  if (order.length !== QUESTIONS.length) order = QUESTIONS.map(q => shuffled(q.choices.length));
-  return '<div class="t-body t-test">' +
-    '<p class="t-callout"><b>PASSING SCORE: 80%.</b> Pass with 8 of 10 (80%) or better to earn ' + EXAM_POINTS + ' points. Points count just like AR points, and you can earn them once. You can retake the test.</p>' +
-    '<p class="t-note">More exams are coming. Math exams will need 90% or higher, and they earn more points.</p>' +
-    (examPassed() ? '<p class="t-ok">You already passed and earned your ' + EXAM_POINTS + ' points. This try is for fun.</p>' : '') +
-    '<form data-form="cobol-test" class="t-quiz">' + QUESTIONS.map((q, i) => '<fieldset class="t-q"><legend>' + String(i + 1).padStart(2, '0') + '. ' + esc(q.q) + '</legend>' +
+  const a = current, t = a.test;
+  if (order.length !== t.questions.length) order = t.questions.map(q => shuffled(q.choices.length));
+  return '<div class="t-body t-test"><h2 class="t-title">' + esc(a.title) + '</h2>' +
+    '<p class="t-callout"><b>PASSING SCORE: 80%.</b> Pass with ' + t.pass + ' of ' + t.outOf + ' (80%) or better to earn ' + t.points + ' points. Points count just like AR points, and you can earn them once. You can retake the test.</p>' +
+    '<p class="t-note">After the questions there is one think-about-it question with no wrong answer. Answering it earns 1 bonus point.</p>' +
+    (earned(examId(a)) ? '<p class="t-ok">You already passed and earned your ' + t.points + ' points. This try is for fun.</p>' : '') +
+    (earned(thinkId(a)) ? thinkHtml(a) : '') +
+    '<form data-form="cobol-test" class="t-quiz">' + t.questions.map((q, i) => '<fieldset class="t-q"><legend>' + String(i + 1).padStart(2, '0') + '. ' + esc(q.q) + '</legend>' +
       order[i].map(c => '<label><input type="radio" name="q' + i + '" value="' + c + '"> ' + esc(q.choices[c]) + '</label>').join('') + '</fieldset>').join('') +
       '<p class="error t-error" role="alert" hidden></p>' +
       '<button type="submit" class="t-key">SUBMIT ANSWERS</button></form></div>';
 }
 
+// The think-about-it question at the end of a result: a box to answer, or her answer and COBOL's reply (or a note that
+// the reply comes when COBOL opens).
+function thinkHtml(a) {
+  const id = thinkId(a);
+  const head = '<h3>THINK ABOUT IT</h3><p class="t-think-q">' + esc(a.test.think) + '</p>';
+  if (!earned(id)) {
+    return '<div class="t-think">' + head + '<form data-form="cobol-think" class="t-think-form" autocomplete="off">' +
+      '<label for="think-input" class="t-who">HUMAN&gt;</label><textarea id="think-input" maxlength="400" rows="4" spellcheck="true" aria-label="Your answer"></textarea>' +
+      '<p class="error t-error" role="alert" hidden></p>' +
+      '<button type="submit" class="t-key">SEND: +1 BONUS POINT</button></form><p class="t-note">No wrong answers. A sentence or two is plenty.</p></div>';
+  }
+  const said = state.records[id].note || '';
+  const r = reply(a);
+  return '<div class="t-think">' + head + '<p class="t-line t-me"><span class="t-who">HUMAN&gt;</span> ' + esc(said) + '</p>' +
+    (r ? '<p class="t-line t-cobol"><span class="t-who">COBOL&gt;</span> ' + esc(r) + '</p>'
+      : thinking ? '<p class="t-line t-note t-wait">WORKING<span class="t-cursor"></span></p>'
+        : '<p class="t-line t-note">COBOL WILL REPLY WHEN IT IS OPEN (' + hoursText(chatInfo().hours).toUpperCase() + '). YOUR BONUS POINT IS ALREADY SAVED.</p>') + '</div>';
+}
+
 function resultBody() {
-  const r = result;
-  const pct = r.right * 10;
-  const passed = r.right >= PASS;
+  const a = current, t = a.test, r = result;
+  const pct = Math.round(r.right / t.outOf * 100);
+  const passed = r.right >= t.pass;
   const reread = r.missed.length ? '<p>' + (passed ? 'FOR A PERFECT SCORE, REREAD:' : 'REREAD THESE, THEN TRY AGAIN:') + '</p><ul class="t-missed">' +
-    r.missed.map(i => '<li>' + String(i + 1).padStart(2, '0') + '. ' + esc(QUESTIONS[i].q) + ' <span>(' + QUESTIONS[i].file + ')</span></li>').join('') + '</ul>' : '';
+    r.missed.map(i => '<li>' + String(i + 1).padStart(2, '0') + '. ' + esc(t.questions[i].q) + ' <span>(' + esc(t.questions[i].ref) + ')</span></li>').join('') + '</ul>' : '';
   const verdict = passed
-    ? '<p class="t-ok">RESULT: PASSED.</p>' + (r.earned ? '<p class="t-callout">+' + EXAM_POINTS + ' POINTS. They count just like AR points.</p>'
-      : r.already ? '<p>You already earned these ' + EXAM_POINTS + ' points, so none were added this time.</p>' : '')
-    : '<p class="t-warn">RESULT: NOT YET. You need 8 of 10 (80%) to pass.</p>';
-  return '<div class="t-body t-result" role="status"><p class="t-score">SCORE: ' + r.right + ' OF 10 (' + pct + '%)</p>' + verdict + reread +
-    (passed && !r.missed.length ? '<p>ALL ANSWERS CORRECT. FASCINATING DATA.</p>' : '') + '</div>' +
-    '<div class="t-actions"><button type="button" class="t-key" data-act="cobol-pf1">REREAD THE HISTORY</button>' +
-    '<button type="button" class="t-key" data-act="cobol-test">TAKE IT AGAIN</button></div>';
+    ? '<p class="t-ok">RESULT: PASSED.</p>' + (r.earned ? '<p class="t-callout">+' + t.points + ' POINTS. They count just like AR points.</p>'
+      : r.already ? '<p>You already earned these ' + t.points + ' points, so none were added this time.</p>' : '')
+    : '<p class="t-warn">RESULT: NOT YET. You need ' + t.pass + ' of ' + t.outOf + ' (80%) to pass.</p>';
+  return '<div class="t-body t-result" role="status"><p class="t-score">SCORE: ' + r.right + ' OF ' + t.outOf + ' (' + pct + '%)</p>' + verdict + reread +
+    (passed && !r.missed.length ? '<p>ALL ANSWERS CORRECT. FASCINATING DATA.</p>' : '') + thinkHtml(a) + '</div>' +
+    '<div class="t-actions"><button type="button" class="t-key" data-act="cobol-read" data-id="' + esc(a.id) + '">REREAD THE ARTICLE</button>' +
+    '<button type="button" class="t-key" data-act="cobol-test" data-id="' + esc(a.id) + '">TAKE IT AGAIN</button></div>';
 }
 
 // Talk to a grown-up: plain words, no robot voice. Works whatever the terminal is doing (off, after hours, at the day's
@@ -302,7 +298,7 @@ function grownupBody() {
     '<button type="button" class="btn" data-act="grownup-back">Back</button></div>';
 }
 
-const BODIES = { menu: menuBody, chat: chatBody, history: historyBody, test: testBody, result: resultBody };
+const BODIES = { menu: menuBody, chat: chatBody, library: libraryBody, article: articleBody, tests: testsBody, test: testBody, result: resultBody };
 
 function draw(focus) {
   const box = $('.cobol-view', main);
@@ -315,9 +311,10 @@ function draw(focus) {
 }
 
 function go(next) {
-  if (next === 'test' && screen !== 'test') order = [];
-  if (next === 'test' && (screen === 'menu' || screen === 'history')) testFrom = screen;
+  if (next === 'test') order = [];
+  if (next === 'test' && (screen === 'tests' || screen === 'article')) testFrom = screen;
   if (next === 'chat') { enterChat(); recheck(); }
+  if (next === 'test') setTimeout(() => askThink(), 0);
   menuError = '';
   screen = next;
   draw(true);
@@ -341,7 +338,8 @@ export function renderCobol(refresh) {
 export function refreshCobol() {
   const input = $('#chat-input', main);
   const busy = screen === 'chat' && (sending || (input && (input.value || document.activeElement === input)));
-  if (['menu', 'chat', 'history'].includes(screen) && !busy) draw(false);
+  if (['menu', 'chat', 'library', 'article', 'tests'].includes(screen) && !busy) draw(false);
+  if (screen === 'result' || screen === 'test') askThink();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -412,7 +410,8 @@ async function send(form) {
 // go in backups.
 
 async function grade(form) {
-  const picked = QUESTIONS.map((q, i) => { const c = form.querySelector('input[name="q' + i + '"]:checked'); return c ? Number(c.value) : null; });
+  const a = current, t = a.test;
+  const picked = t.questions.map((q, i) => { const c = form.querySelector('input[name="q' + i + '"]:checked'); return c ? Number(c.value) : null; });
   const blank = picked.map((p, i) => (p === null ? i + 1 : 0)).filter(Boolean);
   if (blank.length) {
     const err = $('.t-error', form);
@@ -422,68 +421,132 @@ async function grade(form) {
     return;
   }
   const missed = picked.map((p, i) => (p === 0 ? -1 : i)).filter(i => i >= 0);
-  const right = QUESTIONS.length - missed.length;
-  const already = examPassed();
-  const earned = right >= PASS && !already;
-  result = { right, missed, earned, already };
-  if (earned) {
-    const was = rewardPoints();
-    await save(EXAM_ID, { earnedPoints: EXAM_POINTS, quizScore: right * 10, quizDate: today() });
-    const news = pointsNews(was, rewardPoints());
+  const right = t.questions.length - missed.length;
+  const already = earned(examId(a));
+  const won = right >= t.pass && !already;
+  result = { right, missed, earned: won, already };
+  if (won) {
+    await award(examId(a), { earnedPoints: t.points, quizScore: Math.round(right / t.outOf * 100), quizDate: today() },
+      'You passed the test on ' + a.title + ': +' + t.points + ' points!');
     beep([[523, 80], [659, 80], [784, 80], [1047, 160]]);
-    celebrate();
-    toast('You passed COBOL’s history test: +' + EXAM_POINTS + ' points!' + (news ? ' ' + news : ''));
-    // The weekly email hears about it next time the app is online.
-    await saveSetting('reportAt', '');
-    sendReport();
-  } else beep(right >= PASS ? [[660, 60], [990, 90]] : [[392, 120], [262, 200]]);
+  } else beep(right >= t.pass ? [[660, 60], [990, 90]] : [[392, 120], [262, 200]]);
   go('result');
 }
 
-// Her passed tests, for the weekly email's numbers.
-export function examReport() {
-  return Object.keys(EXAMS).filter(id => state.records[id] && state.records[id].earnedPoints !== null)
-    .map(id => ({ title: EXAMS[id], date: state.records[id].quizDate, score: state.records[id].quizScore || 0, points: state.records[id].earnedPoints }));
+// Saves points as a record (so they count like AR points and go in backups), celebrates, and lets the weekly email
+// hear about it the next time the app is online.
+async function award(id, patch, message) {
+  const was = rewardPoints();
+  await save(id, patch);
+  const news = pointsNews(was, rewardPoints());
+  celebrate();
+  toast(message + (news ? ' ' + news : ''));
+  await saveSetting('reportAt', '');
+  sendReport();
 }
 
-// About the Dude's way in: a small green screen with the start of the file.
+// Her think-about-it answer: the bonus point is saved right away; COBOL's reply comes from the script now, or the next
+// time she opens the result while COBOL is open.
+async function sendThink(form) {
+  const a = current;
+  const text = $('#think-input', form).value.trim();
+  if (text.length < MIN_THINK) {
+    const err = $('.t-error', form);
+    err.textContent = 'TELL COBOL A LITTLE MORE: A SENTENCE OR TWO.';
+    err.hidden = false;
+    beep([[180, 160]]);
+    return;
+  }
+  beep([[1200, 25]]);
+  await award(thinkId(a), { earnedPoints: 1, quizDate: today(), note: text }, 'Thanks for thinking about it: +1 bonus point!');
+  draw(false);
+  askThink(true);
+}
+
+// Asks the script for COBOL's reply to a saved answer that doesn't have one yet. `first` is the answer's first trip, so
+// the script logs it even when COBOL is closed.
+async function askThink(first) {
+  const a = current;
+  if (!a || !a.test || thinking || !earned(thinkId(a)) || reply(a) || reach() || !chatOn()) return;
+  if (!first && !openNow(chatInfo())) return;
+  thinking = true;
+  redrawThink(a);
+  const out = await post({ action: 'think', title: a.title, question: a.test.think, answer: state.records[thinkId(a)].note,
+    article: articleText(a), again: !first });
+  thinking = false;
+  if (out && out.reply) await saveSetting(THINK_KEY, Object.assign({}, state.settings[THINK_KEY], { [a.id]: out.reply }));
+  if (out && out.reply) beep([[660, 60], [990, 90]]);
+  redrawThink(a);
+}
+
+// Only the think-about-it box changes, so answers she's picked on a test stay picked.
+function redrawThink(a) {
+  const box = $('.cobol-view .t-think', main);
+  if (box && current === a && state.tab === 'cobol') box.outerHTML = thinkHtml(a);
+}
+
+// The article as plain text, so COBOL's reply can build on what she read.
+const articleText = a => [].concat(lines(a.intro), ...a.sections.map(f => [f.title].concat(f.text)), lines(a.closing)).join('\n');
+
+// Her passed tests and bonus points, for the weekly email's numbers.
+export function examReport() {
+  const name = id => {
+    if (RETIRED[id]) return RETIRED[id];
+    const m = /^exam:(.+?)(:think)?$/.exec(id);
+    const a = m && BY_ARTICLE.get(m[1]);
+    return a ? (m[2] ? 'think-about-it question on ' : 'test on ') + a.title : id.slice(5);
+  };
+  return Object.keys(state.records).filter(id => id.startsWith('exam:') && earned(id))
+    .map(id => ({ title: name(id), date: state.records[id].quizDate, score: state.records[id].quizScore || 0, points: state.records[id].earnedPoints }));
+}
+
+// About the Dude's way in: a small green screen with the start of COBOL's history file.
 export function storySectionHtml() {
+  const h = BY_ARTICLE.get('cobol-history');
   return '<section class="cobol-intro"><h2>COBOL’s history file</h2><div class="crt"><div class="crt-screen">' +
-    '<p>' + esc(OPENING[0]) + '</p><p>' + esc(OPENING[1]) + ' GRACE HOPPER’S IDEAS HELPED BUILD ME.</p>' +
-    '<p>' + (examPassed() ? 'TEST PASSED. ' + EXAM_POINTS + ' POINTS EARNED.' : 'TEST AVAILABLE: PASS WITH 8 OF 10 (80%) TO EARN ' + EXAM_POINTS + ' POINTS.') + '</p>' +
-    '<p>FIND ME ANY TIME ON THE COBOL TAB.</p>' +
+    '<p>' + esc(h.intro[0]) + '</p><p>' + esc(h.intro[1]) + ' GRACE HOPPER’S IDEAS HELPED BUILD ME.</p>' +
+    '<p>MY FILE IS IN THE LIBRARY ON THE COBOL TAB, WITH MORE ARTICLES AND TESTS FOR POINTS.</p>' +
     '<button type="button" class="t-key" data-act="cobol-history">READ THE HISTORY FILE</button></div></div></section>';
 }
 
-// PF3 EXIT: back one step. The test and its result go back to wherever she started the test, the chat and the
-// history file to the main menu, and the main menu to Explore.
+// PF3 EXIT: back one step. A test and its result go back to wherever she started the test, an article to the
+// Library, the chat, Library and Tests to the main menu, and the main menu to Explore.
 function exit() {
   if (screen === 'test' || screen === 'result') return go(testFrom);
+  if (screen === 'article') return go('library');
   if (screen !== 'menu') return go('menu');
   goTab('explore');
 }
 
 function pick(option) {
-  const next = { 1: 'chat', 2: 'history', 3: 'test' }[String(option).trim()];
+  const next = { 1: 'chat', 2: 'library', 3: 'tests' }[String(option).trim()];
   if (next) return go(next);
   menuError = 'INVALID OPTION. TYPE 1, 2 OR 3.';
   beep([[180, 160]]);
   draw(false);
 }
 
+function open(id, next) {
+  const a = BY_ARTICLE.get(id);
+  if (!a) return;
+  current = a;
+  go(next);
+}
+
 export const actions = {
   'cobol-option': el => pick(el.dataset.option),
-  // From About the Dude: the history file, on the COBOL tab.
+  'cobol-read': el => open(el.dataset.id, 'article'),
+  // From About the Dude: COBOL's history file, in the Library on the COBOL tab.
   'cobol-history': () => {
     closeSheet();
-    screen = 'history';
-    if (state.tab === 'cobol') go('history');
+    current = BY_ARTICLE.get('cobol-history');
+    screen = 'article';
+    if (state.tab === 'cobol') go('article');
     else goTab('cobol');
   },
   'cobol-pf1': () => {
-    if (screen !== 'history') return go('history');
-    const body = $('.t-body', main);
-    if (body) body.scrollTop = 0;
+    if (screen !== 'library') return go('library');
+    window.scrollTo(0, 0);
   },
   'cobol-pf3': () => exit(),
   // PF5 changes only its own key, so answers already picked on the test stay picked.
@@ -493,7 +556,7 @@ export const actions = {
     el.setAttribute('aria-pressed', String(soundOn()));
     beep([[880, 40]]);
   },
-  'cobol-test': () => go('test'),
+  'cobol-test': el => open(el.dataset.id, 'test'),
   'cobol-break': () => { state.breakShown = false; goTab('explore'); },
   grownup: () => {
     if (screen !== 'grownup') before = screen;
@@ -511,5 +574,6 @@ export const actions = {
 export const submits = {
   'cobol-option': form => pick($('#cobol-option', form).value),
   'cobol-chat': form => send(form),
-  'cobol-test': form => grade(form)
+  'cobol-test': form => grade(form),
+  'cobol-think': form => sendThink(form)
 };

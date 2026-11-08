@@ -42,7 +42,7 @@ With a Claude API key, the same script also adds:
    person: an IBM 3270 mainframe terminal with retro beeps. It calls her "Human"; her name is never sent to Claude.
    Answers appear whole, with no "typing" bubble or pauses, and there is no voice and no pictures. Nothing rewards
    coming back or chatting longer: no streaks, no counters, no "come back tomorrow". The keys along the bottom work like
-   a mainframe's: **PF1 HISTORY** (COBOL's history file and its test), **PF3 EXIT** (back one step, toward the main
+   a mainframe's: **PF1 LIBRARY** (knowledge articles and their tests), **PF3 EXIT** (back one step, toward the main
    menu) and **PF5 SOUND** (beeps on or off).
    - A line that never scrolls away says **"This is an AI. Mom and Dad can read these chats."**
    - A small yellow **Talk to a grown-up** button is always at the top, whatever COBOL is doing (even after hours, at
@@ -61,8 +61,11 @@ With a Claude API key, the same script also adds:
      has the week's summary, everything flagged, and the whole log.
    - You can switch it off in Book Dude (Farty Pants Central, behind the passcode) or here (`CHAT` = `off`).
 
-COBOL's history file and its 10-question test don't need Claude: they also open from the end of About the Dude. A
-pass (8 of 10, 80%) earns 2 points once, counted like AR points.
+The Library's articles and tests don't need Claude. Passing a test earns its points once (2 for a short article, 4 for
+a long one), counted like AR points. Each test ends with a think-about-it question: her answer earns 1 bonus point
+once, and COBOL replies to it through this script (action `think`), with the same hours, private-details check, log
+and alert email as the chat. After hours her answer is logged right away and COBOL replies the next time it is open.
+The Sunday email shows each answer with COBOL's reply under **What she thought**.
 
 ### Setup (about 10 minutes, on a computer)
 

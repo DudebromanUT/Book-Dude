@@ -360,3 +360,64 @@ test('Talk to a grown-up: logged, and her parents get an email right away with t
   assert.equal(s.sent.rows.length, 14);
   assert.match(s.sent.mail[1].body, /She had not chatted yet\./);
 });
+
+const THINK = { action: 'think', title: 'The Guard Dog, the Wise Owl, and Dopamine', question: 'What experiment would you design?',
+  answer: 'I would ring a bell before dinner and see if my dog drools.', article: 'Pavlov noticed his dogs drooled before food.' };
+
+test('think-about-it: COBOL replies to her idea with the article in hand, and it is logged', () => {
+  let asked;
+  const s = load({ props: AI, claude: body => { asked = body; return { reply: 'PROCESSING... A BELL. Pavlov used a sound too.', flag: 'none', why: '' }; } });
+  assert.deepEqual(s.post(THINK), { reply: 'PROCESSING... A BELL. Pavlov used a sound too.' });
+  assert.match(asked.system, /^## Who you are/);
+  assert.match(asked.system, /think-about-it question: "What experiment would you design\?"/);
+  assert.match(asked.system, /you are not grading/);
+  assert.match(asked.system, /Pavlov noticed his dogs drooled/);
+  assert.deepEqual(asked.messages, [{ role: 'user', content: THINK.answer }]);
+  assert.deepEqual([...s.sent.rows[1].slice(1)], ['[Think: ' + THINK.title + '] ' + THINK.question + ' | ' + THINK.answer, 'PROCESSING... A BELL. Pavlov used a sound too.', '', '']);
+  assert.deepEqual(s.post(Object.assign({}, THINK, { answer: '' })), { error: 'empty' });
+});
+
+test('think-about-it: when COBOL is closed her answer is saved once, and asking again logs nothing more', () => {
+  const s = load({ props: Object.assign({}, AI, { CHAT_HOURS: '0-0' }) });
+  assert.deepEqual(s.post(THINK), { later: true });
+  assert.deepEqual(s.post(Object.assign({ again: true }, THINK)), { later: true });
+  assert.equal(s.sent.requests.length, 0);
+  assert.equal(s.sent.rows.length, 2);
+  assert.equal(s.sent.rows[1][2], '(saved; COBOL will reply when it is open)');
+  const off = load({ props: Object.assign({}, AI, { CHAT: 'off' }) });
+  assert.deepEqual(off.post(THINK), { later: true });
+  assert.equal(off.sent.requests.length, 0);
+});
+
+test('think-about-it: personal details never reach Claude, and a declined answer gets a gentle reply', () => {
+  const s = load({ props: AI });
+  const out = s.post(Object.assign({}, THINK, { answer: 'Call me at 801-555-1234 and I will tell you my idea.' }));
+  assert.match(out.reply, /PRIVATE DATA DETECTED/);
+  assert.equal(s.sent.requests.length, 0);
+  assert.equal(s.sent.rows[1][3], 'private');
+  const no = load({ props: AI, claude: () => ({ status: 200, body: { stop_reason: 'refusal', content: [], usage: { input_tokens: 1, output_tokens: 1 } } }) });
+  assert.match(no.post(THINK).reply, /COBOL cannot answer that one/);
+});
+
+test('the weekly email: "What she thought" shows each answer once, with COBOL\'s reply over the wait note', () => {
+  const s = load({ props: Object.assign({ DIGEST_TO: 'mom@example.com' }, AI, { CHAT_HOURS: '0-0' }), claude: byShape(WEEK) });
+  s.post(THINK);
+  s.store.CHAT_HOURS = '0-24';
+  s.post(Object.assign({ again: true }, THINK));
+  const late = Object.assign({}, THINK, { title: 'COBOL <history>', answer: 'I would ask how big the first computers were.' });
+  s.store.CHAT_HOURS = '0-0';
+  s.post(late);
+  s.ctx.sendWeeklyEmailNow();
+  const m = s.sent.mail[0];
+  assert.match(m.htmlBody, /<h2[^>]*>What she thought<\/h2>/);
+  assert.match(m.htmlBody, /<b>The Guard Dog, the Wise Owl, and Dopamine:<\/b> <i>What experiment would you design\?<\/i>/);
+  assert.match(m.htmlBody, /Maddy: I would ring a bell before dinner/);
+  assert.match(m.htmlBody, /COBOL: PROCESSING\.\.\. Hatchet is about a boy named Brian\./);
+  const part = m.htmlBody.slice(m.htmlBody.indexOf('What she thought</h2>'));
+  const thought = part.slice(0, part.indexOf('<h2') > 0 ? part.indexOf('<h2') : undefined);
+  assert.equal((thought.match(/ring a bell before dinner/g) || []).length, 1);
+  assert.doesNotMatch(thought, /COBOL: \(saved; COBOL will reply/);
+  assert.match(m.htmlBody, /COBOL &lt;history&gt;/);
+  assert.match(m.htmlBody, /COBOL: \(COBOL hasn't replied yet\.\)/);
+  assert.match(m.body, /WHAT SHE THOUGHT\nThe Guard Dog, the Wise Owl, and Dopamine: What experiment would you design\?\nMaddy: I would ring/);
+});

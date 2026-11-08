@@ -13,14 +13,15 @@ like AR points, once per test.
 
 ## Who you're writing for
 
-- A 10-year-old girl who reads at about a 5th-grade level (AR book level around 5).
+- A 10-year-old girl. Write at a 6th-grade reading level (AR book level around 6).
 - She reads the article on an iPad, then takes the test. She can retake it, and after each try she sees her score and
   which questions to reread, never the right answers.
 - Her parents review everything before it goes in the app.
 
 ## The article
 
-- **Length:** 300 to 700 words, in 4 to 9 short sections. Each section has a short title and 1 to 3 short paragraphs.
+- **Length:** 300 to 1,500 words, in 4 to 12 short sections. Each section has a short title and 1 to 3 short paragraphs.
+  The length sets the points (see the test).
 - **Facts:** every fact must be true and checkable. Use numbers and names a reliable encyclopedia would agree with. If
   sources disagree, leave the fact out. Never invent quotes, dates or statistics.
 - **Words:** short sentences, plain words. When a hard word is worth keeping, explain it in the same sentence.
@@ -38,8 +39,9 @@ like AR points, once per test.
 ## The test
 
 - **Questions:** 10 by default, or the number the parents ask for.
-- **Pass mark and points:** set by the parents. The default is 8 of 10 (80%) for 2 points. Math tests may need 90% and
-  give more points.
+- **Points by length:** a **short** article (up to 700 words, like COBOL's history) is worth **2 points**; a **long**
+  article (701 to 1,500 words) is worth **4 points**. State the article's word count.
+- **Pass mark:** 8 of 10 (80%) unless the parents say otherwise. Math tests may need 90% and give more points.
 - **Every question must be answerable from the article alone,** with one clearly right answer.
 - **Four choices** per question. **Put the right answer first**; the app shuffles the order she sees.
 - **Wrong answers** are plausible, about the same length as the right one, and clearly wrong to someone who read the
@@ -67,7 +69,7 @@ Give the article and test in exactly this shape, so it can be dropped into the a
   ],
   closing: 'One sentence that ends the article.',
   test: {
-    pass: 8, outOf: 10, points: 2,
+    pass: 8, outOf: 10, points: 2,   // points: 2 up to 700 words, 4 for 701 to 1,500
     questions: [
       { q: 'What is at the center of the solar system?', ref: 'The Sun',
         choices: ['The Sun', 'The Earth', 'The Moon', 'Jupiter'] }
@@ -85,7 +87,8 @@ Check that:
 - every fact is true and every answer is in the article
 - each question's `ref` matches a section title exactly
 - the right answer is first in every `choices` list
-- the article reads at about a 5th-grade level and stays within the kid-safe rules
+- the article reads at about a 6th-grade level and stays within the kid-safe rules
+- the word count matches the points: up to 700 words for 2, 701 to 1,500 for 4
 - nothing mentions her name, and nothing spoils a book she hasn't finished
 
 Then list, in plain words for her parents, any fact you were less than certain of, so they can check it.

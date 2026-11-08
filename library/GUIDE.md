@@ -38,10 +38,11 @@ like AR points, once per test.
 
 ## The test
 
-- **Questions:** 10 by default, or the number the parents ask for.
+- **Questions:** 10 for a short article, 15 for a long one, unless the parents ask for a different number.
 - **Points by length:** a **short** article (up to 700 words, like COBOL's history) is worth **2 points**; a **long**
   article (701 to 1,500 words) is worth **4 points**. State the article's word count.
-- **Pass mark:** 8 of 10 (80%) unless the parents say otherwise. Math tests may need 90% and give more points.
+- **Pass mark:** 80%: 8 of 10 for a short article, 12 of 15 for a long one, unless the parents say otherwise. Math
+  tests may need 90% and give more points.
 - **Every question must be answerable from the article alone,** with one clearly right answer.
 - **Four choices** per question. **Put the right answer first**; the app shuffles the order she sees.
 - **Wrong answers** are plausible, about the same length as the right one, and clearly wrong to someone who read the
@@ -69,7 +70,7 @@ Give the article and test in exactly this shape, so it can be dropped into the a
   ],
   closing: 'One sentence that ends the article.',
   test: {
-    pass: 8, outOf: 10, points: 2,   // points: 2 up to 700 words, 4 for 701 to 1,500
+    pass: 8, outOf: 10, points: 2,   // short (up to 700 words): 8 of 10 for 2 points; long (701 to 1,500): 12 of 15 for 4
     questions: [
       { q: 'What is at the center of the solar system?', ref: 'The Sun',
         choices: ['The Sun', 'The Earth', 'The Moon', 'Jupiter'] }
@@ -88,7 +89,8 @@ Check that:
 - each question's `ref` matches a section title exactly
 - the right answer is first in every `choices` list
 - the article reads at about a 6th-grade level and stays within the kid-safe rules
-- the word count matches the points: up to 700 words for 2, 701 to 1,500 for 4
+- the word count matches the test: up to 700 words is 10 questions, 8 to pass, 2 points; 701 to 1,500 is 15
+  questions, 12 to pass, 4 points
 - nothing mentions her name, and nothing spoils a book she hasn't finished
 
 Then list, in plain words for her parents, any fact you were less than certain of, so they can check it.

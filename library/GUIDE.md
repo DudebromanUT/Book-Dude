@@ -52,6 +52,11 @@ like AR points, once per test.
   app can tell her what to reread.
 - **Math tests:** show the problem in the question, give one exact answer, and make the wrong answers common mistakes
   (a wrong carry, a flipped fraction), not random numbers.
+- **One "think about it" question** ends every test. It has no right answer and isn't graded: she types a short answer
+  (up to 400 characters) and COBOL responds to her idea. Answering earns 1 bonus point, once. Make it open, personal
+  and tied to the article: what she'd do, ask, change, invent or wonder ("If you could ask Grace Hopper one question,
+  what would it be, and why?"). Never ask about private things (where she lives, her family, her feelings about
+  someone she knows), and never anything a 10-year-old couldn't answer in two or three sentences.
 
 ## Output format
 
@@ -75,7 +80,8 @@ Give the article and test in exactly this shape, so it can be dropped into the a
       { q: 'What is at the center of the solar system?', ref: 'The Sun',
         choices: ['The Sun', 'The Earth', 'The Moon', 'Jupiter'] }
       // …one entry per question; the right answer is always first
-    ]
+    ],
+    think: 'If you could visit one planet for a day, which would you pick, and what would you want to see?'
   }
 }
 ```
@@ -88,6 +94,7 @@ Check that:
 - every fact is true and every answer is in the article
 - each question's `ref` matches a section title exactly
 - the right answer is first in every `choices` list
+- the test ends with one open `think` question that has no right answer and asks for nothing private
 - the article reads at about a 6th-grade level and stays within the kid-safe rules
 - the word count matches the test: up to 700 words is 10 questions, 8 to pass, 2 points; 701 to 1,500 is 15
   questions, 12 to pass, 4 points

@@ -53,6 +53,20 @@ test('school points: once a grown-up types her school total, the points above th
   assert.equal(C.reward({ schoolDate: '2026-02-30' }).schoolDate, '');
 });
 
+test('school points: quizzes from the school emails since the last typed total count on top of it', () => {
+  assert.deepEqual(C.reward({}).schoolNew, {});
+  const cfg = { school: 52.5, schoolStart: 40, schoolNew: { q1: 2.5, q2: '1.5' } };
+  assert.deepEqual(C.reward(cfg).schoolNew, { q1: 2.5, q2: 1.5 });
+  assert.equal(C.rewardPoints(99, cfg, 1), 17.5);
+  // Below the starting line, new quizzes help her get there; nothing goes negative.
+  assert.equal(C.rewardPoints(0, { school: 38, schoolStart: 40, schoolNew: { q1: 4 } }), 2);
+  // Without a school total they don't count twice: the app's own quiz results already have them.
+  assert.equal(C.rewardPoints(9, { school: null, schoolNew: { q1: 4 } }), 9);
+  // Junk is dropped.
+  assert.deepEqual(C.reward({ schoolNew: { a: 'lots', b: -2, c: 3 } }).schoolNew, { c: 3 });
+  assert.deepEqual(C.reward({ schoolNew: [4] }).schoolNew, {});
+});
+
 test('Book Dude\'s own tests: their points count for rewards (on top of a school total, too), but they aren\'t AR quizzes', () => {
   const records = {
     'hatchet--gary-paulsen': C.entry({ id: 'hatchet--gary-paulsen', status: 'finished', finishedDate: '2026-10-01', earnedPoints: 7, quizDate: '2026-10-01' }),

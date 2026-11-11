@@ -34,6 +34,14 @@ export function bookExtra(b) {
   return Object.prototype.hasOwnProperty.call(cfg.special, b.book_id) ? cfg.special[b.book_id] : cfg.bonus;
 }
 
+// The quizzes from school emails counted on top of the last typed school total: ", plus 4 points from 2 new quizzes".
+function schoolNewText(cfg) {
+  const ids = Object.keys(cfg.schoolNew);
+  if (!ids.length) return '';
+  const pts = ids.reduce((sum, id) => sum + cfg.schoolNew[id], 0);
+  return ', plus ' + plural(pts, 'point') + ' from ' + plural(ids.length, 'new quiz', 'new quizzes');
+}
+
 // One choice for 10 points, the jar side: "$10 in the jar", or "10 points in the jar" for a reward that isn't money.
 const jarChoiceLabel = cfg => (cfg.perPoint > 0 ? money(10 * cfg.perPoint) : '10 points') + ' in the jar';
 
@@ -111,7 +119,8 @@ export function jarHtml(total) {
       '<p class="jar-tally">' + fmtNum(total) + counted + (jarPoints !== total ? ' · ' + fmtNum(jarPoints) + ' in the jar' : '') + (st.money
         ? ' = ' + money(st.totalMoney) + ' · payouts earned: ' + st.earned + (cfg.paid ? ', deposited: ' + cfg.paid : '')
         : ' · rewards earned: ' + st.earned + (cfg.paid ? ', given: ' + cfg.paid : '')) + '</p>' +
-      (school ? '<p class="jar-tally">Points from the school’s AR report' + (cfg.schoolDate ? ', updated ' + esc(fmtDay(cfg.schoolDate)) : '') + '.</p>' +
+      (school ? '<p class="jar-tally">Points from the school’s AR report' + (cfg.schoolDate ? ', updated ' + esc(fmtDay(cfg.schoolDate)) : '') +
+        schoolNewText(cfg) + '.</p>' +
         '<div class="row-actions"><button type="button" class="btn small" data-act="school-update">Grown-up: update school points</button></div>' : '') +
     '</div></section>';
 }
@@ -288,7 +297,7 @@ function schoolFieldsHtml(cfg, total) {
       ? '<div class="two"><label class="field"><span>Her school total now</span><input id="school-total" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.school + '"></label>' +
         '<label class="field"><span>Starting line</span><input id="school-start" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + cfg.schoolStart + '"></label></div>' +
         '<p class="hint">Copy her total from the school’s AR report' + (cfg.schoolDate ? ' (last updated ' + esc(fmtDay(cfg.schoolDate)) + ')' : '') +
-          '. Only points above the starting line count: use her total from the day the deal started, or 0 to count the whole school year. Points from Book Dude’s own tests (like COBOL’s history test) are added on top. ' +
+          '. Only points above the starting line count: use her total from the day the deal started, or 0 to count the whole school year. Quizzes from the school’s emails count right away, on top of this total, until you type a new one. Points from Book Dude’s own tests are added on top too. ' +
           plural(total, 'point counts', 'points count') + ' right now.</p>'
       : '<p class="hint">Turn this on to type in her total from the school’s report each week instead, so a quiz she forgets to enter here still counts.</p>');
 }
@@ -410,7 +419,8 @@ export const actions = {
       '<form class="stack" data-form="school" novalidate>' +
         '<label class="field"><span>Her total on the school’s AR report</span><input id="school-quick" class="input" type="text" inputmode="decimal" autocomplete="off" value="' + (cfg.school !== null ? cfg.school : '') + '"></label>' +
         '<p class="error" id="school-error" role="alert" hidden></p>' +
-        '<p class="hint">Points above ' + fmtNum(cfg.schoolStart) + ', the starting line, count for book money and screen time.</p>' +
+        '<p class="hint">Points above ' + fmtNum(cfg.schoolStart) + ', the starting line, count for book money and screen time.' +
+          (Object.keys(cfg.schoolNew).length ? ' Quizzes from school emails since your last update are counted until you save: the new total already includes them.' : '') + '</p>' +
         '<div class="row-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" data-act="close-confirm">Cancel</button></div>' +
       '</form>');
   })
@@ -422,7 +432,7 @@ export const submits = {
     const err = $('#school-error', form);
     if (n === null) { err.textContent = 'Type her total from the report, like 47 or 47.5.'; err.hidden = false; return; }
     const before = rewardPoints();
-    await saveReward({ school: n, schoolDate: today() });
+    await saveReward({ school: n, schoolDate: today(), schoolNew: {} });
     confirmBox.close();
     renderProgress();
     const news = pointsNews(before, rewardPoints());
@@ -478,7 +488,7 @@ export const changes = guardAll({
   // Turning school points on starts from the points she has now, so nothing jumps until a grown-up types her totals.
   'school-on': async t => {
     const cfg = C.reward(state.settings.reward);
-    await saveReward(t.checked ? { school: rewardPoints(), schoolStart: 0, schoolDate: '' } : { school: null });
+    await saveReward(t.checked ? { school: rewardPoints(), schoolStart: 0, schoolDate: '', schoolNew: {} } : { school: null, schoolNew: {} });
     renderMore();
     toast(t.checked ? 'Type her total from the school’s AR report.' : 'Points come from the quiz results entered in this app again.');
     if (t.checked && cfg.school === null) { const input = $('#school-total'); if (input) input.focus(); }
@@ -486,7 +496,7 @@ export const changes = guardAll({
   'school-total': async t => {
     const n = pointsTyped(t.value);
     if (n === null) { toast('Type her total from the report, like 47 or 47.5.'); t.value = C.reward(state.settings.reward).school; return; }
-    await saveReward({ school: n, schoolDate: today() });
+    await saveReward({ school: n, schoolDate: today(), schoolNew: {} });
     renderMore();
   },
   'school-start': async t => {

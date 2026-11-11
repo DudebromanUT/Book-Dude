@@ -122,7 +122,9 @@
    * Book money: every `every` AR points pays out: `perPoint` dollars a point into `where`,
    * or, with perPoint 0, the non-money `prize`. `paid` counts payouts already made.
    * School points: once a grown-up types in her total from the school's AR report (`school`, on `schoolDate`),
-   * the points above `schoolStart` (her total when the deal started) are the ones that count.
+   * the points above `schoolStart` (her total when the deal started) are the ones that count. Quizzes that arrive
+   * from the school's emails after that are counted on top (`schoolNew`: quiz id to points) until a grown-up types a
+   * new total, which already includes them.
    * Her choices: every 10 points is one choice, 10 points' worth of book money (`toJar`) or `minutes` of screen time
    * (`toMinutes`); the counts are the choices she has made.
    * Screen time: the minutes she chose, plus `bonus` minutes for each Reading Room book she finishes on or
@@ -147,6 +149,7 @@
       school: points(o.school, null),
       schoolStart: points(o.schoolStart, 0),
       schoolDate: day(o.schoolDate),
+      schoolNew: schoolNew(o.schoolNew),
       screen: o.screen === undefined ? SCREEN_DEFAULT.screen : o.screen === true,
       minutes: whole(o.minutes, 0, 1000, SCREEN_DEFAULT.minutes),
       bonus: whole(o.bonus, 0, 1000, SCREEN_DEFAULT.bonus),
@@ -159,6 +162,17 @@
       codeReset: day(o.codeReset),
       updatedAt: stamp(o.updatedAt)
     };
+  }
+
+  /** Quizzes from the school's emails since the last typed school total: { quiz id: points }, at most 500. */
+  function schoolNew(o) {
+    const out = {};
+    if (!isPlain(o)) return out;
+    for (const id of Object.keys(o).slice(0, 500)) {
+      const n = amount(o[id], 1000);
+      if (id.length <= 120 && typeof n === 'number' && !Number.isNaN(n) && n >= 0) out[id] = round(n);
+    }
+    return out;
   }
 
   const isExam = id => String(id).startsWith(EXAM_PREFIX);
@@ -175,12 +189,13 @@
 
   /**
    * The points that count for book money, screen time and the Secret Files: her school AR total above the
-   * starting line once a grown-up has typed it in, otherwise the quiz results entered in this app; plus the points
+   * starting line once a grown-up has typed it in (plus quizzes from the school's emails since), otherwise the quiz results entered in this app; plus the points
    * from Book Dude's own tests either way (the school total doesn't know about them).
    */
   function rewardPoints(appPoints, settings, testPoints) {
     const cfg = reward(settings);
-    const ar = Math.max(0, cfg.school === null ? Number(appPoints) || 0 : cfg.school - cfg.schoolStart);
+    const fresh = Object.keys(cfg.schoolNew).reduce((sum, id) => sum + cfg.schoolNew[id], 0);
+    const ar = Math.max(0, cfg.school === null ? Number(appPoints) || 0 : cfg.school + fresh - cfg.schoolStart);
     return round(ar + Math.max(0, Number(testPoints) || 0));
   }
 

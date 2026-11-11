@@ -7,7 +7,7 @@ import { C, plural } from './util.js';
 import { BOOKS, rebuildBooks } from './books.js';
 import { state, db, rec, save, saveSetting } from './state.js';
 import { toast, celebrate } from './page.js';
-import { rewardPoints, pointsNews } from './money.js';
+import { rewardPoints, pointsNews, saveReward } from './money.js';
 import { newCustomId } from './my-books.js';
 import { render } from './tabs.js';
 import { refreshBubble } from './dude-talk.js';
@@ -84,18 +84,24 @@ async function check(quiet) {
   const fresh = C.schoolQuizzes(feed).filter(q => !seen.has(q.id));
   if (!fresh.length) { if (!quiet) toast('No new quizzes from school yet.'); return; }
   const before = rewardPoints();
+  // Counting her school total: a quiz from an email counts on top of it until a grown-up types a new total. One from
+  // before the day of that total is already in it.
+  const cfg = C.reward(state.settings.reward);
+  const counted = cfg.school !== null ? Object.assign({}, cfg.schoolNew) : null;
   try {
     for (const q of fresh) {
       const id = C.findBook(BOOKS, q.title, q.author) || await addBook(q);
       const r = rec(id);
       const patch = { status: 'finished', progress: 100, finishedDate: r.finishedDate || q.date };
       if (r.earnedPoints === null) Object.assign(patch, { earnedPoints: q.points, quizDate: q.date });
+      if (counted && typeof q.points === 'number' && q.points > 0 && (!cfg.schoolDate || !q.date || q.date >= cfg.schoolDate)) counted[q.id] = q.points;
       if (r.quizScore === null && q.score !== null) patch.quizScore = q.score;
       await save(id, patch);
       seen.add(q.id);
     }
   } finally {
     await saveSetting('schoolSeen', Array.from(seen));
+    if (counted && Object.keys(counted).length !== Object.keys(cfg.schoolNew).length) await saveReward({ schoolNew: counted });
   }
   // The Dude's joke about the newest quiz with one becomes his line, linked to the book.
   const joked = fresh.filter(q => q.joke).pop();

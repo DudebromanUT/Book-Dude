@@ -131,6 +131,29 @@ const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
     await p.$eval('.tab[data-tab="more"]', e => e.click()); await sleep(400);
     await p.$eval('[data-act="school-sync"]', e => e.click());
     assert.equal(await toast(), 'No new quizzes from school yet.');
+
+    // Counting her school total: a quiz from an email counts right away on top of the last total typed in, until a
+    // grown-up types a new total (which already has it). One from before that total's day is already in it.
+    const todayUT = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Denver' });
+    await p.$eval('#school-on', e => e.click());
+    assert.equal(await toast(), 'Type her total from the school’s AR report.');
+    await p.fill('#school-total', '52.5'); await p.dispatchEvent('#school-total', 'change'); await sleep(200);
+    await p.fill('#school-start', '40'); await p.dispatchEvent('#school-start', 'change'); await sleep(300);
+    QUIZZES.push({ id: '19a2b04', date: '2026-10-01', title: 'Old Yeller', author: 'Fred Gipson', points: 5, possible: 5, score: 100, level: 5.6 },
+      { id: '19a2b05', date: todayUT, title: 'Mary Anning', author: 'Linda Brown', points: 2.5, possible: 2.5, score: 90, level: 4.5 });
+    await p.$eval('[data-act="school-sync"]', e => e.click());
+    assert.match(await toast(), /2 new quizzes from school!/);
+    await p.$eval('.tab[data-tab="progress"]', e => e.click()); await sleep(600);
+    let prog = clean(await p.textContent('#main'));
+    assert.match(prog, /15 points since the starting line/, '52.5 - 40 + 2.5 from today\'s quiz, not the old one');
+    assert.match(prog, /Points from the school’s AR report, updated [^.]+, plus 2\.5 points from 1 new quiz\./);
+    // The weekly check-in replaces them: her new total already includes Mary Anning.
+    await p.$eval('[data-act="school-update"]', e => e.click()); await sleep(400);
+    assert.match(clean(await p.textContent('#confirm')), /Quizzes from school emails since your last update are counted until you save/);
+    await p.fill('#school-quick', '55'); await p.$eval('form[data-form="school"] button[type="submit"]', e => e.click()); await sleep(600);
+    prog = clean(await p.textContent('#main'));
+    assert.match(prog, /15 points since the starting line/);
+    assert.doesNotMatch(prog, /new quiz\./);
     assert.deepStrictEqual(badRequests, [], 'only plain requests');
     assert.deepStrictEqual(errors, []);
     console.log('School quiz emails land once, keep hand-typed points, and add books not in the app.');
